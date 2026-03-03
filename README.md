@@ -2,6 +2,14 @@
 
 Python tool to convert CSV files into styled HTML tables.
 
+## Context
+
+This tool was built to support my teaching workflow. I am an instructor first, and I write code when it solves a practical problem in my classes or media environment.
+
+The project is shared publicly under the GNU General Public License v3.0 (GPLv3) for transparency and educational use. It works for my systems and use case.
+
+The software is provided as-is, without warranty or guaranteed support. I maintain it as needed for my own environment. Bug reports and pull requests are welcome, but response times may vary during the academic term.
+
 ## Features
 
 - Convert one or multiple CSV files to HTML
@@ -60,3 +68,17 @@ python3 setup.py py2app
 - The tool right-aligns numeric cells automatically.
 - Percent values (like `17%`) stay left-aligned by default.
 - UTF-8 CSV is supported (including UTF-8 with BOM).
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 (GPLv3). See [LICENSE](/Users/tlothian/Documents/Projects/yacht/LICENSE).
+
+GPLv3 is used here because it:
+
+- Requires attribution
+- Requires modified redistributed versions to remain under GPLv3
+- Prevents incorporation into proprietary closed-source systems
+- Requires source distribution when redistributed
+- Allows commercial use
+- Is widely respected in academic and technical communities
+- Signals that reciprocity matters
