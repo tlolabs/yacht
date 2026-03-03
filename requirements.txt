@@ -1,0 +1,4 @@
+# Runtime uses Python stdlib only.
+# Optional for building macOS app bundle:
+py2app>=0.28
+setuptools>=65
