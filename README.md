@@ -63,6 +63,10 @@ python3 setup.py py2app
 - Drag a `.csv` file onto the app icon (in Finder or Dock)
 - It converts to an `.html` file next to the CSV
 
+## Distribution Builds
+
+GitHub Actions builds packaged versions for macOS Intel, macOS Apple Silicon, Windows, and Linux. See [DISTRIBUTION.md](DISTRIBUTION.md) for release workflow details.
+
 ## Notes
 
 - The tool right-aligns numeric cells automatically.
@@ -71,7 +75,7 @@ python3 setup.py py2app
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 (GPLv3). See [LICENSE](/Users/tlothian/Documents/Projects/yacht/LICENSE).
+This project is licensed under the GNU General Public License v3.0 (GPLv3). See [LICENSE](LICENSE).
 
 GPLv3 is used here because it:
 
