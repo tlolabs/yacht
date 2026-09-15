@@ -1,0 +1,385 @@
+// !$*UTF8*$!
+{
+	"archiveVersion" = "1";
+	"classes" = {
+	};
+	"objectVersion" = "56";
+	"objects" = {
+		"36992FD9EFCC35941EC8F506" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.application";
+			"path" = "Y.A.C.H.T..app";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"1BDCCF10062BC847C2914E5C" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.cfbundle";
+			"path" = "YachtUITests.xctest";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"582681C2EAE02B3F3D399C0C" = {
+			"isa" = "XCLocalSwiftPackageReference";
+			"relativePath" = ".";
+		};
+		"8D6A224FA1D1DD751157EB0C" = {
+			"isa" = "XCSwiftPackageProductDependency";
+			"package" = "582681C2EAE02B3F3D399C0C";
+			"productName" = "YachtCore";
+		};
+		"D9F82689E8F760ECED47CA3E" = {
+			"isa" = "PBXBuildFile";
+			"productRef" = "8D6A224FA1D1DD751157EB0C";
+		};
+		"0FBB6CD7B5DF511AB16686ED" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/App/YachtApp.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"7BF66E91C065FF811A1D47C2" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "0FBB6CD7B5DF511AB16686ED";
+		};
+		"172EEAF570E9523A144F9CE7" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/Services/Background.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"D4EA90C5B0EA028AC4717891" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "172EEAF570E9523A144F9CE7";
+		};
+		"708D3C24157883A4F40F88A7" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/Services/DesktopActions.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"2E9F547EC82E3E67801AB196" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "708D3C24157883A4F40F88A7";
+		};
+		"AEB61DC45F4C335F206427BB" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/Services/HTMLFile.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"77763771BF2A9C945D8FDCE7" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "AEB61DC45F4C335F206427BB";
+		};
+		"1A2CC1AAC24FE41D180EE27B" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/Stores/Preferences.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"FB743EDA417F7FBDA1A1695F" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "1A2CC1AAC24FE41D180EE27B";
+		};
+		"B20E7865C590F1DAD727D765" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/Stores/Workspace.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"B87BA8DC1317FD714789C9C2" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "B20E7865C590F1DAD727D765";
+		};
+		"858D6BB7EB8F659AAA7852B5" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/Views/BatchView.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"9A4F8558667A526A7A89E632" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "858D6BB7EB8F659AAA7852B5";
+		};
+		"16A9A60165D24EBF96AEE054" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/Views/ColorSetting.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"ACACB9524D78EE33474E1F25" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "16A9A60165D24EBF96AEE054";
+		};
+		"09AA46B354A55B798E6D490D" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/Views/ContentView.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"6CF6CF9357BBBBF8247D4D19" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "09AA46B354A55B798E6D490D";
+		};
+		"B8C54E8C61EFB299D11C4113" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/Views/HTMLPreview.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"2480040601BC1C2AE5BDA6C0" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "B8C54E8C61EFB299D11C4113";
+		};
+		"D80916A91637C513C210CEAE" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/Views/SettingsView.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"650EF9249BED2974B2AA5DD6" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "D80916A91637C513C210CEAE";
+		};
+		"F2B89E637C5A8C6702EE7F59" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Sources/YachtApp/Views/StyleInspector.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"138B37887A956AEDB5B39014" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "F2B89E637C5A8C6702EE7F59";
+		};
+		"3C3B0F03DC089F93B8457928" = {
+			"isa" = "PBXGroup";
+			"name" = "Sources/YachtApp";
+			"children" = ("0FBB6CD7B5DF511AB16686ED", "172EEAF570E9523A144F9CE7", "708D3C24157883A4F40F88A7", "AEB61DC45F4C335F206427BB", "1A2CC1AAC24FE41D180EE27B", "B20E7865C590F1DAD727D765", "858D6BB7EB8F659AAA7852B5", "16A9A60165D24EBF96AEE054", "09AA46B354A55B798E6D490D", "B8C54E8C61EFB299D11C4113", "D80916A91637C513C210CEAE", "F2B89E637C5A8C6702EE7F59");
+			"sourceTree" = "<group>";
+		};
+		"949D493B91791558E87BC5D7" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = ("7BF66E91C065FF811A1D47C2", "D4EA90C5B0EA028AC4717891", "2E9F547EC82E3E67801AB196", "77763771BF2A9C945D8FDCE7", "FB743EDA417F7FBDA1A1695F", "B87BA8DC1317FD714789C9C2", "9A4F8558667A526A7A89E632", "ACACB9524D78EE33474E1F25", "6CF6CF9357BBBBF8247D4D19", "2480040601BC1C2AE5BDA6C0", "650EF9249BED2974B2AA5DD6", "138B37887A956AEDB5B39014");
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"BD92572B49AC16A86614498D" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = ("D9F82689E8F760ECED47CA3E");
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"29F92999EF397948852A4F7A" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "UITests/YachtUITests.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"C9E4FF7F066194EC9F1E1395" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "29F92999EF397948852A4F7A";
+		};
+		"A619C04D8A87AB070162A099" = {
+			"isa" = "PBXGroup";
+			"name" = "UITests";
+			"children" = ("29F92999EF397948852A4F7A");
+			"sourceTree" = "<group>";
+		};
+		"73449B7401E2150CE31884A3" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = ("C9E4FF7F066194EC9F1E1395");
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"156998F1D551F8233F560236" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = ();
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"FBDC4F23F93125BBEEAE800C" = {
+			"isa" = "PBXGroup";
+			"name" = "Products";
+			"children" = ("36992FD9EFCC35941EC8F506", "1BDCCF10062BC847C2914E5C");
+			"sourceTree" = "<group>";
+		};
+		"870B3294C0CBD48AF6BBCC1B" = {
+			"isa" = "PBXGroup";
+			"children" = ("3C3B0F03DC089F93B8457928", "A619C04D8A87AB070162A099", "FBDC4F23F93125BBEEAE800C");
+			"sourceTree" = "<group>";
+		};
+		"89E1FD6268CC0F221A2BE178" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"ARCHS" = "$(ARCHS_STANDARD)";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
+				"SDKROOT" = "macosx";
+				"SWIFT_VERSION" = "6.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"CODE_SIGN_IDENTITY" = "-";
+				"CODE_SIGN_STYLE" = "Manual";
+				"ENABLE_HARDENED_RUNTIME" = "YES";
+				"SWIFT_STRICT_CONCURRENCY" = "complete";
+				"SUPPORTED_PLATFORMS" = "macosx";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+				"ONLY_ACTIVE_ARCH" = "YES";
+			};
+		};
+		"E6DE6C99132752C914FEF632" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"ARCHS" = "$(ARCHS_STANDARD)";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
+				"SDKROOT" = "macosx";
+				"SWIFT_VERSION" = "6.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"CODE_SIGN_IDENTITY" = "-";
+				"CODE_SIGN_STYLE" = "Manual";
+				"ENABLE_HARDENED_RUNTIME" = "YES";
+				"SWIFT_STRICT_CONCURRENCY" = "complete";
+				"SUPPORTED_PLATFORMS" = "macosx";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+			};
+		};
+		"5810B6B376A3FEBC7E94DC88" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = ("89E1FD6268CC0F221A2BE178", "E6DE6C99132752C914FEF632");
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"E9B2E96ABC5F6856F2BE79CF" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"PRODUCT_NAME" = "Y.A.C.H.T.";
+				"EXECUTABLE_NAME" = "YachtApp";
+				"PRODUCT_MODULE_NAME" = "YachtNativeApp";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.local.yacht.csvhtmltranslator";
+				"INFOPLIST_FILE" = "Support/Info.plist";
+				"LD_RUNPATH_SEARCH_PATHS" = ("$(inherited)", "@executable_path/../Frameworks");
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+				"ONLY_ACTIVE_ARCH" = "YES";
+			};
+		};
+		"5A8C91857F674E16E2724F47" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"PRODUCT_NAME" = "Y.A.C.H.T.";
+				"EXECUTABLE_NAME" = "YachtApp";
+				"PRODUCT_MODULE_NAME" = "YachtNativeApp";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.local.yacht.csvhtmltranslator";
+				"INFOPLIST_FILE" = "Support/Info.plist";
+				"LD_RUNPATH_SEARCH_PATHS" = ("$(inherited)", "@executable_path/../Frameworks");
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+			};
+		};
+		"388C1FCB1C8BF19EBF062851" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = ("E9B2E96ABC5F6856F2BE79CF", "5A8C91857F674E16E2724F47");
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"0F3D67935A4F199E058A017A" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"ENABLE_HARDENED_RUNTIME" = "NO";
+				"PRODUCT_NAME" = "YachtUITests";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.local.yacht.uitests";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"TEST_TARGET_NAME" = "Yacht";
+				"LD_RUNPATH_SEARCH_PATHS" = ("$(inherited)", "@executable_path/../Frameworks", "@loader_path/../Frameworks");
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+				"ONLY_ACTIVE_ARCH" = "YES";
+			};
+		};
+		"20B70E15FDC36C625E57F658" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"ENABLE_HARDENED_RUNTIME" = "NO";
+				"PRODUCT_NAME" = "YachtUITests";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.local.yacht.uitests";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"TEST_TARGET_NAME" = "Yacht";
+				"LD_RUNPATH_SEARCH_PATHS" = ("$(inherited)", "@executable_path/../Frameworks", "@loader_path/../Frameworks");
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+			};
+		};
+		"FE6C5493F35638D6443F069D" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = ("0F3D67935A4F199E058A017A", "20B70E15FDC36C625E57F658");
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"7E85D4A68785761E1DBB22D8" = {
+			"isa" = "PBXContainerItemProxy";
+			"containerPortal" = "98F54143AB4E86B28C3AFEE0";
+			"proxyType" = "1";
+			"remoteGlobalIDString" = "7D1043473D55BFA90E8530D3";
+			"remoteInfo" = "Yacht";
+		};
+		"BAE932EF166B50AB877FDC6F" = {
+			"isa" = "PBXTargetDependency";
+			"target" = "7D1043473D55BFA90E8530D3";
+			"targetProxy" = "7E85D4A68785761E1DBB22D8";
+		};
+		"7D1043473D55BFA90E8530D3" = {
+			"isa" = "PBXNativeTarget";
+			"buildConfigurationList" = "388C1FCB1C8BF19EBF062851";
+			"buildPhases" = ("949D493B91791558E87BC5D7", "BD92572B49AC16A86614498D");
+			"buildRules" = ();
+			"dependencies" = ();
+			"name" = "Yacht";
+			"productName" = "Y.A.C.H.T.";
+			"productReference" = "36992FD9EFCC35941EC8F506";
+			"productType" = "com.apple.product-type.application";
+			"packageProductDependencies" = ("8D6A224FA1D1DD751157EB0C");
+		};
+		"04D13FD0AA6F0197CF2C9990" = {
+			"isa" = "PBXNativeTarget";
+			"buildConfigurationList" = "FE6C5493F35638D6443F069D";
+			"buildPhases" = ("73449B7401E2150CE31884A3", "156998F1D551F8233F560236");
+			"buildRules" = ();
+			"dependencies" = ("BAE932EF166B50AB877FDC6F");
+			"name" = "YachtUITests";
+			"productName" = "YachtUITests";
+			"productReference" = "1BDCCF10062BC847C2914E5C";
+			"productType" = "com.apple.product-type.bundle.ui-testing";
+		};
+		"98F54143AB4E86B28C3AFEE0" = {
+			"isa" = "PBXProject";
+			"attributes" = {
+				"LastUpgradeCheck" = "2600";
+				"BuildIndependentTargetsInParallel" = "YES";
+				"TargetAttributes" = {
+					"04D13FD0AA6F0197CF2C9990" = {
+						"TestTargetID" = "7D1043473D55BFA90E8530D3";
+					};
+				};
+			};
+			"buildConfigurationList" = "5810B6B376A3FEBC7E94DC88";
+			"compatibilityVersion" = "Xcode 14.0";
+			"developmentRegion" = "en";
+			"knownRegions" = ("en", "Base");
+			"mainGroup" = "870B3294C0CBD48AF6BBCC1B";
+			"productRefGroup" = "FBDC4F23F93125BBEEAE800C";
+			"projectDirPath" = "";
+			"projectRoot" = "";
+			"targets" = ("7D1043473D55BFA90E8530D3", "04D13FD0AA6F0197CF2C9990");
+			"packageReferences" = ("582681C2EAE02B3F3D399C0C");
+		};
+	};
+	"rootObject" = "98F54143AB4E86B28C3AFEE0";
+}
