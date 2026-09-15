@@ -17,6 +17,13 @@ final class PreviewDocumentTests: XCTestCase {
         XCTAssertLessThanOrEqual(preview.source.utf8.count, 1_000_000)
         XCTAssertFalse(preview.source.contains("\u{fffd}"))
     }
+    func testMissingCellsCountTowardPreviewBudget() throws {
+        let header = Array(repeating: "A", count: 10_000)
+        let table = try TableData(records: [header] + Array(repeating: [], count: 200))
+        let preview = try PreviewDocument(table: table, style: .unstyled)
+        XCTAssertLessThan(preview.rowCount, 3)
+        XCTAssertLessThan(preview.html.utf8.count, 2_000_000)
+    }
     func testDefaultsMatchLegacyExactly() throws {
         let data = try Data(contentsOf: Bundle.module.resourceURL!.appendingPathComponent("Fixtures/default-options.json"))
         XCTAssertEqual(try JSONDecoder().decode(StyleOptions.self, from: data), StyleOptions())

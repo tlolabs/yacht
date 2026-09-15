@@ -21,6 +21,7 @@ public enum CSVParser {
     }
 
     public static func read(_ url: URL, delimiter: CSVDelimiter = .comma, chunkSize: Int = 65_536) throws -> TableData {
+        guard url.isFileURL else { throw YachtError.invalid("Choose a local CSV or TSV file.") }
         guard chunkSize > 0 else { throw YachtError.invalid("CSV read buffer must be positive.") }
         let values = try url.resourceValues(forKeys: [.isRegularFileKey])
         guard values.isRegularFile == true else { throw YachtError.invalid("Choose a regular CSV or TSV file.") }

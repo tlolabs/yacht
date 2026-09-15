@@ -66,4 +66,4 @@ The legacy Python workflow remains available for manual cross-platform builds an
 
 ## Updating and future distribution
 
-There was no automatic update mechanism to preserve. Updates are currently downloaded from GitHub. A future updater and sandbox/bookmark work for a Mac App Store edition are tracked as follow-up issues rather than adding an unconfigured service to this rewrite.
+There was no automatic update mechanism to preserve. Updates are currently downloaded from GitHub. A future updater and sandbox/bookmark work for a Mac App Store edition are tracked as [updater](https://github.com/tlolabs/yacht/issues/1) and [sandbox](https://github.com/tlolabs/yacht/issues/3) follow-up issues rather than adding an unconfigured service to this rewrite.

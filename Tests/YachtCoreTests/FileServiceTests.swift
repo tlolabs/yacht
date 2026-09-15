@@ -53,10 +53,9 @@ final class FileServiceTests: XCTestCase {
         let url = directory.appendingPathComponent("safe.html")
         try Data("KEEP".utf8).write(to: url)
         let task = Task {
-            try await Task.sleep(for: .milliseconds(100))
+            withUnsafeCurrentTask { $0?.cancel() }
             try FileService.export(.sample, style: .init(), to: url, overwrite: true)
         }
-        task.cancel()
         do { try await task.value; XCTFail("Expected cancellation") } catch is CancellationError {} catch { XCTFail("\(error)") }
         XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), "KEEP")
     }

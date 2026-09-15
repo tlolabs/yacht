@@ -29,6 +29,10 @@ for target, folder in [('app', 'Sources/YachtApp'), ('tests', 'UITests')]:
     sources = add(target+'-sources', isa='PBXSourcesBuildPhase', buildActionMask=2147483647, files=builds, runOnlyForDeploymentPostprocessing=0)
     frameworks = add(target+'-frameworks', isa='PBXFrameworksBuildPhase', buildActionMask=2147483647, files=[core_build] if target=='app' else [], runOnlyForDeploymentPostprocessing=0)
     phases[target] = [sources, frameworks]
+license_ref = add('license-ref', isa='PBXFileReference', lastKnownFileType='text', path='LICENSE', sourceTree='SOURCE_ROOT')
+license_build = add('license-build', isa='PBXBuildFile', fileRef=license_ref)
+phases['app'].append(add('app-resources', isa='PBXResourcesBuildPhase', buildActionMask=2147483647, files=[license_build], runOnlyForDeploymentPostprocessing=0))
+groups.append(license_ref)
 products = add('products', isa='PBXGroup', name='Products', children=[product_app, product_test], sourceTree='<group>')
 main = add('main-group', isa='PBXGroup', children=groups+[products], sourceTree='<group>')
 def configs(name, common):
