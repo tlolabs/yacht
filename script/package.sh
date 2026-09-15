@@ -22,8 +22,8 @@ else
   codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" "$STAGING_DIR/Y.A.C.H.T..app"
 fi
 codesign --verify --deep --strict "$STAGING_DIR/Y.A.C.H.T..app"
-lipo -verify_arch arm64 x86_64 "$STAGING_DIR/Y.A.C.H.T..app/Contents/MacOS/YachtApp"
-lipo -verify_arch arm64 x86_64 "$STAGING_DIR/yacht"
+lipo "$STAGING_DIR/Y.A.C.H.T..app/Contents/MacOS/YachtApp" -verify_arch arm64 x86_64
+lipo "$STAGING_DIR/yacht" -verify_arch arm64 x86_64
 if [[ -n "${NOTARY_PROFILE:-}" ]]; then
   [[ "$SIGNING_IDENTITY" != '-' ]] || { echo 'Notarization requires Developer ID signing.' >&2; exit 1; }
   ditto -c -k --keepParent "$STAGING_DIR/Y.A.C.H.T..app" "$STAGING_DIR/notarize.zip"

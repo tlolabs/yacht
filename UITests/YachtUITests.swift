@@ -16,13 +16,29 @@ import AppKit
         try? FileManager.default.removeItem(at: directory)
     }
     func launch(csv: String? = nil) throws {
+        app.launch()
+        XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 15))
         if let csv {
             let file = directory.appendingPathComponent("input.csv")
             try Data(csv.utf8).write(to: file)
-            app.launchArguments += ["--open", file.path]
+            openCSV(file)
         }
-        app.launch()
-        XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 10))
+    }
+    func goTo(_ path: String) {
+        app.typeKey("g", modifierFlags: [.command, .shift])
+        let field = app.textFields["PathTextField"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.click()
+        field.typeKey("a", modifierFlags: .command)
+        field.typeText(path)
+        field.typeKey(.return, modifierFlags: [])
+        XCTAssertTrue(field.waitForNonExistence(timeout: 5))
+    }
+    func openCSV(_ file: URL) {
+        app.buttons["openCSV"].click()
+        XCTAssertTrue(app.sheets["open-panel"].waitForExistence(timeout: 5))
+        goTo(file.path)
+        app.sheets["open-panel"].buttons["OKButton"].click()
     }
     func testSamplePreviewSourceCopyAndReset() throws {
         try launch()
@@ -60,21 +76,37 @@ import AppKit
     func testNativeOpenAndExportDialogs() throws {
         try launch()
         app.typeKey("o", modifierFlags: .command)
-        XCTAssertTrue(app.dialogs.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.sheets["open-panel"].waitForExistence(timeout: 5))
         app.typeKey(.escape, modifierFlags: [])
         XCTAssertTrue(app.buttons["exportHTML"].waitForExistence(timeout: 5))
         app.typeKey("s", modifierFlags: .command)
-        XCTAssertTrue(app.dialogs.firstMatch.waitForExistence(timeout: 10))
-        app.typeKey("g", modifierFlags: [.command, .shift])
-        app.typeText(directory.path + "/table.html")
-        app.typeKey(.return, modifierFlags: [])
-        let save = app.buttons["Save"].firstMatch
+        XCTAssertTrue(app.sheets["save-panel"].waitForExistence(timeout: 10))
+        goTo(directory.path)
+        let name = app.textFields["saveAsNameTextField"]
+        name.click(); name.typeKey("a", modifierFlags: .command); name.typeText("table.html")
+        let save = app.sheets["save-panel"].buttons["OKButton"]
         XCTAssertTrue(save.waitForExistence(timeout: 5)); save.click()
         let url = directory.appendingPathComponent("table.html")
         let exists = NSPredicate { _, _ in FileManager.default.fileExists(atPath: url.path) }
         expectation(for: exists, evaluatedWith: nil); waitForExpectations(timeout: 10)
         XCTAssertTrue(try String(contentsOf: url, encoding: .utf8).contains("Friction, Baby"))
         XCTAssertTrue(app.buttons["Reveal in Finder"].waitForExistence(timeout: 5))
+    }
+    func testBatchConversionPreservesExistingOutput() throws {
+        try launch()
+        let input = directory.appendingPathComponent("batch.csv")
+        let output = directory.appendingPathComponent("batch.html")
+        try Data("A,B\n1,2".utf8).write(to: input)
+        try Data("KEEP".utf8).write(to: output)
+        app.buttons["batchConvert"].click()
+        XCTAssertTrue(app.sheets["open-panel"].waitForExistence(timeout: 5))
+        goTo(input.path)
+        app.sheets["open-panel"].buttons["OKButton"].click()
+        XCTAssertTrue(app.buttons["Convert"].waitForExistence(timeout: 5))
+        app.buttons["Convert"].click()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "already exists")).firstMatch.waitForExistence(timeout: 10))
+        XCTAssertEqual(try String(contentsOf: output, encoding: .utf8), "KEEP")
+        app.buttons["Done"].click()
     }
     func testPresetSaveLoadAndDelete() throws {
         try launch()
@@ -84,7 +116,7 @@ import AppKit
         app.buttons["Save Current"].click()
         XCTAssertTrue(app.staticTexts["Saved preset “Classroom”"].waitForExistence(timeout: 5))
         app.buttons["Reset Styled"].click()
-        let picker = app.popUpButtons["Preset"]
+        let picker = app.descendants(matching: .any).matching(identifier: "presetPicker").firstMatch
         picker.click(); app.menuItems["Classroom"].click()
         app.buttons["loadPreset"].click()
         app.buttons["copyHTML"].click()

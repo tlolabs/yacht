@@ -30,11 +30,8 @@ struct ContentView: View {
             case .failure(let error): workspace.errorMessage = error.localizedDescription
             }
         }
-        .fileExporter(isPresented: $workspace.showExporter, document: workspace.exportDocument, contentType: .html,
-            defaultFilename: workspace.sourceURL?.deletingPathExtension().lastPathComponent ?? "Y.A.C.H.T. Table") { workspace.finishExport($0) }
-        .onChange(of: workspace.showExporter) { _, showing in
-            if !showing { Task { try? await Task.sleep(for: .seconds(1)); if !workspace.showExporter { workspace.cleanPreparedExport() } } }
-        }
+        .fileExporter(isPresented: $workspace.showExporter, document: workspace.exportDocument, contentTypes: [.html],
+            defaultFilename: workspace.sourceURL?.deletingPathExtension().lastPathComponent ?? "Y.A.C.H.T. Table", onCompletion: { workspace.finishExport($0) }, onCancellation: { workspace.cleanPreparedExport(); workspace.status = "Export cancelled" })
         .sheet(isPresented: $workspace.showBatch) { BatchView(workspace: workspace) }
         .alert("Y.A.C.H.T.", isPresented: Binding(get: { workspace.errorMessage != nil }, set: { if !$0 { workspace.errorMessage = nil } })) {
             Button("OK", role: .cancel) { workspace.errorMessage = nil }
@@ -54,13 +51,13 @@ struct ContentView: View {
                 Picker("View", selection: $workspace.section) {
                     Text("Table Preview").tag("preview")
                     Text("HTML Source").tag("source")
-                }.pickerStyle(.segmented).frame(width: 235).accessibilityIdentifier("viewSelector")
+                }.pickerStyle(.segmented).labelsHidden().frame(width: 235).accessibilityIdentifier("viewSelector")
             }
             HStack {
                 Picker("Delimiter", selection: $workspace.delimiter) {
                     ForEach(CSVDelimiter.allCases, id: \.self) { Text($0.label).tag($0) }
                 }.frame(width: 230)
-                .onChange(of: workspace.delimiter) { if let url = workspace.sourceURL { workspace.load(url) } }
+                .onChange(of: workspace.delimiter) { if let url = workspace.sourceURL { workspace.load(url, inferDelimiter: false) } }
                 Spacer()
                 if let table = workspace.table { Text("\(table.rows.count.formatted()) rows · \(table.header.count.formatted()) columns").font(.caption).foregroundStyle(.secondary) }
             }
@@ -113,7 +110,7 @@ struct ContentView: View {
         }
         ToolbarItemGroup {
             Button { workspace.chooseFile() } label: { Label("Open CSV", systemImage: "folder") }.accessibilityIdentifier("openCSV")
-            Button { workspace.chooseFile(batch: true) } label: { Label("Batch Convert CSVs", systemImage: "square.stack.3d.up") }.disabled(workspace.working)
+            Button { workspace.chooseFile(batch: true) } label: { Label("Batch Convert CSVs", systemImage: "square.stack.3d.up") }.disabled(workspace.working).accessibilityIdentifier("batchConvert")
             Button { workspace.refresh() } label: { Label("Refresh Preview", systemImage: "arrow.clockwise") }.disabled(workspace.importing)
             Button { workspace.copyHTML() } label: { Label("Copy HTML Code", systemImage: "doc.on.doc") }.disabled(!workspace.canExport).accessibilityIdentifier("copyHTML")
             Button { workspace.prepareExport() } label: { Label("Export HTML", systemImage: "square.and.arrow.up") }.disabled(!workspace.canExport).accessibilityIdentifier("exportHTML")
