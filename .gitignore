@@ -7,3 +7,9 @@ dist/
 BTE.html
 release/
 .venv/
+
+.build/
+.swiftpm/
+DerivedData/
+*.xcresult/
+xcuserdata/

@@ -1,4 +1,4 @@
-name: Build Distributions
+name: Legacy Python Distributions
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
         type: string
   push:
     tags:
-      - "v*"
+      - "v1*"
 
 permissions:
   contents: write

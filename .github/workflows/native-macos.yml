@@ -1,0 +1,65 @@
+name: Native macOS
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+jobs:
+  verify:
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: swift --version && xcodebuild -version
+      - name: Verify generated Xcode project
+        run: python3 script/generate_project.py && git diff --exit-code -- Yacht.xcodeproj
+      - name: Core tests
+        run: swift test
+      - name: CLI and Python regression tests
+        run: python3 script/verify_compatibility.py
+      - name: macOS UI tests
+        run: xcodebuild -project Yacht.xcodeproj -scheme Yacht -derivedDataPath build -destination 'platform=macOS,arch=arm64' -resultBundlePath build/UITests.xcresult test -quiet
+      - name: Package universal development build
+        run: ./script/package.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: UI-test-results
+          path: build/UITests.xcresult
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Y.A.C.H.T.-macos-universal
+          path: |
+            release/*.dmg
+            release/*.zip
+            release/yacht
+            release/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 30
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Y.A.C.H.T.-macos-universal
+          path: release
+      - name: Publish tagged release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "$RELEASE_TAG" release/* --verify-tag --generate-notes --title "Y.A.C.H.T. $RELEASE_TAG" --notes 'Native macOS build for Apple Silicon and Intel, macOS 14+. Development signatures only; this build is not notarized.'
