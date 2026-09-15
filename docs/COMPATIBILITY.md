@@ -23,7 +23,7 @@ Default styled/unstyled snapshots for ordinary, quoted, Unicode, escaped and BOM
 
 - Actual WebKit live preview includes hover, spacing and border behavior; the Python canvas approximated the first ten rows and did not render hover.
 - Native file dialogs and overwrite confirmation; atomic export; batch collision reporting; explicit CLI `--overwrite`.
-- Finder/Dock Open With opens a reviewable preview; CLI and Batch Convert provide direct conversion. Multiple dropped files open a batch review.
+- Finder/Dock Open With opens a reviewable preview; CLI and Batch Convert provide direct conversion. Multiple dropped or Finder-opened files open a batch review.
 - Explicit delimiter controls add TSV/semicolon/pipe support; the previous app supported comma only.
 - Recent files, remembered valid style, settings, keyboard shortcuts, Finder reveal and default-browser opening.
 - Presets migrate into Application Support without altering the Python preset file. They are independent after migration.

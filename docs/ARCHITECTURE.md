@@ -47,6 +47,6 @@ WebKit JavaScript control follows [Apple’s documentation](https://developer.ap
 
 Named presets live in `~/Library/Application Support/Y.A.C.H.T./presets.json`. On first native launch, existing `~/.yacht_presets.json` is read and copied without changing the original. Errors are shown and preserve the original file. UserDefaults remembers the valid last style, preview setting and recent paths. No automatic reopen/export occurs on startup; the sample makes the initial view useful.
 
-Finder multi-file events are coalesced into a batch review so each input remains represented.
+A small NSApplicationDelegate bridge receives the complete Finder open-URL array and passes it to Workspace. Multiple inputs open a batch review; one opens a preview. SwiftUI onOpenURL is avoided because it delivered only the first file in a multi-file event during verification.
 
 Native labeled controls, standard focus traversal, keyboard shortcuts, selectable source text, adaptive interface colors and semantic HTML support assistive technology. Export colors are author-selected document content, so they intentionally remain independent of the Mac’s light/dark appearance. A human VoiceOver and display/accessibility acceptance pass remains valuable.

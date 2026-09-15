@@ -7,7 +7,7 @@ Verified September 15, 2026, with Xcode 26.6 / Swift 6.3.3 on Apple Silicon. The
 - 23 Swift unit tests: CSV quoting, escaped quotes, commas, multiline cells, all newline conventions, blanks, Unicode/BOM/emoji, one-byte read buffers, short/extra rows, invalid UTF-8/NUL and malformed quotes, 100,000-row input, long cells, HTML structure/escaping, combining Unicode characters in attributes, CSS injection rejection, numeric alignment, presets, atomic replacement, failed imports, cancellation cleanup and bounded previews (including very wide missing-cell tables).
 - Exact regression fixtures from the original Python app, with only the documented header/viewport/numeric changes normalized for comparison.
 - 60 deterministic Python/Swift differential CSV cases, including HTML-looking content and combining Unicode. The integration script also tests every-file batch continuation, collision rejection, explicit replacement, unsafe styles and input-path protection.
-- Six native UI workflows: sample preview/source/copy/reset; importing escaped content with extra columns; malformed-input error and disabled export; native Open/Export panels and saved-file content; named preset save/load/delete; batch collision protection. All six passed locally after correcting test queries to use macOS sheets/control identifiers. CI reruns the complete suite for each published commit.
+- Seven native UI workflows: sample preview/source/copy/reset; importing escaped content with extra columns; malformed-input error and disabled export; native Open/Export panels and saved-file content; named preset save/load/delete; batch collision protection; Finder multi-file opening with both exported outputs and subsequent single-file preview. CI runs the complete suite, including on its 1024-pixel-wide virtual display. The initial window size fits that smaller desktop.
 
 Local XCTest initially could not enable automation while the desktop was unavailable. Once the desktop was available, the tests ran normally. Result bundles remain under the ignored `build/` directory and CI uploads its `.xcresult` artifact for inspection.
 
@@ -18,7 +18,7 @@ Local XCTest initially could not enable automation while the desktop was unavail
 - Inspected native UI layout and accessibility structure.
 - Opened the escaping fixture through the native Open panel; verified `<script>` renders as literal text, and HTML Source contains escaped markup.
 - Exported through the native Export panel and checked the saved file on disk, including escaped content and Finder/browser completion controls.
-- Verified Finder-style `Open With` loads BTE.csv into the native window.
+- Verified Finder-style `Open With` loads a single CSV into the native window and cold-launch multi-file opening retains both inputs in batch review.
 - Built universal ARM64/x86_64 app and CLI, verified both architectures and code signatures, and produced DMG/ZIP/checksums.
 
 ## Performance sample

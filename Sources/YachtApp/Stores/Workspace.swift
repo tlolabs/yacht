@@ -27,8 +27,6 @@ final class Workspace {
     var batchProgress = 0
     var batchResults: [String] = []
     var section = "preview"
-    @ObservationIgnored private var externalTask: Task<Void, Never>?
-    @ObservationIgnored private var pendingExternalURLs: [URL] = []
     @ObservationIgnored private var importTask: Task<Void, Never>?
     @ObservationIgnored private var previewTask: Task<Void, Never>?
     @ObservationIgnored private var operationTask: Task<Void, Never>?
@@ -44,18 +42,6 @@ final class Workspace {
     var canExport: Bool { table != nil && !importing && !working && validationMessage == nil }
     var title: String { sourceURL?.lastPathComponent ?? "Sample table" }
     func chooseFile(batch: Bool = false) { batchImport = batch; showImporter = true }
-    /// SwiftUI delivers Finder's multi-file open event one URL at a time.
-    /// Coalesce those deliveries so no selected source is silently discarded.
-    func receiveExternal(_ url: URL) {
-        if !pendingExternalURLs.contains(url) { pendingExternalURLs.append(url) }
-        externalTask?.cancel()
-        externalTask = Task {
-            do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
-            let urls = pendingExternalURLs
-            pendingExternalURLs.removeAll()
-            receive(urls)
-        }
-    }
     func receive(_ urls: [URL], batch: Bool = false) {
         guard !urls.isEmpty else { return }
         if urls.count > 1 || batch { batchURLs = urls; batchResults = []; batchOverwrite = false; showBatch = true }
