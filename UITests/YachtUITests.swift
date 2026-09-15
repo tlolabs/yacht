@@ -58,7 +58,7 @@ import AppKit
     }
     func testImportEscapingAndExtraColumnWarning() throws {
         try launch(csv: "Name,Value\n<script>alert(1)</script>,17%\nCafé,🛥️,extra\n")
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "additional columns are preserved")).firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "additional columns are preserved", "additional columns are preserved")).firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(app.webViews.staticTexts["<script>alert(1)</script>"].waitForExistence(timeout: 10))
         app.buttons["copyHTML"].click()
         XCTAssertTrue(app.staticTexts["Copied complete HTML document"].waitForExistence(timeout: 10))
@@ -68,9 +68,9 @@ import AppKit
     }
     func testMalformedImportShowsErrorAndDisablesExport() throws {
         try launch(csv: "A,B\n\"unterminated")
-        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.alerts.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "unterminated quoted field")).firstMatch.exists)
-        app.alerts.buttons["OK"].click()
+        XCTAssertTrue(app.sheets["alert"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.sheets["alert"].staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "unterminated quoted field", "unterminated quoted field")).firstMatch.exists)
+        app.sheets["alert"].buttons["OK"].click()
         XCTAssertFalse(app.buttons["exportHTML"].isEnabled)
     }
     func testNativeOpenAndExportDialogs() throws {
@@ -104,7 +104,7 @@ import AppKit
         app.sheets["open-panel"].buttons["OKButton"].click()
         XCTAssertTrue(app.buttons["Convert"].waitForExistence(timeout: 5))
         app.buttons["Convert"].click()
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "already exists")).firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "already exists", "already exists")).firstMatch.waitForExistence(timeout: 10))
         XCTAssertEqual(try String(contentsOf: output, encoding: .utf8), "KEEP")
         app.buttons["Done"].click()
     }

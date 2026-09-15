@@ -27,7 +27,7 @@ The Python application is preserved at its original paths and under [`legacy-pyt
 - Whole HTML document, embedded CSS, semantic `thead`/`tbody`, `scope="col"` headers. Styled output retains the legacy CSS classes and defaults; Unstyled removes CSS/classes.
 - Numbers align right; percentages stay left-aligned. Default widths and alignment match the Python tool.
 
-Preview defaults to 200 rows, with an additional 2 MB estimated size budget. Source display is limited to 1 MB and clearly labels excerpts. **Exports and copied HTML include every row.** Import, generation and streaming export run off the main UI thread. Cancel is available for long operations. The parsed table resides in memory, so practical file size is limited by available RAM; this is not a disk-backed database.
+Preview defaults to 200 rows, with an additional 2 MB estimated size budget. Source display is limited to 1 MB and clearly labels excerpts. **Exports and copied HTML include every row.** Import, generation and streaming export run off the main UI thread. Cancel is available for long operations. The parsed table resides in memory, so practical file size is limited by available RAM; this is not a disk-backed database. [Disk-backed conversion is tracked separately](https://github.com/tlolabs/yacht/issues/2).
 
 Finder/Dock opening now opens a preview for review. Use batch conversion or the CLI for direct conversion. See [output and workflow changes](docs/COMPATIBILITY.md).
 

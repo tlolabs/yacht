@@ -18,7 +18,7 @@ class Cells(HTMLParser):
     def handle_data(self,data):
         if self.inside: self.cells[-1]+=data
 rng=random.Random(20260915)
-values=['', 'a,b', '"quoted"', "O'Reilly", '<script>alert(1)</script>', 'a&b', 'line\nnext', 'CR\rLF\r\n', '🛥️', '日本語', 'e\u0301', '17%', '12345', '-1,234.50', ' whitespace ']
+values=['', 'a,b', '"quoted"', "O'Reilly", '<script>alert(1)</script>', 'a&b', 'line\nnext', 'CR\rLF\r\n', '🛥️', '日本語', 'e\u0301', '17%', '12345', '-1,234.50', ' whitespace ', '"\u0301', '<\u0301', '&\ufe0f']
 with tempfile.TemporaryDirectory(prefix='yacht-regression-') as tmp:
     base=Path(tmp)
     for i in range(60):

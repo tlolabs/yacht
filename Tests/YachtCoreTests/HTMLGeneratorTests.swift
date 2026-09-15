@@ -25,6 +25,13 @@ final class HTMLGeneratorTests: XCTestCase {
         XCTAssertTrue(html.contains("scope=\"col\""))
         XCTAssertTrue(html.contains("&quot; onmouseover=&quot;"))
     }
+    func testEscapingCombiningCharactersCannotBreakAttributes() throws {
+        let value = "\"\u{fe0f} onmouseover=\"alert(1)"
+        var style = StyleOptions(); style.tableClass = value
+        let html = try HTMLGenerator.document(.sample, style: style)
+        XCTAssertTrue(html.contains("&quot;\u{fe0f} onmouseover=&quot;alert(1)"))
+        XCTAssertEqual(HTMLGenerator.escape("<\u{301}&\u{fe0f}'\u{301}"), "&lt;\u{301}&amp;\u{fe0f}&#x27;\u{301}")
+    }
     func testStyleInjectionBlocked() {
         for attack in ["</style><script>alert(1)</script>", "red; background:url(https://example.com)", "url(file:///etc/passwd)", "red\\3c"] {
             var s = StyleOptions(); s.fontFamily = attack

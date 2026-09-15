@@ -196,6 +196,22 @@
 			"files" = ();
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
+		"BA3BF7DAC3040388A0E99B12" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text";
+			"path" = "LICENSE";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"134673B2F244444146DA7449" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "BA3BF7DAC3040388A0E99B12";
+		};
+		"8ECC8B5D05B79F879ACDF1A2" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = ("134673B2F244444146DA7449");
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
 		"FBDC4F23F93125BBEEAE800C" = {
 			"isa" = "PBXGroup";
 			"name" = "Products";
@@ -204,7 +220,7 @@
 		};
 		"870B3294C0CBD48AF6BBCC1B" = {
 			"isa" = "PBXGroup";
-			"children" = ("3C3B0F03DC089F93B8457928", "A619C04D8A87AB070162A099", "FBDC4F23F93125BBEEAE800C");
+			"children" = ("3C3B0F03DC089F93B8457928", "A619C04D8A87AB070162A099", "BA3BF7DAC3040388A0E99B12", "FBDC4F23F93125BBEEAE800C");
 			"sourceTree" = "<group>";
 		};
 		"89E1FD6268CC0F221A2BE178" = {
@@ -338,7 +354,7 @@
 		"7D1043473D55BFA90E8530D3" = {
 			"isa" = "PBXNativeTarget";
 			"buildConfigurationList" = "388C1FCB1C8BF19EBF062851";
-			"buildPhases" = ("949D493B91791558E87BC5D7", "BD92572B49AC16A86614498D");
+			"buildPhases" = ("949D493B91791558E87BC5D7", "BD92572B49AC16A86614498D", "8ECC8B5D05B79F879ACDF1A2");
 			"buildRules" = ();
 			"dependencies" = ();
 			"name" = "Yacht";

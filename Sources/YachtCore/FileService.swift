@@ -4,6 +4,7 @@ public enum FileService {
     public static func defaultOutput(for input: URL) -> URL { input.deletingPathExtension().appendingPathExtension("html") }
 
     public static func export(_ table: TableData, style: StyleOptions, to url: URL, overwrite: Bool = false) throws {
+        guard url.isFileURL else { throw YachtError.invalid("Choose a local output file.") }
         let fm = FileManager.default
         try style.validate()
         try fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)

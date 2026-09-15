@@ -40,7 +40,7 @@ struct ContentView: View {
             guard !workspace.working else { return false }; workspace.receive(urls); return !urls.isEmpty
         } isTargeted: { dropTargeted = $0 }
         .overlay { if dropTargeted { RoundedRectangle(cornerRadius: 8).stroke(.tint, lineWidth: 3).padding(4).allowsHitTesting(false) } }
-        .onOpenURL { workspace.receive([$0]) }
+        .onOpenURL { workspace.receiveExternal($0) }
         .onChange(of: workspace.preferences.previewRows) { workspace.schedulePreview() }
     }
     private var header: some View {

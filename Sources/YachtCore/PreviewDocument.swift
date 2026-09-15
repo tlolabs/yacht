@@ -13,7 +13,7 @@ public struct PreviewDocument: Sendable {
         var bytes = table.header.reduce(0) { $0 + $1.utf8.count * 6 + 100 }
         var count = 0
         for row in table.rows.prefix(limit) {
-            let cost = row.reduce(0) { $0 + $1.utf8.count * 6 + 100 }
+            let cost = table.header.count * 100 + row.reduce(0) { $0 + $1.utf8.count * 6 }
             if bytes + cost > budget { break }
             bytes += cost; count += 1
         }

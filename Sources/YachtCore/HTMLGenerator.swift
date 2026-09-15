@@ -5,14 +5,14 @@ public enum HTMLGenerator {
         guard text.utf8.contains(where: { $0 == 38 || $0 == 60 || $0 == 62 || $0 == 34 || $0 == 39 }) else { return text }
         var result = ""
         result.reserveCapacity(text.utf8.count)
-        for c in text {
-            switch c {
-            case "&": result += "&amp;"
-            case "<": result += "&lt;"
-            case ">": result += "&gt;"
-            case "\"": result += "&quot;"
-            case "'": result += "&#x27;"
-            default: result.append(c)
+        for scalar in text.unicodeScalars {
+            switch scalar.value {
+            case 38: result += "&amp;"
+            case 60: result += "&lt;"
+            case 62: result += "&gt;"
+            case 34: result += "&quot;"
+            case 39: result += "&#x27;"
+            default: result.unicodeScalars.append(scalar)
             }
         }
         return result

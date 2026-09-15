@@ -6,7 +6,7 @@ The baseline is `703bcd2`; captured fixtures were committed before Swift impleme
 
 All sixteen styling values and their defaults; built-in styled/unstyled resets; custom preset load/save/delete and compatible JSON; album sample; single and batch conversion; complete-document HTML copy; read-only source; numeric alignment intent; percent left-alignment; embedded CSS; original table/wrapper classes; GUI/CLI styling controls; default `.html` filenames; bundle name and identifier; GPLv3. The repository never contained a custom icon or automatic updater.
 
-The native CLI accepts all former style flags, multiple files and single-file `-o`/`--output`. Python remains runnable on other platforms. Legacy distribution CI is retained for manual runs and `v1*` tags; native tags use `v2*` onward.
+The native CLI accepts all former style flags, multiple files and single-file `-o`/`--output`. Python remains runnable on other platforms. Legacy distribution CI is retained for manual runs and `v1.*` tags; native tags use `v2*` onward.
 
 ## Output changes
 
