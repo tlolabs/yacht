@@ -2,14 +2,15 @@ import SwiftUI
 
 @main
 struct YachtApp: App {
-    @State private var workspace = Workspace()
+    @NSApplicationDelegateAdaptor(FileOpenDelegate.self) private var fileOpenDelegate
+    private var workspace: Workspace { fileOpenDelegate.workspace }
     var body: some Scene {
         WindowGroup("Y.A.C.H.T.", id: "main") {
             ContentView(workspace: workspace)
                 .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         }
         .handlesExternalEvents(matching: ["*"])
-        .defaultSize(width: 1180, height: 780)
+        .defaultSize(width: 1000, height: 650)
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Open CSV…") { workspace.chooseFile() }.keyboardShortcut("o")
@@ -36,5 +37,14 @@ struct YachtApp: App {
             }
         }
         Settings { SettingsView(preferences: workspace.preferences) }
+    }
+}
+
+/// Receives the entire Finder Open event; onOpenURL can discard all but its first file.
+@MainActor
+final class FileOpenDelegate: NSObject, NSApplicationDelegate {
+    let workspace = Workspace()
+    func application(_ application: NSApplication, open urls: [URL]) {
+        workspace.receive(urls)
     }
 }
