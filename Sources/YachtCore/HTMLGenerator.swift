@@ -1,8 +1,8 @@
 import Foundation
 
 public enum HTMLGenerator {
-    private static let numericExpression = try! NSRegularExpression(pattern: #"^[+-]?(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)(?:\.[0-9]+)?$"#)
     public static func escape(_ text: String) -> String {
+        guard text.utf8.contains(where: { $0 == 38 || $0 == 60 || $0 == 62 || $0 == 34 || $0 == 39 }) else { return text }
         var result = ""
         result.reserveCapacity(text.utf8.count)
         for c in text {
@@ -19,8 +19,23 @@ public enum HTMLGenerator {
     }
 
     public static func isNumeric(_ value: String) -> Bool {
-        let text = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        return numericExpression.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil
+        let text = (value.first?.isWhitespace == true || value.last?.isWhitespace == true)
+            ? value.trimmingCharacters(in: .whitespacesAndNewlines) : value
+        var digits = 0, position = 0
+        var grouped = false, fraction = false
+        for byte in text.utf8 {
+            defer { position += 1 }
+            if position == 0 && (byte == 43 || byte == 45) { continue }
+            if (48...57).contains(byte) { digits += 1; continue }
+            if byte == 44 {
+                guard !fraction, digits > 0, grouped ? digits == 3 : digits <= 3 else { return false }
+                grouped = true; digits = 0
+            } else if byte == 46 {
+                guard !fraction, digits > 0, !grouped || digits == 3 else { return false }
+                fraction = true; digits = 0
+            } else { return false }
+        }
+        return digits > 0 && (fraction || !grouped || digits == 3)
     }
 
     public static func document(_ table: TableData, style: StyleOptions, rowLimit: Int? = nil) throws -> String {

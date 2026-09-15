@@ -12,10 +12,10 @@ struct ColorSetting: View {
     }
     var body: some View {
         LabeledContent(title) {
-          HStack {
-            ColorPicker(title, selection: selectedColor, supportsOpacity: false)
+            HStack {
+            ColorPicker("", selection: selectedColor, supportsOpacity: false)
                 .labelsHidden().accessibilityLabel("\(title) picker")
-            TextField(title, text: $value).accessibilityLabel(title)
+            TextField("", text: $value).accessibilityLabel(title)
                 .help("CSS hex color, color name, rgb(), hsl(), or transparent")
         }
         }

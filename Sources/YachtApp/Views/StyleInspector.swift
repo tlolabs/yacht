@@ -15,6 +15,7 @@ struct StyleInspector: View {
                     Text("Unstyled").tag("Unstyled")
                     ForEach(workspace.preferences.presets.keys.sorted(), id: \.self) { Text($0).tag($0) }
                 }
+                .accessibilityIdentifier("presetPicker")
                 HStack {
                     Button("Load") { loadPreset() }.accessibilityIdentifier("loadPreset")
                     Button("Delete", role: .destructive) { confirmDelete = true }

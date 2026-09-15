@@ -4,15 +4,11 @@ import SwiftUI
 struct YachtApp: App {
     @State private var workspace = Workspace()
     var body: some Scene {
-        Window("Y.A.C.H.T.", id: "main") {
+        WindowGroup("Y.A.C.H.T.", id: "main") {
             ContentView(workspace: workspace)
-                .task {
-                    let args = ProcessInfo.processInfo.arguments
-                    if let index = args.firstIndex(of: "--open"), args.indices.contains(index + 1) {
-                        workspace.load(URL(fileURLWithPath: args[index + 1]))
-                    }
-                }
+                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         }
+        .handlesExternalEvents(matching: ["*"])
         .defaultSize(width: 1180, height: 780)
         .commands {
             CommandGroup(replacing: .newItem) {

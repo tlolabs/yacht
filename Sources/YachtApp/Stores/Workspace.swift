@@ -47,14 +47,14 @@ final class Workspace {
         if urls.count > 1 || batch { batchURLs = urls; batchResults = []; batchOverwrite = false; showBatch = true }
         else { load(urls[0]) }
     }
-    func load(_ url: URL) {
+    func load(_ url: URL, inferDelimiter: Bool = true) {
         importTask?.cancel(); previewTask?.cancel()
         generation = UUID()
         let request = generation
         sourceURL = url; table = nil; preview = nil; importing = true; rendering = false
         validationMessage = nil
         status = "Reading \(url.lastPathComponent)…"
-        let selectedDelimiter = url.pathExtension.lowercased() == "tsv" ? CSVDelimiter.tab : delimiter
+        let selectedDelimiter = inferDelimiter && url.pathExtension.lowercased() == "tsv" ? CSVDelimiter.tab : delimiter
         delimiter = selectedDelimiter
         importTask = Task {
             do {
@@ -74,7 +74,7 @@ final class Workspace {
         }
     }
     func refresh() {
-        if let sourceURL { load(sourceURL) } else { schedulePreview() }
+        if let sourceURL { load(sourceURL, inferDelimiter: false) } else { schedulePreview() }
     }
     func useSample() {
         importTask?.cancel(); generation = UUID(); importing = false
