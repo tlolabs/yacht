@@ -7,6 +7,7 @@ MODE="${1:-run}"
 pkill -x YachtApp >/dev/null 2>&1 || true
 xcodebuild -project Yacht.xcodeproj -scheme Yacht -configuration Debug -derivedDataPath build -destination 'platform=macOS' build -quiet
 mkdir -p dist
+rm -rf -- "$ROOT_DIR/dist/Y.A.C.H.T..app"
 ditto 'build/Build/Products/Debug/Y.A.C.H.T..app' 'dist/Y.A.C.H.T..app'
 case "$MODE" in
   --build-only) ;;

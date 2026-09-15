@@ -32,7 +32,11 @@ if [[ -n "${NOTARY_PROFILE:-}" ]]; then
   xcrun stapler validate "$STAGING_DIR/Y.A.C.H.T..app"
   rm "$STAGING_DIR/notarize.zip"
 fi
+# dist contains generated artifacts only; replace the complete bundle so an
+# earlier Debug build cannot leave unsigned auxiliary files in the release app.
+rm -rf -- "$ROOT_DIR/dist/Y.A.C.H.T..app"
 ditto "$STAGING_DIR/Y.A.C.H.T..app" 'dist/Y.A.C.H.T..app'
+codesign --verify --deep --strict 'dist/Y.A.C.H.T..app'
 cp "$STAGING_DIR/yacht" dist/yacht
 ln -s /Applications "$STAGING_DIR/Applications"
 hdiutil create -volname 'Y.A.C.H.T.' -srcfolder "$STAGING_DIR" -ov -format UDZO 'release/Y.A.C.H.T.-macos-universal.dmg'
