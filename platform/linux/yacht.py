@@ -56,6 +56,16 @@ class Window(Adw.ApplicationWindow):
         super().__init__(
             application=app, title="YACHT", default_width=1100, default_height=720
         )
+        icon_theme = Gtk.IconTheme.get_for_display(self.get_display())
+        prefix = Path(__file__).resolve().parents[2]
+        source_icons = prefix / "assets" / "icons"
+        if (source_icons / "YACHT.svg").is_file():
+            icon_theme.add_search_path(str(source_icons))
+            self.set_icon_name("YACHT")
+        else:
+            # Also resolve icons when running a tar package outside /usr.
+            icon_theme.add_search_path(str(prefix / "share" / "icons"))
+            self.set_icon_name("com.local.yacht.csvhtmltranslator")
         self.core = Core()
         self.pool = concurrent.futures.ThreadPoolExecutor(max_workers=3)
         self.table = self.core.table()

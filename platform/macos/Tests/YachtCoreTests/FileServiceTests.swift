@@ -33,7 +33,7 @@ final class FileServiceTests: XCTestCase {
             XCTAssertThrowsError(try FileService.convert(source, to: source, style: .init(), overwrite: true))
         }
     }
-    func testPresetsRoundTripAndLegacyDefaults() throws {
+    func testPresetsRoundTripAndPartialDefaults() throws {
         try withDirectory { directory in
             let repo = PresetRepository(url: directory.appendingPathComponent("presets.json"))
             XCTAssertEqual(try repo.load(), [:])
@@ -42,8 +42,8 @@ final class FileServiceTests: XCTestCase {
             XCTAssertThrowsError(try repo.save(["Unstyled": .init()]))
             let decoded = try JSONDecoder().decode(StyleOptions.self, from: Data("{\"font_size_px\":22}".utf8))
             XCTAssertEqual(decoded.fontSizePx, 22); XCTAssertEqual(decoded.borderColor, "#cccccc")
-            let fixture = Bundle.module.resourceURL!.appendingPathComponent("Fixtures/default-options.json")
-            XCTAssertEqual(try JSONDecoder().decode(StyleOptions.self, from: Data(contentsOf: fixture)), StyleOptions())
+            let encoded = try JSONEncoder().encode(decoded)
+            XCTAssertEqual(try JSONDecoder().decode(StyleOptions.self, from: encoded), decoded)
         }
     }
     func testCancelledExportLeavesExistingFile() async throws {

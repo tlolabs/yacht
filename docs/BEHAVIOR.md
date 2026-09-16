@@ -23,8 +23,8 @@ original header. No cell is silently discarded or interpreted as HTML.
 
 ## Style and output
 
-Sixteen snake_case properties use the defaults captured in
-`Tests/YachtCoreTests/Fixtures/default-options.json`. Partial/null properties receive
+Sixteen snake_case properties use the defaults defined by `Style::default()` in
+`crates/yacht-core/src/style.rs`. Partial/null properties receive
 Rust defaults; unknown properties are ignored for legacy compatibility. Wrong
 property types fail. Pixel values are integers: font size 1–10000, other sizes
 0–10000. Border styles: solid, dashed, dotted, double, none, hidden, groove, ridge,

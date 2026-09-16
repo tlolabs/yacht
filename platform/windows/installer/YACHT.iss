@@ -18,6 +18,7 @@ SolidCompression=yes
 CloseApplications=yes
 RestartApplications=no
 WizardStyle=modern
+SetupIconFile=../../../assets/icons/YACHT.ico
 ChangesAssociations=yes
 [Files]
 Source: "{#PublishDirectory}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

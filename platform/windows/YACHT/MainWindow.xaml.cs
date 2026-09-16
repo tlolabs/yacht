@@ -33,6 +33,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "YACHT.ico"));
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1100, 760));
         string? problem = null;
         try

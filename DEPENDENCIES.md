@@ -16,10 +16,11 @@ No paid services or runtime network APIs are required for conversion.
 | .NET 8 / Windows App SDK | WinUI 3 frontend | SDK 8.0.x in CI; Microsoft.WindowsAppSDK 2.4.0 in csproj + packages.lock.json; Dependabot | Windows 10 1809+, x64/ARM64 |
 | WebView2 | Windows generated-table preview | Transitive Windows App SDK NuGet lock; Edge WebView2 runtime | Evergreen runtime must be present on Windows |
 | GTK 4 / libadwaita | Linux native controls | distro packages, GTK >=4.10, Adwaita >=1.4 | Ubuntu 24.04 baseline; Linux x64/ARM64 |
-| Python 3 / PyGObject | Thin GTK presentation and ctypes ABI | system Python >=3.10, python3-gi distro package | GTK Linux runtime; compatibility tests use frozen fixtures |
+| Python 3 / PyGObject | Thin GTK presentation and ctypes ABI | system Python >=3.10, python3-gi distro package | GTK Linux runtime; CLI tests generate their own input records |
 | WebKitGTK 6.0 | Actual HTML/CSS Linux preview | distro gir1.2-webkit-6.0 | Native GTK4 web view, scripts/network blocked |
 | Inno Setup 6 | Per-user Windows installer | CI runner / choco fallback; installer source tracked | Windows packaging only |
 | dpkg-deb / tar / GnuPG | Linux packages/checksums/optional signatures | distribution toolchain | GPG key optional, never committed |
+| librsvg / ImageMagick / iconutil | Regenerate committed SVG-derived native icons | Local developer tools; `script/generate_icons.sh` | macOS artwork regeneration only; not required to build or run |
 | GitHub Actions | Build/test/artifact release infrastructure | .github/workflows; Dependabot monthly | Standard hosted runners |
 
 GTK packages are distribution-managed rather than vendored; install through the

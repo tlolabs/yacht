@@ -14,17 +14,20 @@ concurrency:
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 jobs:
   macos:
+    name: macOS ${{ matrix.display }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - runner: macos-26
+            display: Apple Silicon ARM64
             xcode: '26.6'
             arch: arm64
             apple_arch: arm64
             triple: aarch64-apple-darwin
           # Avoid the iconservicesagent/Metal crash observed on macos-26-intel.
           - runner: macos-15-intel
+            display: Intel x64
             xcode: '26.3'
             arch: x64
             apple_arch: x86_64
@@ -45,7 +48,7 @@ jobs:
       - name: Rust quality gates
         run: cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings && cargo test --workspace --locked
       - name: Verify generated files
-        run: python3 script/sync_version.py && python3 script/generate_project.py && git diff --exit-code -- Yacht.xcodeproj Support/Info.plist platform/windows/Version.props platform/windows/YACHT/app.manifest
+        run: python3 script/sync_version.py && python3 script/generate_project.py && git diff --exit-code -- Yacht.xcodeproj platform/macos/Support/Info.plist platform/windows/Version.props platform/windows/YACHT/app.manifest
       - name: Swift binding tests
         run: ./script/build_rust_macos.sh && swift test
       - name: CLI compatibility regressions
@@ -73,6 +76,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
   windows:
+    name: Windows ${{ matrix.arch }}
     strategy:
       fail-fast: false
       matrix:
@@ -132,6 +136,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
   linux:
+    name: Linux ${{ matrix.arch }}
     strategy:
       fail-fast: false
       matrix:

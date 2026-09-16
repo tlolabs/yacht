@@ -13,7 +13,7 @@ necessary even for rows with automated verification.
 | Blank/missing/extra cells and warnings | V | V | V | V | Rust/Swift ragged tests, native binding tests |
 | Sample and single-file open | V | V | V | V | XCTest + native runtime smoke |
 | All sixteen style controls, native color choice | V | V | I | I | Rust CSS tests; UI smoke; picker acceptance manual |
-| Styled/unstyled and numeric alignment | V | V | V | V | Python snapshots and Rust/Swift tests |
+| Styled/unstyled and numeric alignment | V | V | V | V | Rust/Swift document-contract and style tests |
 | Live actual HTML preview | V | V | V | V | Rust preview tests + native runtime smoke |
 | Bounded preview/source, unlimited export/copy | V | V | V | V | 100k rows/huge-cell tests, binding export checks |
 | Preset defaults, load/save/delete, confirmation | V | V | I | I | Rust preset tests; XCTest; runtime preset tests |
@@ -29,7 +29,7 @@ necessary even for rows with automated verification.
 | Native commands and keyboard shortcuts | — | V | I | I | XCTest shortcuts; manual keyboard pass |
 | System/light/dark appearance | — | V | I | I | XCTest settings; manual scaling pass remains |
 | Screen reader, focus and native scaling | scoped HTML | I | I | I | Semantic assertions + human acceptance |
-| Shared Rust CLI, flags, batch/status | V | V | V | V | 60 seeded differential + CLI safety checks |
+| Shared Rust CLI, flags, batch/status | V | V | V | V | 60 seeded round trips + CLI safety checks |
 | Native bindings and concurrent access | V | V | V | V | Swift, C#, ctypes tests; native x64/ARM64 CI |
 | Installers/packages and signing hooks | — | V | V | V | x64/ARM64 ZIP/DMG, Windows installer/ZIP, Linux deb/tar gates |
 

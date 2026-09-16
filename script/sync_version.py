@@ -8,7 +8,7 @@ root = Path(__file__).resolve().parents[1]
 version = re.search(
     r'(?m)^version = "([0-9.]+)"', (root / "Cargo.toml").read_text()
 ).group(1)
-p = root / "Support/Info.plist"
+p = root / "platform/macos/Support/Info.plist"
 p.write_text(
     re.sub(
         r"(<key>CFBundleShortVersionString</key><string>)[^<]+",

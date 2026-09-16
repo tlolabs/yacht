@@ -19,8 +19,7 @@ cargo bench -p yacht-core --bench conversion
 python3 script/verify_compatibility.py
 ```
 
-Compatibility testing uses Python standard-library code and frozen reference
-fixtures; tkinter and the archived converter are not required. Core/CLI binaries
+Compatibility testing uses Python standard-library code and generated CSV records; tkinter and the archived converter are not required. Core/CLI binaries
 do not depend on Python. Cargo.lock is committed; do not regenerate it in release CI.
 
 ## macOS
@@ -132,8 +131,7 @@ when configuring a restricted workstation; do not disable WebKit's sandbox.
 
 Outputs: `.deb`, tar.gz and SHA256SUMS-linux-<arch>. Tar packages use the same
 native dependencies; they are not universal static binaries. The desktop entry
-registers CSV/TSV handling and the native launcher. A system spreadsheet icon is
-used because the repository had no custom icon asset. Optional YACHT_GPG_KEY signs
+registers CSV/TSV handling and the native launcher. The shared YACHT icon is installed into the hicolor theme and referenced by the desktop entry. Optional YACHT_GPG_KEY signs
 the checksum manifest with an already-provisioned GnuPG key; unsigned development
 packages remain buildable. Architecture-specific Linux CI runs the code natively.
 
@@ -159,3 +157,14 @@ Required human acceptance includes screen readers, keyboard-only navigation,
 light/dark/high contrast/scaling, native pickers, file manager behavior and the
 owner's real CSV/preset collection. Record actual platform evidence in the parity
 matrix before claiming release readiness.
+
+## App icon
+
+The original vector master is `assets/icons/YACHT.svg`. Its table-grid sail connects
+YACHT's name with the CSV-to-HTML workflow. Committed PNG, ICNS and ICO files come
+from `script/generate_icons.sh` (macOS, librsvg and ImageMagick). Regeneration is not
+required for normal app builds. macOS embeds the ICNS as a bundle resource; Windows
+embeds the ICO in its executable and installer and loads it for the window; Linux
+ships the scalable SVG in the hicolor icon theme. All six architectures use the same
+artwork. Artwork changes on main appear in subsequent builds; existing tagged
+release assets are immutable.

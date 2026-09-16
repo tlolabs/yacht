@@ -16,6 +16,8 @@ cat > "$stage/usr/bin/yacht-gui" <<'LAUNCH'
 exec /usr/bin/python3 "$(dirname "$(readlink -f "$0")")/../lib/yacht/yacht.py" "$@"
 LAUNCH
 chmod +x "$stage/usr/bin/yacht-gui"
+mkdir -p "$stage/usr/share/icons/hicolor/scalable/apps"
+cp assets/icons/YACHT.svg "$stage/usr/share/icons/hicolor/scalable/apps/com.local.yacht.csvhtmltranslator.svg"
 cp platform/linux/data/*.desktop "$stage/usr/share/applications/"
 cp platform/linux/data/*.xml "$stage/usr/share/metainfo/"
 cp LICENSE README.md DEPENDENCIES.md "$stage/usr/share/doc/yacht/"
