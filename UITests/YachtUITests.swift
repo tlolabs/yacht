@@ -112,8 +112,7 @@ import AppKit
         app.buttons["Done"].click()
     }
     func finderOpen(_ urls: [URL], withApplicationAt bundle: URL) throws {
-        // Send the Launch Services request from its own process. In older XCTest,
-        // synchronous UI queries in an async MainActor test can stall NSWorkspace delivery.
+        // Exercise the same Launch Services path as opening files from Finder.
         let request = Process()
         request.executableURL = URL(fileURLWithPath: "/usr/bin/open")
         request.arguments = ["-a", bundle.path] + urls.map(\.path)
@@ -122,13 +121,27 @@ import AppKit
         XCTAssertEqual(request.terminationStatus, 0)
     }
     func testFinderOpenRetainsEverySelectedFile() throws {
-        try launch()
+        let bundle = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("YACHT.app")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: bundle.path))
+        // XCTest launches under a debugger with LSStoppedState. On macOS 15,
+        // Launch Services can retain that state and withhold later document events.
+        // Launch normally, then attach UI automation to the running application.
+        let startup = Process()
+        startup.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        startup.arguments = ["-a", bundle.path, "--args", "--ui-testing"]
+        try startup.run()
+        startup.waitUntilExit()
+        XCTAssertEqual(startup.terminationStatus, 0)
+        app = XCUIApplication(bundleIdentifier: "com.local.yacht.csvhtmltranslator")
+        let running = NSPredicate { _, _ in self.app.state == .runningForeground || self.app.state == .runningBackground }
+        expectation(for: running, evaluatedWith: nil)
+        waitForExpectations(timeout: 15)
+        app.activate()
+        XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 15))
         let first = directory.appendingPathComponent("first.csv")
         let second = directory.appendingPathComponent("Café.csv")
         try Data("Name,Value\nFirst,1\n".utf8).write(to: first)
         try Data("Name,Value\nSecond,2\n".utf8).write(to: second)
-        let bundle = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("YACHT.app")
-        XCTAssertTrue(FileManager.default.fileExists(atPath: bundle.path))
         try finderOpen([first, second], withApplicationAt: bundle)
         app.activate()
         XCTAssertTrue(app.buttons["Convert"].waitForExistence(timeout: 10))
