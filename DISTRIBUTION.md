@@ -105,14 +105,21 @@ Ubuntu 24.04 x64/ARM64 baseline (glibc 2.39). GTK 4.10+, libadwaita 1.4+, WebKit
 
 ```sh
 sudo apt install python3-gi python3-tk gir1.2-gtk-4.0 gir1.2-adw-1 \
-  gir1.2-webkit-6.0 xvfb dbus-x11 desktop-file-utils
+  gir1.2-webkit-6.0 xvfb dbus-x11 at-spi2-core desktop-file-utils
 cargo build --workspace --locked
 YACHT_LIBRARY="$PWD/target/debug/libyacht_ffi.so" python3 platform/linux/yacht.py
 python3 script/test_native_binding.py target/debug/libyacht_ffi.so
 YACHT_LIBRARY="$PWD/target/debug/libyacht_ffi.so" \
-  dbus-run-session -- xvfb-run -a python3 platform/linux/test_ui.py
+  xvfb-run -a dbus-run-session -- python3 platform/linux/test_ui.py
 ./script/package_linux.sh
 ```
+
+WebKit keeps its process sandbox enabled. Ubuntu hosts must permit the distro
+`/usr/bin/bwrap` helper to create user namespaces. If startup reports a denied UID
+map, check the installed AppArmor/bubblewrap policy; the workflow installs a narrow
+helper profile on its ephemeral test hosts. Follow [Ubuntu's application profile
+guidance](https://ubuntu.com/blog/ubuntu-23-10-restricted-unprivileged-user-namespaces)
+when configuring a restricted workstation; do not disable WebKit's sandbox.
 
 Outputs: `.deb`, tar.gz and SHA256SUMS-linux-<arch>. Tar packages use the same
 native dependencies; they are not universal static binaries. The desktop entry

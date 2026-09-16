@@ -4,7 +4,20 @@ public partial class App : Application
 {
     private MainWindow? window;
     private NativeInstance? instance;
-    public App() { InitializeComponent(); }
+    private static void RecordTestFailure(Exception error)
+    {
+        var directory = Environment.GetEnvironmentVariable("YACHT_TEST_DATA");
+        if (string.IsNullOrEmpty(directory)) return;
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(Path.Combine(directory, "startup-failed.txt"), error.ToString());
+    }
+    public App()
+    {
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => RecordTestFailure(e.ExceptionObject as Exception ?? new Exception(e.ExceptionObject.ToString()));
+        UnhandledException += (_, e) => RecordTestFailure(e.Exception);
+        try { InitializeComponent(); }
+        catch (Exception e) { RecordTestFailure(e); throw; }
+    }
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         var paths = Environment.GetCommandLineArgs().Skip(1).ToArray();
