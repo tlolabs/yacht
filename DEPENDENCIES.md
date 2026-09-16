@@ -12,11 +12,11 @@ No paid services or runtime network APIs are required for conversion.
 | tempfile | Adjacent staging and atomic no-clobber publication | Cargo.toml + Cargo.lock; Dependabot | Native file-system atomic semantics |
 | thiserror | Structured core errors | Cargo.toml + Cargo.lock; Dependabot | Core only |
 | ctrlc | CLI cooperative cancellation | yacht-cli/Cargo.toml + Cargo.lock; Dependabot | SIGINT/Windows console events |
-| Swift / SwiftUI / AppKit / WebKit | macOS presentation, OS integration, HTML preview | Xcode 26.6 in CI; Swift tools 6.0; OS frameworks | macOS 14+, Intel/Apple Silicon |
+| Swift / SwiftUI / AppKit / WebKit | macOS presentation, OS integration, HTML preview | Xcode 26.6 ARM64 / 26.3 Intel in CI; Swift tools 6.0; OS frameworks | macOS 14+, Intel/Apple Silicon |
 | .NET 8 / Windows App SDK | WinUI 3 frontend | SDK 8.0.x in CI; Microsoft.WindowsAppSDK 2.4.0 in csproj + packages.lock.json; Dependabot | Windows 10 1809+, x64/ARM64 |
 | WebView2 | Windows generated-table preview | Transitive Windows App SDK NuGet lock; Edge WebView2 runtime | Evergreen runtime must be present on Windows |
 | GTK 4 / libadwaita | Linux native controls | distro packages, GTK >=4.10, Adwaita >=1.4 | Ubuntu 24.04 baseline; Linux x64/ARM64 |
-| Python 3 / PyGObject | Thin GTK presentation and ctypes ABI | system Python >=3.10, python3-gi distro package | GTK Linux runtime; Python reference retained separately |
+| Python 3 / PyGObject | Thin GTK presentation and ctypes ABI | system Python >=3.10, python3-gi distro package | GTK Linux runtime; compatibility tests use frozen fixtures |
 | WebKitGTK 6.0 | Actual HTML/CSS Linux preview | distro gir1.2-webkit-6.0 | Native GTK4 web view, scripts/network blocked |
 | Inno Setup 6 | Per-user Windows installer | CI runner / choco fallback; installer source tracked | Windows packaging only |
 | dpkg-deb / tar / GnuPG | Linux packages/checksums/optional signatures | distribution toolchain | GPG key optional, never committed |

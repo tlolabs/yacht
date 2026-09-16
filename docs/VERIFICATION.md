@@ -1,121 +1,81 @@
-# Rust/native migration verification
+# YACHT 2.1.0 verification
 
-Run date: 2026-09-15. Local host: Apple Silicon Mac, macOS 26.7, Xcode 26.6,
-Rust 1.98.1; project-local .NET SDK 8.0.425 for C# compilation/binding tests.
+Verification date: September 16, 2026. Application/cleanup candidate: `2ca1b0d`; CI runner correction follows.
+Local host: Apple Silicon Mac, macOS 26.7, Xcode 26.6 and Rust 1.98.1.
 
-## Separate macOS architecture packages
+## Native platform gates
 
-The universal macOS distribution is replaced by independent x64 and ARM64 DMG,
-ZIP, CLI and checksum outputs. CI now has six native platform jobs, including an
-Intel macOS runner with the complete binding, CLI and UI suites. Both architecture
-packages built locally; exact executable architectures, code signatures and all
-six artifact checksums passed. The initial six-job run passed five platforms. Intel macOS UI queries timed out;
-its spindump shows the system iconservicesagent throttled after SIGABRT, blocking
-AppKit menu accessibility. A fresh six-platform run is required before release.
-Earlier results below establish the inherited test coverage.
+[Release-candidate CI run](https://github.com/tlolabs/yacht/actions/runs/35115422183)
+executes the Rust core and CLI, native bindings, actual native UI workflows and
+packaging on each architecture. Five platform jobs have passed; Intel macOS UI
+validation is being rerun on macOS 15 with Xcode 26.3. Publication requires all six to pass again for
+the release tag, using one commit and version.
 
-## Executed locally
+| Platform | Native runner | Candidate result |
+|---|---|---|
+| macOS ARM64 | macos-26 | Passed |
+| macOS Intel x64 | macos-15-intel | Pending |
+| Windows x64 | windows-2025 | Passed |
+| Windows ARM64 | windows-11-arm | Passed |
+| Linux x64 | ubuntu-24.04 | Passed |
+| Linux ARM64 | ubuntu-24.04-arm | Passed |
 
-- Rust workspace tests: eight behavior groups plus the C ABI ownership/error test
-  passed. They cover strict CSV and chunking, Unicode/BOM/newlines, sparse rows,
-  malformed encodings/quoting, Python HTML snapshots, all styling/escaping,
-  presets, batch, atomic replacement, cancellation, large inputs and preview limits.
-- `cargo fmt --all --check` and Clippy across all workspace targets with warnings
-  denied passed. Rust `cargo check` passed for x86_64 Windows MSVC and Linux GNU;
-  these checks are not native execution on those platforms.
-- SwiftPM: **25 tests passed** against the actual Rust library, including all 23
-  retained tests and new shared settings/TSV batch binding cases.
-- CLI: **60 seeded reference compatibility cases**, all sixteen styling flags,
-  ordered Unstyled reset, dash-prefixed positional paths, overwrite/input safety
-  and mixed-success batch checks passed.
-- ctypes adapter: Unicode paths, opening, metadata, preview/source, complete export,
-  replacement safety, presets/settings, batch, cancellation and concurrent calls
-  passed against the macOS dynamic Rust library.
-- C# adapter: built with zero warnings/errors and passed equivalent binding tests
-  against that library. Windows dependencies were restored and locked; locked ARM64
-  resolution passed. The full WinUI C# source compiled against resolved SDK references
-  using temporary XAML-generated declarations (compiler scaffolding only, not shipped).
-- Universal Rust static library and CLI cross-built for Apple Silicon and Intel.
-  Local unsigned/ad-hoc macOS packaging produced DMG, ZIP, CLI and checksums; the
-  script verified code signatures and both CPU architectures.
-- Shell syntax, Python syntax, workflow YAML and git whitespace checks passed.
+The earlier Intel run (`35107149682`) timed out evaluating UI queries. Its
+spindump showed the system icon service throttled after SIGABRT, blocking AppKit
+menu accessibility. System logs identify a Metal assertion in iconservicesagent
+before SIGABRT. The Intel job now uses macOS 15/Xcode 26.3, retaining the complete
+test suite and x64 packaging. The macOS minimum deployment target remains 14.
 
-## Native UI execution
+## Coverage
 
-The first Rust-backed macOS run passed all seven retained UI tests
-(`build/RustMigrationUITests.xcresult`). A subsequent expanded run found missing
-Settings accessibility identifiers and native event-targeting failures; its trace
-also captured unrelated desktop application automation crashes. Settings controls
-now have explicit accessible labels/identifiers, appearance uses the isolated test
-preference domain, and test launch/panel helpers explicitly activate YACHT.
+- Rust: eight behavior groups and the C ABI ownership/error test cover strict
+  CSV and chunking, BOM/Unicode/newlines, sparse rows, malformed input, frozen HTML
+  snapshots, styles/escaping, presets, atomic export, cancellation, batch and
+  bounded previews. Formatting and Clippy run with warnings denied.
+- Swift: all 25 binding tests run against the Rust library, including retained
+  CSV/HTML/file/preview cases and shared settings/TSV batch behavior.
+- CLI: 60 seeded CSV cases compare decoded cells against both original records
+  and frozen legacy output. Input hashes prevent silent changes to the corpus.
+  Additional checks cover all sixteen style flags, ordered Unstyled reset,
+  dash-prefixed paths, overwrite/input protection and mixed-success batches.
+- Native bindings: ctypes and C# exercise Unicode paths, opening, metadata,
+  preview/source, complete export, replacement safety, presets/settings, batch,
+  cancellation and concurrent requests.
+- macOS: eight UI cases exercise sample/source/copy/reset, escaped and malformed
+  imports, native Open/Save, preset save/load/delete, batch collision protection,
+  Finder multiple-file opening and appearance/preview settings.
+- Windows: native WinUI startup, file opening, preview/source, style changes,
+  presets, clipboard, export, settings and batch run before artifact upload.
+- Linux: real GTK workflows exercise startup, all sixteen controls, file loading,
+  preview/source, presets, clipboard, export, settings and batch. WebKit's process
+  sandbox remains enabled.
+- Packaging: each macOS executable is checked for exactly its requested CPU
+  architecture and a valid ad-hoc signature. Windows produces per-user installers
+  and portable ZIPs; Linux validates desktop entries and DEB/tar packages. Every
+  architecture has its own SHA-256 manifest.
 
-All four affected cases passed the focused rerun
-(`build/RustMigrationFocusedUITests.xcresult`). The final complete **eight-case run passed**, followed by successful universal
-ad-hoc packaging (`build/RustMigrationAcceptedUITests.xcresult`). Tests cover sample/source/copy,
-malformed input, semantic escaping, preset save/load/delete, native Open/Save,
-batch replacement protection, Finder multiple files, appearance and preview settings.
+After archival cleanup, local Rust tests, formatting, Clippy, all 25 Swift tests,
+60 seeded CLI cases and ctypes tests passed. The local native app rebuilt as
+version 2.1.0, macOS build 5. Generated Xcode and version metadata were checked.
 
-## Native CI follow-up
+## Archive and compatibility provenance
 
-**All five required platform jobs passed** for source commit `b3505be` on
-September 16, 2026: https://github.com/tlolabs/yacht/actions/runs/35068094113.
-macOS universal, Windows x64/ARM64 and Linux x64/ARM64 artifacts were uploaded
-only after their required checks passed. The tagged release job was skipped.
+The [2.0.2 archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2)
+at `d8a64ff` preserves the old Tk application, packaging, migration records and
+previous Swift implementation in its history. The owner authorized archival and
+removal from the active tree. Current GTK Python presentation code remains.
 
-Owner-authorized branch: `codex/rust-native-core`. Native CI has now executed on
-macOS 26 (Apple Silicon), Ubuntu 24.04 x64/ARM64 and Windows Server 2025 x64 /
-Windows 11 ARM64.
+The 60 seeded legacy results were captured and compared with Rust before removing
+the converter. `Tests/YachtCoreTests/Fixtures/seeded-legacy-cells.json` records the
+reference commit/path/source hash, seed and per-input hashes. Existing exact HTML
+fixtures also remain. Compatibility tests no longer import legacy code or need Tk.
 
-- macOS: Rust quality gates, generated-file consistency, all 25 Swift tests,
-  differential CLI and ctypes tests, all eight UI tests and universal DMG/ZIP
-  packaging passed in https://github.com/tlolabs/yacht/actions/runs/35066573379.
-- Linux: Rust tests, all CLI differential cases, ctypes bindings, real GTK runtime
-  workflows and DEB/tar packaging passed on both architectures. The GTK suite drives
-  startup, all sixteen controls, file load, preview/source, styles, preset save,
-  clipboard, export, settings and batch. Example evidence:
-  https://github.com/tlolabs/yacht/actions/runs/35065733023.
-- Windows: Rust, CLI differential, C# bindings and ctypes bindings passed natively
-  on both architectures. WinUI startup, file open, preview/source, styles, presets,
-  clipboard, export, settings and batch passed, followed by successful artifact
-  uploads in https://github.com/tlolabs/yacht/actions/runs/35068094113 (`b3505be`).
-  Both architectures produced installers and ZIPs. CI identified a Windows App SDK
-  bug omitting the generated application PRI from publish output; an explicit
-  publish target and missing-resource gate fix that omission. It also identified
-  delayed native control events cancelling style previews; unchanged values now
-  avoid redundant renders.
-- CI exposed Git checkout newline conversion of reference fixtures and a test read
-  using Windows' default encoding. Fixture bytes are now preserved by attributes,
-  and generated HTML is read explicitly as UTF-8.
-- Windows restore now selects Windows runtime identifiers explicitly, preventing
-  the build host from contaminating the NuGet lockfile.
-- Linux CI starts D-Bus inside its virtual display and grants the bubblewrap helper
-  user-namespace access through an AppArmor profile. WebKit sandboxing stays enabled.
+## Scope and distribution limits
 
-Intel Mac UI execution, full screen-reader, high-contrast/display-scaling and real-dataset manual checks are not claimed here. The owner authorized legacy
-archival and the official release. No signing credentials or notarization
-submission were used. A focused scan of changed/new
-text files found no private-key or common access-token patterns; this is not a
-comprehensive security audit. macOS packaging defaults to explicit local unsigned
-mode; signing and notarization require separate command-line modes.
+Automated coverage does not establish full screen-reader, high-contrast/scaling,
+color-picker, drag/drop or real teaching-dataset acceptance on every host. The
+[parity matrix](FEATURE-PARITY.md) distinguishes those manual checks.
 
-## Performance sample
-
-One optimized local 100,000-row, three-column sample via `cargo bench`:
-
-| Operation | Elapsed |
-|---|---:|
-| UTF-8 parsing | 15.35 ms |
-| Bounded HTML preview + source excerpt | 3.81 ms |
-| Streaming HTML generation into a sink | 2.74 ms |
-
-These are local samples, not portable performance guarantees. The sink figure is
-not disk export latency. Export remains buffered/streaming; table and full clipboard
-storage remain RAM-limited. Compare on the same host/data when evaluating regressions.
-
-## Archive and release preparation
-
-Legacy code and historical migration records are preserved on
-[the 2.0.2 archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2). Version 2.1.0 removes the old Tk
-application and packaging from the active tree. The 60 seeded reference results
-were captured and checked against Rust before archival cleanup; their input and
-reference-source hashes are recorded in `seeded-legacy-cells.json`.
+Packages use the documented default signing state: macOS ad-hoc signed; Windows
+and Linux unsigned. No Developer ID, notarization or other signing credentials
+were used. See [distribution instructions](../DISTRIBUTION.md).

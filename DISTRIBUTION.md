@@ -25,7 +25,7 @@ do not depend on Python. Cargo.lock is committed; do not regenerate it in releas
 
 ## macOS
 
-macOS 14+, Xcode 26.6 (CI)/Swift 6, and Rust. The run/build script selects
+macOS 14+, Swift 6 and Rust. CI uses Xcode 26.6 on ARM64 and 26.3 on Intel. The run/build script selects
 `/Applications/Xcode.app/Contents/Developer` unless DEVELOPER_DIR is set. It does not
 change machine-wide xcode-select. Rust is linked statically, so the shipped app
 requires no separate Rust installation/library.
@@ -50,7 +50,7 @@ same `target/swift` archive. Packaging builds one Rust and Swift architecture pe
 invocation. `--arch arm64` targets Apple Silicon; `--arch x64` targets Intel.
 Omitting `--arch` selects the host architecture. Cross-building is available with
 the matching Rust target installed, but CI tests each architecture on its own native
-runner (`macos-26` and `macos-26-intel`). Use `arch=x86_64` for Intel XCTest runs.
+runner (`macos-26` with Xcode 26.6 and `macos-15-intel` with Xcode 26.3). Use `arch=x86_64` for Intel XCTest runs.
 
 Outputs per `<arch>` (`arm64` or `x64`): `dist/macos-<arch>/YACHT.app`,
 `dist/macos-<arch>/yacht`, `release/YACHT-macos-<arch>.dmg`,
