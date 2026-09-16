@@ -1,12 +1,12 @@
 # Compatibility and deliberate corrections
 
-The baseline is `703bcd2`; captured fixtures were committed before Swift implementation at `50ba807`. Both the original Python files and the `legacy-python/` copy remain until manual approval.
+The baseline is `703bcd2`; captured fixtures were committed before Swift implementation at `50ba807`. The original Python files and migration records are preserved on the [2.0.2 archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2) after owner-authorized removal from the active tree.
 
 ## Preserved
 
 All sixteen styling values and their defaults; built-in styled/unstyled resets; custom preset load/save/delete and compatible JSON; album sample; single and batch conversion; complete-document HTML copy; read-only source; numeric alignment intent; percent left-alignment; embedded CSS; original table/wrapper classes; GUI/CLI styling controls; default `.html` filenames; bundle identifier; GPLv3. The repository never contained a custom icon or automatic updater.
 
-The native CLI accepts all former style flags, multiple files and single-file `-o`/`--output`. The Rust CLI and native WinUI/GTK interfaces replace the platform-specific production cores; Python remains runnable as a reference. Legacy distribution CI is retained for manual runs and `v1.*` tags; native tags use `v2*` onward.
+The native CLI accepts all former style flags, multiple files and single-file `-o`/`--output`. The Rust CLI and native WinUI/GTK interfaces replace the platform-specific production cores; the active tree contains only the Rust/native rewrite. Legacy distribution CI is archived; native tags use `v2*` onward.
 
 ## Output changes
 
@@ -17,7 +17,7 @@ The native CLI accepts all former style flags, multiple files and single-file `-
 5. Unsafe CSS input is rejected before preview/copy/export. An empty custom font list uses `inherit` in styled output; exact Unstyled omits CSS entirely.
 6. Malformed CSV is rejected, rather than silently repaired by Python’s permissive reader. Valid quoted/multiline data is retained byte-for-byte after UTF-8 decoding.
 
-Default styled/unstyled snapshots for ordinary, quoted, Unicode, escaped and BOM input match the Python HTML exactly after the first two changes and the documented `1234` alignment correction. Ragged fixture changes have separate assertions. Sixty seeded differential cases compare all header/cell contents and check that CSV content cannot create executable tags.
+Default styled/unstyled snapshots for ordinary, quoted, Unicode, escaped and BOM input match the Python HTML exactly after the first two changes and the documented `1234` alignment correction. Ragged fixture changes have separate assertions. Sixty seeded cases compare all header/cell contents with frozen legacy results (including input SHA-256 hashes and reference provenance) and check that CSV content cannot create executable tags.
 
 ## Workflow improvements
 
@@ -31,7 +31,7 @@ Default styled/unstyled snapshots for ordinary, quoted, Unicode, escaped and BOM
 
 No raw HTML, inline CSS, fragment export, custom table width or general CSV editing feature existed. Those features are intentionally outside this rewrite.
 
-## Rust migration (2.0.1 development)
+## Rust/native release (2.1.0)
 
 The HTML/application display name changes from the dotted legacy name to YACHT,
 including `<title>YACHT Table</title>`. Historical Python snapshots remain unchanged;
@@ -40,8 +40,8 @@ semantic corrections. Production CSV/style/preset/export behavior is now Rust-ow
 
 The existing bundle/signing ID, UserDefaults domain and keys, macOS Application
 Support/Y.A.C.H.T. preset directory and legacy ~/.yacht_presets.json path are retained.
-Python remains in both original/reference locations until owner acceptance. The
-root Python copy has the requested display-name cleanup; legacy-python is frozen.
+The old application is archived; its preset migration paths and frozen HTML
+snapshots remain part of current compatibility coverage.
 
 Preview also enforces a hard HTML byte cap after its existing estimate, preventing
 unbounded preview markup from extremely large CSS class/font strings. Full copy and

@@ -1,5 +1,0 @@
-# Runtime uses Python stdlib only.
-# Optional for building distributable app bundles:
-py2app>=0.28
-pyinstaller>=6
-setuptools>=65

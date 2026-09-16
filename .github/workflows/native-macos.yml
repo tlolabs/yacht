@@ -45,7 +45,7 @@ jobs:
         run: python3 script/sync_version.py && python3 script/generate_project.py && git diff --exit-code -- Yacht.xcodeproj Support/Info.plist platform/windows/Version.props platform/windows/YACHT/app.manifest
       - name: Swift binding tests
         run: ./script/build_rust_macos.sh && swift test
-      - name: CLI and Python regression tests
+      - name: CLI compatibility regressions
         run: python3 script/verify_compatibility.py
       - name: Native ctypes binding tests
         run: cargo build --workspace --locked && python3 script/test_native_binding.py target/debug/libyacht_ffi.dylib
@@ -145,7 +145,7 @@ jobs:
         with:
           toolchain: '1.98.1'
       - name: Install native runtime and UI test dependencies
-        run: sudo apt-get update && sudo apt-get install -y python3-gi python3-tk gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 xvfb dbus-x11 at-spi2-core desktop-file-utils apparmor
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 xvfb dbus-x11 at-spi2-core desktop-file-utils apparmor
       - name: Rust, CLI and native binding tests
         run: |
           cargo test --workspace --locked

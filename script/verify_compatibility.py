@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Seeded CSV/Python/Rust differential tests plus CLI integration checks."""
+"""Seeded frozen-reference CSV regressions plus CLI integration checks."""
 from pathlib import Path
-import csv, html, importlib.util, io, random, subprocess, sys, tempfile
+import csv, hashlib, io, json, random, subprocess, sys, tempfile
 from html.parser import HTMLParser
 root = Path(__file__).resolve().parents[1]
 subprocess.run(['cargo', 'build', '--locked', '-p', 'yacht-cli'], cwd=root, check=True)
 binary = root/'target'/'debug'/('yacht.exe' if sys.platform == 'win32' else 'yacht')
-spec=importlib.util.spec_from_file_location('legacy_yacht',root/'legacy-python/yacht.py')
-legacy=importlib.util.module_from_spec(spec);sys.modules['legacy_yacht']=legacy;spec.loader.exec_module(legacy)
+baseline=json.loads((root/'Tests/YachtCoreTests/Fixtures/seeded-legacy-cells.json').read_text(encoding='utf-8'))
+assert baseline['seed'] == 20260915 and len(baseline['cases']) == 60
 class Cells(HTMLParser):
     def __init__(self): super().__init__(); self.cells=[]; self.inside=False; self.tags=[]
     def handle_starttag(self,tag,attrs):
@@ -32,8 +32,9 @@ with tempfile.TemporaryDirectory(prefix='yacht-regression-') as tmp:
         parsed=Cells();parsed.feed(output.read_bytes().decode())
         assert parsed.cells == [cell for row in records for cell in row], i
         assert 'script' not in parsed.tags and 'img' not in parsed.tags, i
-        expected=Cells();expected.feed(legacy.render_csv_to_html_doc(source,legacy.StyleOptions()))
-        assert parsed.cells==expected.cells, i
+        expected=baseline['cases'][i]
+        assert hashlib.sha256(source.read_bytes()).hexdigest() == expected['input_sha256'], i
+        assert parsed.cells == expected['cells'], i
     source=base/'case-0.csv'; output=source.with_suffix('.html'); previous=output.read_bytes()
     assert subprocess.run([str(binary),str(source)],capture_output=True).returncode != 0
     assert output.read_bytes()==previous
@@ -56,4 +57,4 @@ with tempfile.TemporaryDirectory(prefix='yacht-regression-') as tmp:
     assert good.with_suffix('.html').exists() and not invalid.with_suffix('.html').exists()
     assert subprocess.run([str(binary),str(source),'--output',str(source),'--overwrite'],capture_output=True).returncode != 0
     assert subprocess.run([str(binary),str(source),'--font-family','</style><script>'],capture_output=True).returncode != 0
-print('60 seeded Python/Rust CSV regressions and CLI safety/batch checks passed.')
+print('60 seeded frozen-reference CSV regressions and CLI safety/batch checks passed.')

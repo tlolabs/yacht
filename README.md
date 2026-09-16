@@ -3,11 +3,10 @@
 Convert CSV and TSV files into styled, accessible HTML tables. One Rust core powers
 the shared command-line tool and native SwiftUI, WinUI 3 and GTK/libadwaita interfaces.
 
-This refactor is under verification. The Rust core, macOS application and native
-binding tests have local evidence; Windows/Linux application builds and packages
-must pass their required CI jobs before release. See [feature parity](docs/FEATURE-PARITY.md)
-and [verification evidence](docs/VERIFICATION.md). Python remains at its original
-paths and under `legacy-python/` for reference. **Do not remove it before owner acceptance.**
+The Rust/native rewrite replaces the former Tk application. Legacy implementations,
+packaging and migration records are preserved on the [2.0.2 archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2).
+Current regression fixtures retain compatibility coverage. See [feature parity](docs/FEATURE-PARITY.md)
+and [verification evidence](docs/VERIFICATION.md) for test scope.
 
 ## Installation and first launch
 
@@ -149,7 +148,7 @@ feature. Linux tar archives require the listed native packages.
 On a Mac with Xcode and Rust, `./script/build_and_run.sh` builds and launches
 `dist/YACHT.app`; the Codex Run action uses the same entrypoint. All Rust business
 logic is under `crates/`; SwiftUI stays under `Sources/YachtApp`, and other native
-frontends are under `platform/`. Historical Python code/fixtures remain available.
+frontends are under `platform/`. Frozen compatibility fixtures remain under `Tests/`; the GTK Python frontend is part of the current native rewrite.
 
 ## Context and license
 

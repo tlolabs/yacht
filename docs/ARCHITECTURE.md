@@ -43,14 +43,13 @@ They do not provide crash isolation from an abort or out-of-memory condition.
 | Tests/YachtCoreTests, UITests | Existing Swift binding and macOS UI coverage |
 | platform/windows/Tests, platform/linux/test_ui.py | Native runtime integration |
 | script, .github | Version generation, tests, packaging and required CI gates |
-| legacy-python | Frozen reference, fixtures remain under Tests |
 
 Swift source locations remain to preserve Xcode/SwiftPM history and existing test
 entrypoints; YachtCore's name is a compatibility facade, not a second business
-implementation. The former Swift CLI is removed after Rust differential tests
-passed. Original Python remains at the root and under legacy-python; only the root
-copy's visible branding changed. No legacy implementation may be removed without
-owner acceptance. See [audit and migration plan](MIGRATION.md).
+implementation. The former Swift CLI and Python/Tk application are archived after owner acceptance.
+See the [2.0.2 archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2) for the implementations and migration
+records. Golden HTML and seeded cell fixtures remain under Tests. The current GTK
+Python adapter remains required and routes all conversion behavior through Rust.
 
 ## Operation lifecycle
 
