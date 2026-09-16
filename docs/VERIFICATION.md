@@ -26,9 +26,11 @@ menu accessibility. System logs identify a Metal assertion in iconservicesagent
 before SIGABRT. The Intel job now uses macOS 15/Xcode 26.3, retaining the complete
 test suite and x64 packaging. The macOS minimum deployment target remains 14. That runner completed UI testing
 and exposed duplicate toolbar accessibility wrappers and missing Finder-event
-forwarding on macOS 15. Tests select the first toolbar match, and a narrow AppKit
-Open Documents handler forwards the complete URL array to the existing workspace.
-The corrected suite must pass before release.
+forwarding on macOS 15. Tests select the first toolbar match. Seven of eight Intel UI cases then passed.
+The Finder test now sends the same Launch Services request through `/usr/bin/open`
+from a separate process, avoiding async test-runner event delivery. Application
+file handling remains in its existing delegate. The corrected suite must pass
+before release.
 
 ## Coverage
 
