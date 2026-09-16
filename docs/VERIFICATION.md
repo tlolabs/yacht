@@ -24,7 +24,11 @@ The earlier Intel run (`35107149682`) timed out evaluating UI queries. Its
 spindump showed the system icon service throttled after SIGABRT, blocking AppKit
 menu accessibility. System logs identify a Metal assertion in iconservicesagent
 before SIGABRT. The Intel job now uses macOS 15/Xcode 26.3, retaining the complete
-test suite and x64 packaging. The macOS minimum deployment target remains 14.
+test suite and x64 packaging. The macOS minimum deployment target remains 14. That runner completed UI testing
+and exposed duplicate toolbar accessibility wrappers and missing Finder-event
+forwarding on macOS 15. Tests select the first toolbar match, and a narrow AppKit
+Open Documents handler forwards the complete URL array to the existing workspace.
+The corrected suite must pass before release.
 
 ## Coverage
 
