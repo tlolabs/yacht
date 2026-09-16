@@ -21,7 +21,7 @@ struct ContentView: View {
             }.frame(minWidth: 450, maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 820, minHeight: 600)
-        .navigationTitle("Y.A.C.H.T.")
+        .navigationTitle("YACHT")
         .navigationSubtitle(workspace.title)
         .toolbar { toolbar }
         .fileImporter(isPresented: $workspace.showImporter, allowedContentTypes: [.commaSeparatedText, .tabSeparatedText, .plainText], allowsMultipleSelection: true) { result in
@@ -31,9 +31,9 @@ struct ContentView: View {
             }
         }
         .fileExporter(isPresented: $workspace.showExporter, document: workspace.exportDocument, contentTypes: [.html],
-            defaultFilename: workspace.sourceURL?.deletingPathExtension().lastPathComponent ?? "Y.A.C.H.T. Table", onCompletion: { workspace.finishExport($0) }, onCancellation: { workspace.cleanPreparedExport(); workspace.status = "Export cancelled" })
+            defaultFilename: workspace.sourceURL?.deletingPathExtension().lastPathComponent ?? "YACHT Table", onCompletion: { workspace.finishExport($0) }, onCancellation: { workspace.cleanPreparedExport(); workspace.status = "Export cancelled" })
         .sheet(isPresented: $workspace.showBatch) { BatchView(workspace: workspace) }
-        .alert("Y.A.C.H.T.", isPresented: Binding(get: { workspace.errorMessage != nil }, set: { if !$0 { workspace.errorMessage = nil } })) {
+        .alert("YACHT", isPresented: Binding(get: { workspace.errorMessage != nil }, set: { if !$0 { workspace.errorMessage = nil } })) {
             Button("OK", role: .cancel) { workspace.errorMessage = nil }
         } message: { Text(workspace.errorMessage ?? "") }
         .dropDestination(for: URL.self) { urls, _ in
@@ -58,7 +58,7 @@ struct ContentView: View {
                 }.frame(width: 230)
                 .onChange(of: workspace.delimiter) { if let url = workspace.sourceURL { workspace.load(url, inferDelimiter: false) } }
                 Spacer()
-                if let table = workspace.table { Text("\(table.rows.count.formatted()) rows · \(table.header.count.formatted()) columns").font(.caption).foregroundStyle(.secondary) }
+                if let table = workspace.table { Text("\(table.rowCount.formatted()) rows · \(table.header.count.formatted()) columns").font(.caption).foregroundStyle(.secondary) }
             }
             if let warning = workspace.table?.warnings.joined(separator: " "), !warning.isEmpty {
                 Label(warning, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange).textSelection(.enabled)
@@ -83,7 +83,7 @@ struct ContentView: View {
                     ContentUnavailableView("Cells Too Large to Preview", systemImage: "tablecells", description: Text("The table is ready to export. Preview is limited to keep the app responsive."))
                 } else {
                     HTMLPreview(html: preview.html)
-                    if preview.rowCount < (workspace.table?.rows.count ?? 0) { note("Preview shows the first \(preview.rowCount) rows. Copy HTML and Export include every row.") }
+                    if preview.rowCount < (workspace.table?.rowCount ?? 0) { note("Preview shows the first \(preview.rowCount) rows. Copy HTML and Export include every row.") }
                 }
             }.overlay(alignment: .topTrailing) { if workspace.rendering { ProgressView().controlSize(.small).padding(12).accessibilityLabel("Updating preview") } }
         } else {

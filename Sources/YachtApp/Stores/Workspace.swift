@@ -65,7 +65,7 @@ final class Workspace {
                 }
                 guard !Task.isCancelled, request == generation else { return }
                 table = value; importing = false; preferences.addRecent(url)
-                status = "\(value.rows.count.formatted()) rows · \(value.header.count.formatted()) columns"
+                status = "\(value.rowCount.formatted()) rows · \(value.header.count.formatted()) columns"
                 schedulePreview()
             } catch is CancellationError {} catch {
                 guard request == generation else { return }
@@ -154,8 +154,7 @@ final class Workspace {
                     try await Background.run {
                         let granted = url.startAccessingSecurityScopedResource()
                         defer { if granted { url.stopAccessingSecurityScopedResource() } }
-                        try FileService.convert(url, to: output, style: options,
-                            delimiter: url.pathExtension.lowercased() == "tsv" ? .tab : separator, overwrite: overwrite)
+                        _ = try FileService.batchItem(url, style: options, delimiter: separator, overwrite: overwrite)
                     }
                     batchResults.append("Saved \(output.lastPathComponent)"); lastExport = output
                 } catch is CancellationError { break }

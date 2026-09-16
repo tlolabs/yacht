@@ -1,3 +1,88 @@
+# Rust/native migration verification
+
+Run date: 2026-09-15. Local host: Apple Silicon Mac, macOS 26.7, Xcode 26.6,
+Rust 1.98.1; project-local .NET SDK 8.0.425 for C# compilation/binding tests.
+
+## Executed locally
+
+- Rust workspace tests: eight behavior groups plus the C ABI ownership/error test
+  passed. They cover strict CSV and chunking, Unicode/BOM/newlines, sparse rows,
+  malformed encodings/quoting, Python HTML snapshots, all styling/escaping,
+  presets, batch, atomic replacement, cancellation, large inputs and preview limits.
+- `cargo fmt --all --check` and Clippy across all workspace targets with warnings
+  denied passed. Rust `cargo check` passed for x86_64 Windows MSVC and Linux GNU;
+  these checks are not native execution on those platforms.
+- SwiftPM: **25 tests passed** against the actual Rust library, including all 23
+  retained tests and new shared settings/TSV batch binding cases.
+- CLI: **60 seeded Python/Rust differential cases**, all sixteen styling flags,
+  ordered Unstyled reset, dash-prefixed positional paths, overwrite/input safety
+  and mixed-success batch checks passed.
+- ctypes adapter: Unicode paths, opening, metadata, preview/source, complete export,
+  replacement safety, presets/settings, batch, cancellation and concurrent calls
+  passed against the macOS dynamic Rust library.
+- C# adapter: built with zero warnings/errors and passed equivalent binding tests
+  against that library. Windows dependencies were restored and locked; locked ARM64
+  resolution passed. The full WinUI C# source compiled against resolved SDK references
+  using temporary XAML-generated declarations (compiler scaffolding only, not shipped).
+- Universal Rust static library and CLI cross-built for Apple Silicon and Intel.
+  Local unsigned/ad-hoc macOS packaging produced DMG, ZIP, CLI and checksums; the
+  script verified code signatures and both CPU architectures.
+- Shell syntax, Python syntax, workflow YAML and git whitespace checks passed.
+
+## Native UI execution
+
+The first Rust-backed macOS run passed all seven retained UI tests
+(`build/RustMigrationUITests.xcresult`). A subsequent expanded run found missing
+Settings accessibility identifiers and native event-targeting failures; its trace
+also captured unrelated desktop application automation crashes. Settings controls
+now have explicit accessible labels/identifiers, appearance uses the isolated test
+preference domain, and test launch/panel helpers explicitly activate YACHT.
+
+All four affected cases passed the focused rerun
+(`build/RustMigrationFocusedUITests.xcresult`). The final complete **eight-case run passed**, followed by successful universal
+ad-hoc packaging (`build/RustMigrationAcceptedUITests.xcresult`). Tests cover sample/source/copy,
+malformed input, semantic escaping, preset save/load/delete, native Open/Save,
+batch replacement protection, Finder multiple files, appearance and preview settings.
+
+## Not claimed locally
+
+Windows WinUI/XAML/runtime/installer and Linux GTK runtime/deb/tar verification
+require their native hosts. Their implementation and mandatory CI gates are present,
+but those jobs have not been executed from this working tree. A macOS attempt to
+run the Windows XAML compiler failed loading its Windows tooling dependencies;
+C# compile/binding checks are not represented as a Windows application build.
+
+Intel GUI runtime execution, Windows/Linux ARM64 runtime execution, full screen-reader,
+high-contrast/display-scaling and owner dataset acceptance remain pending. No code
+signing credentials, notarization submission, stable tag, push or public release
+were performed. Automatic approval review blocked publishing the refactor to the
+public repository without explicit owner authorization, so native CI dispatch is
+pending that approval. All changes remain local and uncommitted. A focused scan of
+changed/new text files found no private-key or common access-token patterns; this
+is not a comprehensive security audit. macOS packaging now defaults to an explicit local-only unsigned
+mode; signing and notarization require separate command-line modes.
+
+## Performance sample
+
+One optimized local 100,000-row, three-column sample via `cargo bench`:
+
+| Operation | Elapsed |
+|---|---:|
+| UTF-8 parsing | 15.35 ms |
+| Bounded HTML preview + source excerpt | 3.81 ms |
+| Streaming HTML generation into a sink | 2.74 ms |
+
+These are local samples, not portable performance guarantees. The sink figure is
+not disk export latency. Export remains buffered/streaming; table and full clipboard
+storage remain RAM-limited. Compare on the same host/data when evaluating regressions.
+
+---
+
+# Historical Swift migration verification
+
+The following records the prior implementation before Rust. It is retained as
+historical evidence, not a claim about the current architecture.
+
 # Rewrite verification
 
 Verified September 15, 2026, with Xcode 26.6 / Swift 6.3.3 on Apple Silicon. The original Python implementation remains in place and under `legacy-python/` pending manual acceptance.

@@ -17,6 +17,7 @@ import AppKit
     }
     func launch(csv: String? = nil) throws {
         app.launch()
+        app.activate()
         XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 15))
         if let csv {
             let file = directory.appendingPathComponent("input.csv")
@@ -25,6 +26,7 @@ import AppKit
         }
     }
     func goTo(_ path: String) {
+        app.activate()
         app.typeKey("g", modifierFlags: [.command, .shift])
         let field = app.textFields["PathTextField"]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
@@ -114,7 +116,7 @@ import AppKit
         let second = directory.appendingPathComponent("Café.csv")
         try Data("Name,Value\nFirst,1\n".utf8).write(to: first)
         try Data("Name,Value\nSecond,2\n".utf8).write(to: second)
-        let bundle = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("Y.A.C.H.T..app")
+        let bundle = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("YACHT.app")
         XCTAssertTrue(FileManager.default.fileExists(atPath: bundle.path))
         _ = try await NSWorkspace.shared.open([first, second], withApplicationAt: bundle, configuration: .init())
         app.activate()
@@ -148,4 +150,17 @@ import AppKit
         app.buttons["Delete"].click()
         app.buttons.matching(identifier: "Delete").allElementsBoundByIndex.last!.click()
     }
+    func testSettingsAppearanceAndPreviewRows() throws {
+        try launch()
+        app.typeKey(",", modifierFlags: .command)
+        let appearance = app.popUpButtons["appearance"]
+        XCTAssertTrue(appearance.waitForExistence(timeout: 10))
+        appearance.click(); app.menuItems["Dark"].click()
+        let preview = app.popUpButtons["previewRows"]
+        XCTAssertTrue(preview.exists)
+        preview.click(); app.menuItems["50"].click()
+        XCTAssertTrue(app.switches["rememberStyle"].exists)
+        appearance.click(); app.menuItems["System"].click()
+    }
+
 }

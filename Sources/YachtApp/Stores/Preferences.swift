@@ -10,6 +10,9 @@ final class Preferences {
     var presets: [String: StyleOptions] = [:]
     var recentFiles: [URL] = []
     var problem: String?
+    var appearance: String {
+        didSet { defaults.set(appearance, forKey: "appearance") }
+    }
     var rememberStyle: Bool {
         didSet { defaults.set(rememberStyle, forKey: "rememberStyle") }
     }
@@ -21,8 +24,9 @@ final class Preferences {
         let testing = ProcessInfo.processInfo.arguments.contains("--ui-testing")
         defaults = testing ? UserDefaults(suiteName: "com.local.yacht.ui-testing")! : .standard
         if testing { defaults.removePersistentDomain(forName: "com.local.yacht.ui-testing") }
-        rememberStyle = defaults.object(forKey: "rememberStyle") as? Bool ?? true
-        previewRows = defaults.object(forKey: "previewRows") as? Int ?? 200
+        appearance = defaults.string(forKey: "appearance") ?? "System"
+        rememberStyle = defaults.object(forKey: "rememberStyle") as? Bool ?? BehaviorSettings.defaults.rememberStyle
+        previewRows = defaults.object(forKey: "previewRows") as? Int ?? BehaviorSettings.defaults.previewRows
         let base = testing ? FileManager.default.temporaryDirectory.appendingPathComponent("yacht-ui-\(ProcessInfo.processInfo.processIdentifier)") :
             FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Y.A.C.H.T.")
         repository = PresetRepository(url: base.appendingPathComponent("presets.json"))
@@ -37,9 +41,11 @@ final class Preferences {
         recentFiles = (defaults.stringArray(forKey: "recentFiles") ?? []).map { URL(fileURLWithPath: $0) }
     }
     var initialStyle: StyleOptions {
-        guard rememberStyle, let data = defaults.data(forKey: "lastStyle"),
-              let value = try? JSONDecoder().decode(StyleOptions.self, from: data), (try? value.validate()) != nil else { return .init() }
-        return value
+        var settings = BehaviorSettings.defaults
+        settings.rememberStyle = rememberStyle
+        settings.previewRows = previewRows
+        if let data = defaults.data(forKey: "lastStyle"), let style = try? JSONDecoder().decode(StyleOptions.self, from: data) { settings.lastStyle = style }
+        return (try? settings.initialStyle()) ?? .init()
     }
     func remember(_ style: StyleOptions) {
         guard rememberStyle, let data = try? JSONEncoder().encode(style) else { return }

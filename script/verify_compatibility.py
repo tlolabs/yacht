@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Seeded CSV/Python/Swift differential tests plus CLI integration checks."""
+"""Seeded CSV/Python/Rust differential tests plus CLI integration checks."""
 from pathlib import Path
 import csv, html, importlib.util, io, random, subprocess, sys, tempfile
 from html.parser import HTMLParser
 root = Path(__file__).resolve().parents[1]
-subprocess.run(['swift', 'build', '--product', 'yacht'], cwd=root, check=True)
-binary = Path(subprocess.check_output(['swift', 'build', '--show-bin-path'], cwd=root, text=True).strip())/'yacht'
+subprocess.run(['cargo', 'build', '--locked', '-p', 'yacht-cli'], cwd=root, check=True)
+binary = root/'target'/'debug'/('yacht.exe' if sys.platform == 'win32' else 'yacht')
 spec=importlib.util.spec_from_file_location('legacy_yacht',root/'legacy-python/yacht.py')
 legacy=importlib.util.module_from_spec(spec);sys.modules['legacy_yacht']=legacy;spec.loader.exec_module(legacy)
 class Cells(HTMLParser):
@@ -39,10 +39,21 @@ with tempfile.TemporaryDirectory(prefix='yacht-regression-') as tmp:
     assert output.read_bytes()==previous
     subprocess.run([str(binary),str(source),'--overwrite','--font-size','22','--zebra','no','--border-style','dashed','--hover=false'],check=True,capture_output=True)
     assert 'font-size: 22px' in output.read_text() and 'nth-child' not in output.read_text()
+    # Every retained style flag reaches the one shared generator.
+    all_flags=['--table-class','teaching','--font-family',"'Times New Roman', serif",'--font-size','20','--cell-padding','12','--border-width','3','--border-style','dotted','--border-color','rebeccapurple','--header-bg','rgb(1, 2, 3)','--header-text-color','white','--body-bg','#ffeecc','--zebra','true','--zebra-bg','#abcdef','--hover','true','--hover-bg','#fedcba','--border-collapse','separate','--border-spacing','4']
+    subprocess.run([str(binary),str(source),'--overwrite',*all_flags],check=True,capture_output=True)
+    complete=output.read_text(encoding='utf-8')
+    for token in ['csv-table teaching',"'Times New Roman', serif",'20px','12px','3px dotted rebeccapurple','rgb(1, 2, 3)','color: white','#ffeecc','#abcdef','#fedcba','border-collapse: separate','border-spacing: 4px']:
+        assert token in complete, token
+    subprocess.run([str(binary),str(source),'--overwrite','--font-size','23','--unstyled'],check=True,capture_output=True)
+    assert '<style>' not in output.read_text(encoding='utf-8')
+    positional=base/'-input.csv';positional.write_text('A\n1',encoding='utf-8')
+    subprocess.run([str(binary),'--','-input.csv'],cwd=base,check=True,capture_output=True)
+    assert positional.with_suffix('.html').exists()
     invalid=base/'bad.csv';invalid.write_text('A\n"broken')
     good=base/'good.csv';good.write_text('A\nvalid')
     assert subprocess.run([str(binary),str(invalid),str(good)],capture_output=True).returncode != 0
     assert good.with_suffix('.html').exists() and not invalid.with_suffix('.html').exists()
     assert subprocess.run([str(binary),str(source),'--output',str(source),'--overwrite'],capture_output=True).returncode != 0
     assert subprocess.run([str(binary),str(source),'--font-family','</style><script>'],capture_output=True).returncode != 0
-print('60 seeded Python/Swift CSV regressions and CLI safety/batch checks passed.')
+print('60 seeded Python/Rust CSV regressions and CLI safety/batch checks passed.')

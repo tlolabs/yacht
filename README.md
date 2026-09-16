@@ -1,91 +1,163 @@
-# Y.A.C.H.T. — Yet Another CSV HTML Translator
+# YACHT — Yet Another CSV HTML Translator
 
-A native Swift and SwiftUI Mac utility for turning CSV files into styled, accessible HTML tables. macOS 14 or later; Apple Silicon and Intel. No runtime dependencies or paid services.
+Convert CSV and TSV files into styled, accessible HTML tables. One Rust core powers
+the shared command-line tool and native SwiftUI, WinUI 3 and GTK/libadwaita interfaces.
 
-The Python application is preserved at its original paths and under [`legacy-python/`](legacy-python/). It remains available for comparison and for Windows/Linux. **Do not remove it until the owner manually accepts the native replacement.**
+This refactor is under verification. The Rust core, macOS application and native
+binding tests have local evidence; Windows/Linux application builds and packages
+must pass their required CI jobs before release. See [feature parity](docs/FEATURE-PARITY.md)
+and [verification evidence](docs/VERIFICATION.md). Python remains at its original
+paths and under `legacy-python/` for reference. **Do not remove it before owner acceptance.**
 
-## Using Y.A.C.H.T.
+## Installation and first launch
 
-1. **Open CSV** (`⌘O`), drop a file into the window, or use Finder’s **Open With**. The built-in album sample is available from File → Use Sample Table.
-2. Choose a delimiter: comma, tab, semicolon, or pipe. TSV files initially select Tab. The first CSV record contains column headers.
-3. Adjust typography, cell padding, borders, colors, zebra striping, hover highlighting, and CSS classes in the style controls. Changes update the actual HTML preview automatically.
-4. Use **Default (Styled)**, **Unstyled**, or save a named preset. Existing Python presets are copied into the native store on first launch; the original JSON remains unchanged.
-5. Switch between **Table Preview** (`⌘1`) and read-only **HTML Source** (`⌘2`). **Copy HTML Code** (`⇧⌘C`) copies the complete document.
-6. **Export HTML** (`⌘S`) opens the standard Save dialog, including normal replacement confirmation. After export, **Reveal in Finder** or **Open in Browser** is available.
+| Platform | Baseline | Distribution |
+|---|---|---|
+| macOS Apple Silicon / Intel | macOS 14+ | Universal YACHT.app, DMG or ZIP |
+| Windows x64 / ARM64 | Windows 10 1809+ | Per-user installer or portable ZIP |
+| Linux x64 / ARM64 | Ubuntu 24.04 baseline; GTK 4.10+, libadwaita 1.4+ | `.deb` or dependency-aware tar archive |
 
-**Batch Convert CSVs** (`⇧⌘B`) writes `.html` beside each selected input using the current style. Existing output files are skipped with an explanation unless you explicitly choose and confirm replacement. Each result is listed, including partial failures. Dropping multiple files also opens batch conversion.
+Use artifacts from a successful [Native cross-platform run](https://github.com/tlolabs/yacht/actions/workflows/native-macos.yml)
+for development/nightly builds. Stable versions use matching `v2.*` or later tags.
+Every platform artifact in a stable release must pass its platform tests and use
+the same repository commit. Artifacts are not claimed available until CI succeeds.
 
-**Refresh Preview** (`⌘R`) rereads the source CSV. Settings (`⌘,`) controls remembered styles and preview size. File → Open Recent remembers the ten most recently imported files. macOS handles file-dialog directory memory.
+- **Mac:** open the DMG and drag YACHT to Applications, or extract the app ZIP.
+  Development builds have ad-hoc signatures; downloaded builds may require explicit
+  approval in System Settings → Privacy & Security. Developer ID/notarization is
+  optional infrastructure, not currently claimed for unsigned builds.
+- **Windows:** run the per-user setup executable, or extract the entire portable ZIP
+  and run `YachtApp.exe`. Keep its DLLs together. The CLI is `yacht.exe`.
+  Microsoft Edge WebView2 Runtime is required for table preview; install the
+  [Microsoft runtime](https://developer.microsoft.com/microsoft-edge/webview2/)
+  if it is absent. Unsigned development installers may trigger SmartScreen.
+- **Linux:** `sudo apt install ./YACHT-<version>-linux-<arch>.deb` installs the native
+  dependencies and desktop entry. Launch YACHT or `yacht-gui`. For the tar archive,
+  install Python/PyGObject, GTK, libadwaita and WebKitGTK as described in
+  [DISTRIBUTION.md](DISTRIBUTION.md), extract, and run `bin/yacht-gui`.
 
-### CSV and output behavior
+First launch shows the album sample. No account, upload, or paid service is needed.
+Existing `~/.yacht_presets.json` presets are copied when the native preset store does
+not yet exist. The original remains unchanged. Existing Mac presets/preferences
+keep their original identity and location.
 
-- UTF-8, optional UTF-8 BOM, Unicode and emoji.
-- Quoted commas, escaped double quotes, multiline cells, CR/LF/CRLF, blank cells and blank rows.
-- Missing cells become blank cells. Extra cells are preserved under added `Column N` headers and reported in the window.
-- Malformed quoting and invalid UTF-8 produce useful errors. Export as UTF-8 CSV from your spreadsheet if encoding errors appear. A quote inside an unquoted field must be escaped by quoting the entire field and doubling internal quotes.
-- Cell content is always escaped text. There is no raw HTML mode.
-- Whole HTML document, embedded CSS, semantic `thead`/`tbody`, `scope="col"` headers. Styled output retains the legacy CSS classes and defaults; Unstyled removes CSS/classes.
-- Numbers align right; percentages stay left-aligned. Default widths and alignment match the Python tool.
+## Using YACHT
 
-Preview defaults to 200 rows, with an additional 2 MB estimated size budget. Source display is limited to 1 MB and clearly labels excerpts. **Exports and copied HTML include every row.** Import, generation and streaming export run off the main UI thread. Cancel is available for long operations. The parsed table resides in memory, so practical file size is limited by available RAM; this is not a disk-backed database. [Disk-backed conversion is tracked separately](https://github.com/tlolabs/yacht/issues/2).
+1. **Open CSV**, use your file manager's Open With, or drop a file into the window.
+   Choose comma, tab, semicolon or pipe. A `.tsv` initially selects Tab. The first
+   record supplies headers. **Sample** restores the built-in example.
+2. Adjust font family/size, cell padding, border width/style/spacing/collapse,
+   header/body/border/zebra/hover colors, zebra/hover toggles and table CSS classes.
+   Text color fields accept safe CSS values; native color pickers supply hex colors.
+3. Load **Default (Styled)** or **Unstyled**, or save a named preset. Load, replace
+   and delete controls preserve the existing workflow, with destructive confirmations.
+   Presets are portable JSON; copy `presets.json` between native stores while the
+   apps are closed. There is no separate preset import/export dialog in the reference app.
+4. Switch between **Table Preview** and read-only **HTML Source**. Preview renders
+   the actual generated HTML/CSS. Copy HTML copies the complete document.
+5. **Export HTML** opens the native Save dialog and its replacement confirmation.
+   Reveal locates the saved output in the file manager; Browser opens it normally.
 
-Finder/Dock opening now opens a preview for review. Use batch conversion or the CLI for direct conversion. See [output and workflow changes](docs/COMPATIBILITY.md).
+**Batch Convert** reviews selected inputs before writing `.html` beside each.
+Existing output is left unchanged and reported unless you explicitly enable and
+confirm replacement. Individual failures are listed and remaining inputs continue.
+Multiple opened/dropped files also enter batch review. Cancel stops remaining work.
 
-## Development build
+**Refresh** rereads the source with the current delimiter. Settings controls
+remembered valid style, maximum preview rows, recent-file clearing and appearance.
+Recent files retains ten successfully imported paths. The Mac uses native Settings
+and menus; Windows/Linux expose the equivalent controls in their native windows.
 
-Download the `Y.A.C.H.T.-macos-universal` artifact from a successful [Native macOS Actions run](https://github.com/tlolabs/yacht/actions/workflows/native-macos.yml). It includes a DMG, app ZIP, command-line tool, and SHA-256 checksums. These are ad-hoc-signed development builds until Developer ID signing and notarization are configured. Gatekeeper may require explicit user approval for a downloaded development app.
+### Input and output details
 
-Local build with Xcode 26.6 / Swift 6.3.3:
+UTF-8 with optional BOM, Unicode/emoji, quoted delimiters, doubled quotes,
+multiline cells, CR/LF/CRLF, blank fields and blank rows are supported. Missing cells
+render blank; extra cells are preserved under `Column N` headers and reported.
+Malformed quoting, NUL and invalid UTF-8 are errors. Save spreadsheet data as UTF-8
+CSV when encoding errors occur. No raw HTML mode exists: all cell data is escaped.
 
-```sh
-./script/build_and_run.sh
-```
+Output is a full document with embedded CSS, semantic headers, and numeric right
+alignment. Percentages remain left aligned. Exact Unstyled removes CSS/classes.
+The HTML title is now `YACHT Table`; other deliberate historical corrections are
+in [compatibility notes](docs/COMPATIBILITY.md).
 
-This builds and opens `dist/Y.A.C.H.T..app`. The Codex Run action uses the same script. Options: `--build-only`, `--verify`, `--debug`, `--logs`, `--telemetry`. The project also supports Swift 6.0+ through SwiftPM; current CI uses Swift 6.3.3.
+Preview defaults to 200 rows and has a 2 MB bound; source is a UTF-8-safe excerpt
+of at most 1 MB. Limits are shown visibly. **Copy and Export include every row.**
+Work runs off the UI thread. Parsing retains the table in RAM; very large data and
+full clipboard copies remain memory-limited. Cancellation before publication keeps
+existing output intact. A completed export cannot be undone by later cancellation.
 
-```sh
-export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
-swift test
-python3 script/verify_compatibility.py
-xcodebuild -project Yacht.xcodeproj -scheme Yacht -derivedDataPath build \
-  -destination 'platform=macOS,arch=arm64' test
-./script/package.sh
-```
+### Keyboard shortcuts
 
-UI tests require a logged-in Mac desktop and permission for Xcode’s automation runner. Use `arch=x86_64` for an Intel test host. The universal distribution is cross-compiled for both architectures. [Build, signing, CI and release guide](DISTRIBUTION.md).
+| Action | macOS | Windows / Linux |
+|---|---|---|
+| Open | Command+O | Ctrl+O |
+| Export | Command+S | Ctrl+S |
+| Copy complete HTML | Command+Shift+C | Ctrl+Shift+C |
+| Batch convert | Command+Shift+B | Ctrl+Shift+B |
+| Refresh | Command+R | Ctrl+R or F5 |
+| Table preview / HTML source | Command+1 / 2 | Ctrl+1 / 2 |
+| Settings | Command+, | Settings button |
+
+Use native Tab/Shift+Tab navigation and screen-reader commands. Appearance follows
+the system by default; export colors are independently chosen content. Native UI
+controls support platform display scaling. Manual screen-reader/high-contrast and
+scaling acceptance is tracked in the parity matrix.
 
 ## Command-line automation
 
-The native `yacht` executable preserves every Python CLI styling flag:
+Build with `cargo build --release --locked -p yacht-cli`, or use the packaged `yacht`:
 
 ```sh
-swift run yacht input.csv --output output.html --cell-padding 10 --border-style dashed
-swift run yacht one.csv two.csv three.csv
-swift run yacht input.tsv --delimiter tab --unstyled
-swift run yacht input.csv --overwrite
-swift run yacht --help
+yacht input.csv --output output.html --cell-padding 10 --border-style dashed
+yacht one.csv two.csv three.csv
+yacht input.tsv --delimiter tab --unstyled
+yacht input.csv --overwrite
+yacht --help
 ```
 
-Multiple input files produce outputs beside their inputs; `-o`/`--output` is valid only for one input. Existing output replacement requires `--overwrite`. Inputs are never overwritten by conversion. Batch failures do not prevent subsequent files from being processed, and return a nonzero exit status.
+All existing style flags are retained. `--output` accepts one input only; otherwise
+outputs are beside inputs. CLI delimiter defaults to comma regardless of filename.
+Existing output requires `--overwrite`. Errors go to stderr, successes to stdout;
+batch failures exit 1 and do not prevent later conversions. Ctrl+C cancels (130).
+`--` permits filenames beginning with a dash; `--flag=value` is also supported.
+The old `swift run yacht` development command is replaced by `cargo run -p yacht-cli --`.
 
-## Repository and architecture
+## Permissions, updates and troubleshooting
 
-| Location | Responsibility |
-| --- | --- |
-| `Sources/YachtCore` | Incremental CSV parsing, immutable table data, style validation, HTML generation, bounded previews, atomic exports, portable preset JSON |
-| `Sources/YachtApp` | SwiftUI app, views, observable workspace/preferences, small WebKit and desktop bridges |
-| `Sources/YachtCLI` | Native command-line interface sharing the same core |
-| `Tests/YachtCoreTests` | Unit, regression, security, import/export and large-data tests plus Python fixtures |
-| `UITests` | Native macOS UI workflow tests |
-| `Yacht.xcodeproj` | App and UI-test targets; local Swift package core dependency |
-| `script` | Reproducible build, packaging, project generation and differential tests |
-| `legacy-python` | Preserved Python implementation and its original documentation/build workflow |
-| `docs` | Baseline inventory, compatibility notes, architecture and verification evidence |
+Use local readable CSV/TSV files and a writable export directory. Batch export needs
+write access beside each input. macOS may request file/folder access through native
+panels. The app has no networking or notification permission requirement for
+conversion. Preview blocks scripts and remote resources; Help/browser actions are
+explicit user navigation.
 
-[Architecture](docs/ARCHITECTURE.md) · [Baseline](docs/LEGACY-BASELINE.md) · [Compatibility](docs/COMPATIBILITY.md)
+Updates are manual downloads from GitHub; no automatic updater was present or is
+introduced here. Keep a copy of your presets before upgrading development builds.
+If presets cannot load, the app reports the error and leaves the file intact. Check
+JSON types and style values against [file formats](docs/BEHAVIOR.md). If previews are
+unavailable for large cells, export/copy remain complete. On Windows, a missing
+WebView2 runtime affects the preview renderer; install it instead of disabling the
+feature. Linux tar archives require the listed native packages.
+
+## Development and project references
+
+[Build, packaging, CI and signing](DISTRIBUTION.md) · [Architecture](docs/ARCHITECTURE.md)
+· [Canonical behavior](docs/BEHAVIOR.md) · [Bindings/development](docs/DEVELOPMENT.md)
+· [Dependencies](DEPENDENCIES.md) · [Parity](docs/FEATURE-PARITY.md)
+
+On a Mac with Xcode and Rust, `./script/build_and_run.sh` builds and launches
+`dist/YACHT.app`; the Codex Run action uses the same entrypoint. All Rust business
+logic is under `crates/`; SwiftUI stays under `Sources/YachtApp`, and other native
+frontends are under `platform/`. Historical Python code/fixtures remain available.
 
 ## Context and license
 
-This tool supports a teaching workflow. I am an instructor first, and write code when it solves practical problems in classes or a media environment. The project is shared for transparency and educational use, as-is, without warranty or guaranteed support. Bug reports and pull requests are welcome; response times may vary during the academic term.
+This tool supports a teaching workflow. I am an instructor first, and write code
+when it solves practical problems in classes or a media environment. The project
+is shared for transparency and educational use, as-is, without warranty or
+guaranteed support. Bug reports and pull requests are welcome; response times may
+vary during the academic term.
 
-GNU General Public License v3.0 (GPLv3). See [LICENSE](LICENSE). Distributed modifications must retain the applicable license and source availability requirements. The repository and tagged GitHub releases provide corresponding source.
+GNU General Public License v3.0. See [LICENSE](LICENSE). Distributed modifications
+must retain applicable license and source availability requirements. Repository
+and tagged releases provide corresponding source.
