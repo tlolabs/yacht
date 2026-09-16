@@ -34,9 +34,10 @@ necessary even for rows with automated verification.
 | Installers/packages and signing hooks | — | V | V | V | x64/ARM64 ZIP/DMG, Windows installer/ZIP, Linux deb/tar gates |
 
 Review this table after CI, updating I to V only with actual platform evidence.
-All six OS/architecture combinations have independent native runner jobs. The
-macOS split is awaiting its first complete CI run; Intel uses macOS 15/Xcode 26.3
-to avoid the macOS 26 Intel VM icon-service crash. See VERIFICATION.md for evidence.
+All six OS/architecture combinations passed their native build, integration/UI test
+and packaging jobs for candidate `da81a5d`. macOS packages are separate x64 and
+ARM64 builds. Intel uses macOS 15/Xcode 26.3 to avoid the macOS 26 Intel VM
+icon-service crash. See [VERIFICATION.md](VERIFICATION.md) for the run and scope.
 
 ## Manual release acceptance
 
