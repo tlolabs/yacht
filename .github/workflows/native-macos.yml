@@ -14,7 +14,19 @@ concurrency:
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 jobs:
   macos:
-    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-26
+            arch: arm64
+            apple_arch: arm64
+            triple: aarch64-apple-darwin
+          - runner: macos-26-intel
+            arch: x64
+            apple_arch: x86_64
+            triple: x86_64-apple-darwin
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 35
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
@@ -23,8 +35,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.98.1'
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
+          targets: ${{ matrix.triple }}
           components: rustfmt,clippy
+      - name: Verify native runner architecture
+        run: test "$(uname -m)" = '${{ matrix.apple_arch }}'
       - name: Rust quality gates
         run: cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings && cargo test --workspace --locked
       - name: Verify generated files
@@ -36,23 +50,23 @@ jobs:
       - name: Native ctypes binding tests
         run: cargo build --workspace --locked && python3 script/test_native_binding.py target/debug/libyacht_ffi.dylib
       - name: macOS UI tests
-        run: xcodebuild -project Yacht.xcodeproj -scheme Yacht -derivedDataPath build -destination 'platform=macOS,arch=arm64' -resultBundlePath build/UITests.xcresult test -quiet
-      - name: Package universal development build
-        run: ./script/package.sh
+        run: xcodebuild -project Yacht.xcodeproj -scheme Yacht -derivedDataPath build -destination 'platform=macOS,arch=${{ matrix.apple_arch }}' -resultBundlePath build/UITests.xcresult test -quiet
+      - name: Package native macOS development build
+        run: ./script/package.sh --arch ${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: macOS-UI-test-results
+          name: macOS-${{ matrix.arch }}-UI-test-results
           path: build/UITests.xcresult
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
-          name: YACHT-macos-universal-${{ github.sha }}
+          name: YACHT-macos-${{ matrix.arch }}-${{ github.sha }}
           path: |
-            release/YACHT-*.dmg
-            release/YACHT-*.zip
-            release/yacht
-            release/SHA256SUMS-macos
+            release/YACHT-macos-${{ matrix.arch }}.dmg
+            release/YACHT-macos-${{ matrix.arch }}.zip
+            release/yacht-macos-${{ matrix.arch }}
+            release/SHA256SUMS-macos-${{ matrix.arch }}
           if-no-files-found: error
           retention-days: 30
   windows:

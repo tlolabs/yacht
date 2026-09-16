@@ -3,6 +3,15 @@
 Run date: 2026-09-15. Local host: Apple Silicon Mac, macOS 26.7, Xcode 26.6,
 Rust 1.98.1; project-local .NET SDK 8.0.425 for C# compilation/binding tests.
 
+## Separate macOS architecture packages
+
+The universal macOS distribution is replaced by independent x64 and ARM64 DMG,
+ZIP, CLI and checksum outputs. CI now has six native platform jobs, including an
+Intel macOS runner with the complete binding, CLI and UI suites. Both architecture
+packages built locally; exact executable architectures, code signatures and all
+six artifact checksums passed. The first six-job CI run is pending. Earlier universal-build results below are
+retained as historical migration evidence.
+
 ## Executed locally
 
 - Rust workspace tests: eight behavior groups plus the C ABI ownership/error test

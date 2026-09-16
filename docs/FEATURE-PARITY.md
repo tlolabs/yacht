@@ -3,7 +3,7 @@
 Status: **V** implemented and verified within the listed test scope; **I** implemented,
 remaining native/manual acceptance pending. I is not an unsupported feature or acceptance claim.
 Windows and Linux core, binding, native runtime tests and packages passed on x64
-and ARM64 CI. macOS has passing Swift/Rust, native UI and universal packaging gates.
+and ARM64 CI. macOS now has separate x64 and ARM64 build, UI test and packaging gates.
 See VERIFICATION.md for evidence and test scope. Manual acceptance below remains
 necessary even for rows with automated verification.
 
@@ -31,11 +31,11 @@ necessary even for rows with automated verification.
 | Screen reader, focus and native scaling | scoped HTML | I | I | I | Semantic assertions + human acceptance |
 | Shared Rust CLI, flags, batch/status | V | V | V | V | 60 seeded differential + CLI safety checks |
 | Native bindings and concurrent access | V | V | V | V | Swift, C#, ctypes tests; native x64/ARM64 CI |
-| Installers/packages and signing hooks | — | V | V | V | Universal/ZIP/DMG, Windows installer/ZIP, Linux deb/tar gates |
+| Installers/packages and signing hooks | — | V | V | V | x64/ARM64 ZIP/DMG, Windows installer/ZIP, Linux deb/tar gates |
 
 Review this table after CI, updating I to V only with actual platform evidence.
-Intel Mac binaries are cross-built; Intel UI execution is a separate acceptance
-check. ARM64 Windows/Linux have independent runner jobs, not just cross-compilation.
+All six OS/architecture combinations have independent native runner jobs. The
+macOS split is awaiting its first complete CI run; see VERIFICATION.md for evidence.
 
 ## Manual release acceptance
 

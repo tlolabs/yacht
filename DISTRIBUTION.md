@@ -38,18 +38,27 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   -project Yacht.xcodeproj -scheme Yacht -derivedDataPath build \
   -destination 'platform=macOS,arch=arm64' -resultBundlePath build/UITests.xcresult test
-./script/package.sh
+./script/package.sh --arch arm64
+./script/package.sh --arch x64
 ```
 
 Use a fresh xcresult path per run. XCTest needs a logged-in unlocked desktop and
 Xcode automation permission. The deterministic project generator adds a Rust build
 phase; regenerate with `python3 script/generate_project.py`. Direct SwiftPM builds
 need `build_rust_macos.sh` first. Do not run simultaneous builds that replace the
-same `target/swift` archive. Universal packaging builds both Rust architectures and
-both Swift architectures before linking/signing.
+same `target/swift` archive. Packaging builds one Rust and Swift architecture per
+invocation. `--arch arm64` targets Apple Silicon; `--arch x64` targets Intel.
+Omitting `--arch` selects the host architecture. Cross-building is available with
+the matching Rust target installed, but CI tests each architecture on its own native
+runner (`macos-26` and `macos-26-intel`). Use `arch=x86_64` for Intel XCTest runs.
 
-Outputs: `dist/YACHT.app`, `dist/yacht`, `release/YACHT-macos-universal.dmg`,
-`release/YACHT-macos-universal.zip`, `release/yacht`, `release/SHA256SUMS-macos`.
+Outputs per `<arch>` (`arm64` or `x64`): `dist/macos-<arch>/YACHT.app`,
+`dist/macos-<arch>/yacht`, `release/YACHT-macos-<arch>.dmg`,
+`release/YACHT-macos-<arch>.zip`, `release/yacht-macos-<arch>` and
+`release/SHA256SUMS-macos-<arch>`. Both packages install the same `YACHT.app`;
+choose the package matching the Mac's processor. Each shipped executable is checked
+to contain exactly the requested architecture. CLI and checksum filenames remain
+unique when release artifacts are combined.
 Bundle ID remains `com.local.yacht.csvhtmltranslator`. Application Support/Y.A.C.H.T.
 and UserDefaults keys are intentionally retained. Window/app/HTML display names
 use YACHT. Build/run modes: --build-only, --verify, --debug, --logs, --telemetry.
@@ -58,7 +67,7 @@ Developer ID/notarization remains optional:
 
 ```sh
 SIGNING_IDENTITY='Developer ID Application: Your Name (TEAMID)' \
-NOTARY_PROFILE='yacht-notary' ./script/package.sh --notarize
+NOTARY_PROFILE='yacht-notary' ./script/package.sh --notarize --arch arm64
 ```
 
 Default builds (`--unsigned`) are ad-hoc signed and explicitly ignore ambient signing/notary credentials. Use `--sign` for signing without upload, or `--notarize` for explicit notarization. Provision a certificate/private key in an ephemeral
@@ -131,8 +140,8 @@ packages remain buildable. Architecture-specific Linux CI runs the code natively
 ## CI and releases
 
 The Native cross-platform workflow runs on PRs, main pushes, nightly schedules,
-manual requests and non-v1 version tags. macOS builds/tests/packages universal
-binaries. Windows has x64 and ARM64 jobs; Linux has x64 and ARM64 jobs. Every job
+manual requests and non-v1 version tags. macOS, Windows and Linux each have
+separate native x64 and ARM64 jobs: six required platform jobs. Every job
 runs the shared Rust/CLI regressions and its native binding/runtime tests before
 artifact upload. No platform job is allowed to fail optionally. Uploaded artifact
 names include the commit SHA; retention is 30 days.

@@ -13,7 +13,8 @@ paths and under `legacy-python/` for reference. **Do not remove it before owner 
 
 | Platform | Baseline | Distribution |
 |---|---|---|
-| macOS Apple Silicon / Intel | macOS 14+ | Universal YACHT.app, DMG or ZIP |
+| macOS Apple Silicon (ARM64) | macOS 14+ | YACHT-macos-arm64 DMG or ZIP |
+| macOS Intel (x64) | macOS 14+ | YACHT-macos-x64 DMG or ZIP |
 | Windows x64 / ARM64 | Windows 10 1809+ | Per-user installer or portable ZIP |
 | Linux x64 / ARM64 | Ubuntu 24.04 baseline; GTK 4.10+, libadwaita 1.4+ | `.deb` or dependency-aware tar archive |
 
