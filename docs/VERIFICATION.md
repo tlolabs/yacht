@@ -1,36 +1,36 @@
 # YACHT 2.1.0 verification
 
-Verification date: September 16, 2026. Application/cleanup candidate: `2ca1b0d`; CI runner correction follows.
+Verification date: September 16, 2026. Application/test candidate: `da81a5d`.
 Local host: Apple Silicon Mac, macOS 26.7, Xcode 26.6 and Rust 1.98.1.
 
 ## Native platform gates
 
-[Release-candidate CI run](https://github.com/tlolabs/yacht/actions/runs/35115422183)
+[Release-candidate CI run](https://github.com/tlolabs/yacht/actions/runs/35123568911)
 executes the Rust core and CLI, native bindings, actual native UI workflows and
-packaging on each architecture. Five platform jobs have passed; Intel macOS UI
-validation is being rerun on macOS 15 with Xcode 26.3. Publication requires all six to pass again for
-the release tag, using one commit and version.
+packaging on each architecture. All six candidate jobs passed. Publication
+requires all six jobs to pass again for the release tag, using one commit and version.
 
 | Platform | Native runner | Candidate result |
 |---|---|---|
-| macOS ARM64 | macos-26 | Passed |
-| macOS Intel x64 | macos-15-intel | Pending |
+| macOS ARM64 | macos-26 / Xcode 26.6 | Passed |
+| macOS Intel x64 | macos-15-intel / Xcode 26.3 | Passed |
 | Windows x64 | windows-2025 | Passed |
 | Windows ARM64 | windows-11-arm | Passed |
 | Linux x64 | ubuntu-24.04 | Passed |
 | Linux ARM64 | ubuntu-24.04-arm | Passed |
 
-The earlier Intel run (`35107149682`) timed out evaluating UI queries. Its
-spindump showed the system icon service throttled after SIGABRT, blocking AppKit
-menu accessibility. System logs identify a Metal assertion in iconservicesagent
-before SIGABRT. The Intel job now uses macOS 15/Xcode 26.3, retaining the complete
-test suite and x64 packaging. The macOS minimum deployment target remains 14. That runner completed UI testing
-and exposed duplicate toolbar accessibility wrappers and missing Finder-event
-forwarding on macOS 15. Tests select the first toolbar match. Seven of eight Intel UI cases then passed.
-The Finder test now sends the same Launch Services request through `/usr/bin/open`
-from a separate process, avoiding async test-runner event delivery. Application
-file handling remains in its existing delegate. The corrected suite must pass
-before release.
+Intel CI uses macOS 15/Xcode 26.3 because the macOS 26 Intel hosted image crashed
+in the system icon service's Metal initialization, blocking AppKit accessibility.
+The complete test suite and native x64 packaging remain required. The deployment
+minimum remains macOS 14.
+
+The macOS UI tests account for macOS 15's duplicate toolbar accessibility wrappers
+and scope preset confirmation to the alert sheet. The Finder test launches YACHT
+normally through Launch Services and then attaches XCTest. This avoids the stopped
+launch state left by the macOS 15 debugger: system logs showed Launch Services
+withholding document events from that state. The test still opens two files,
+checks both batch paths and exported contents, then opens a single file and checks
+that it appears in the same window.
 
 ## Coverage
 
@@ -61,8 +61,9 @@ before release.
   architecture has its own SHA-256 manifest.
 
 After archival cleanup, local Rust tests, formatting, Clippy, all 25 Swift tests,
-60 seeded CLI cases and ctypes tests passed. The local native app rebuilt as
-version 2.1.0, macOS build 5. Generated Xcode and version metadata were checked.
+60 seeded CLI cases and ctypes tests passed. All eight local macOS UI tests passed
+with no skips after the launch correction. The local native app rebuilt as version
+2.1.0, macOS build 5. Generated Xcode and version metadata were checked.
 
 ## Archive and compatibility provenance
 
