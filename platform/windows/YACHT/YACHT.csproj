@@ -21,4 +21,16 @@
   <Import Project="..\Version.props" />
   <ItemGroup><PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" /></ItemGroup>
   <ItemGroup><Content Include="..\..\..\target\$(RustTarget)\release\yacht_ffi.dll" Link="yacht_ffi.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <!-- Unpackaged MRT Core builds generate the PRI but omit it from publish.
+       Track https://github.com/microsoft/WindowsAppSDK/issues/6720. -->
+  <Target Name="PublishYachtResources" BeforeTargets="ComputeResolvedFilesToPublishList"
+          DependsOnTargets="$(GenerateProjectPriFile)">
+    <Error Condition="!Exists('$(ProjectPriFullPath)')" Text="The generated YACHT resource index is missing: $(ProjectPriFullPath)" />
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(ProjectPriFullPath)" Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>$(ProjectPriFileName)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 </Project>

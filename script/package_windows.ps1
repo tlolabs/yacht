@@ -11,6 +11,7 @@ dotnet restore platform/windows/YACHT/YACHT.csproj -p:Platform=$platform -p:Rust
 if($LASTEXITCODE){throw 'Locked NuGet restore failed'}
 dotnet publish platform/windows/YACHT/YACHT.csproj --no-restore -c Release -r "win-$Architecture" --self-contained true -p:Platform=$platform -p:RustTarget=$triple -o $publish
 if($LASTEXITCODE){throw 'WinUI publish failed'}
+if(!(Test-Path (Join-Path $publish 'YachtApp.pri'))){throw 'WinUI resource index was not published'}
 Copy-Item "target/$triple/release/yacht.exe",LICENSE,README.md,DEPENDENCIES.md $publish
 # Signing is optional. Certificate is selected from an ephemeral CI/user store;
 # certificate material/passwords never appear in the repository or command line.
