@@ -131,17 +131,29 @@ jobs:
         with:
           toolchain: '1.98.1'
       - name: Install native runtime and UI test dependencies
-        run: sudo apt-get update && sudo apt-get install -y python3-gi python3-tk gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 xvfb dbus-x11 desktop-file-utils
+        run: sudo apt-get update && sudo apt-get install -y python3-gi python3-tk gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 xvfb dbus-x11 at-spi2-core desktop-file-utils apparmor
       - name: Rust, CLI and native binding tests
         run: |
           cargo test --workspace --locked
           python3 script/verify_compatibility.py
           cargo build --workspace --locked
           python3 script/test_native_binding.py target/debug/libyacht_ffi.so
+      - name: Permit WebKit sandbox helper on the isolated CI host
+        run: |
+          # Hosted images may lack the distro bubblewrap AppArmor profile.
+          # Permit its user namespace without disabling WebKit's sandbox.
+          sudo tee /etc/apparmor.d/yacht-ci-bwrap >/dev/null <<'PROFILE'
+          abi <abi/4.0>,
+          include <tunables/global>
+          profile yacht-ci-bwrap /usr/bin/bwrap flags=(unconfined) {
+            userns,
+          }
+          PROFILE
+          sudo apparmor_parser -r /etc/apparmor.d/yacht-ci-bwrap
       - name: GTK runtime integration
         env:
           YACHT_LIBRARY: ${{ github.workspace }}/target/debug/libyacht_ffi.so
-        run: dbus-run-session -- xvfb-run -a python3 platform/linux/test_ui.py
+        run: xvfb-run -a dbus-run-session -- python3 platform/linux/test_ui.py
       - name: Package and validate Linux artifacts
         run: |
           desktop-file-validate platform/linux/data/*.desktop

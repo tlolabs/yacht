@@ -1,0 +1,4 @@
+# Keep source checkout behavior consistent across native build hosts.
+* text=auto eol=lf
+# Compatibility fixtures include intentional byte sequences and line endings.
+Tests/YachtCoreTests/Fixtures/** -text

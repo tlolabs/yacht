@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Run with dbus-run-session -- xvfb-run -a python3 platform/linux/test_ui.py."""
+"""Run with xvfb-run -a dbus-run-session -- python3 platform/linux/test_ui.py."""
 
 import os, tempfile, sys, time
 from pathlib import Path
