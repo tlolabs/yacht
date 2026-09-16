@@ -36,8 +36,9 @@ import AppKit
         field.typeKey(.return, modifierFlags: [])
         XCTAssertTrue(field.waitForNonExistence(timeout: 5))
     }
+    // macOS 15 exposes both the toolbar host and its embedded button under the same ID.
     func openCSV(_ file: URL) {
-        app.buttons["openCSV"].click()
+        app.buttons["openCSV"].firstMatch.click()
         XCTAssertTrue(app.sheets["open-panel"].waitForExistence(timeout: 5))
         goTo(file.path)
         app.sheets["open-panel"].buttons["OKButton"].click()
@@ -48,11 +49,11 @@ import AppKit
         XCTAssertTrue(app.webViews.staticTexts["Friction, Baby"].waitForExistence(timeout: 10))
         app.typeKey("2", modifierFlags: .command)
         XCTAssertTrue(app.staticTexts["htmlSource"].waitForExistence(timeout: 5))
-        app.buttons["copyHTML"].click()
+        app.buttons["copyHTML"].firstMatch.click()
         XCTAssertTrue(app.staticTexts["Copied complete HTML document"].waitForExistence(timeout: 10))
         XCTAssertTrue(NSPasteboard.general.string(forType: .string)?.contains("scope=\"col\"") == true)
         app.buttons["Reset Unstyled"].click()
-        app.buttons["copyHTML"].click()
+        app.buttons["copyHTML"].firstMatch.click()
         let copied = NSPredicate { _, _ in !(NSPasteboard.general.string(forType: .string) ?? "<style>").contains("<style>") }
         expectation(for: copied, evaluatedWith: nil)
         waitForExpectations(timeout: 10)
@@ -62,7 +63,7 @@ import AppKit
         try launch(csv: "Name,Value\n<script>alert(1)</script>,17%\nCafé,🛥️,extra\n")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "additional columns are preserved", "additional columns are preserved")).firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(app.webViews.staticTexts["<script>alert(1)</script>"].waitForExistence(timeout: 10))
-        app.buttons["copyHTML"].click()
+        app.buttons["copyHTML"].firstMatch.click()
         XCTAssertTrue(app.staticTexts["Copied complete HTML document"].waitForExistence(timeout: 10))
         let html = NSPasteboard.general.string(forType: .string) ?? ""
         XCTAssertTrue(html.contains("&lt;script&gt;")); XCTAssertFalse(html.contains("<script>"))
@@ -73,14 +74,14 @@ import AppKit
         XCTAssertTrue(app.sheets["alert"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.sheets["alert"].staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "unterminated quoted field", "unterminated quoted field")).firstMatch.exists)
         app.sheets["alert"].buttons["OK"].click()
-        XCTAssertFalse(app.buttons["exportHTML"].isEnabled)
+        XCTAssertFalse(app.buttons["exportHTML"].firstMatch.isEnabled)
     }
     func testNativeOpenAndExportDialogs() throws {
         try launch()
         app.typeKey("o", modifierFlags: .command)
         XCTAssertTrue(app.sheets["open-panel"].waitForExistence(timeout: 5))
         app.typeKey(.escape, modifierFlags: [])
-        XCTAssertTrue(app.buttons["exportHTML"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["exportHTML"].firstMatch.waitForExistence(timeout: 5))
         app.typeKey("s", modifierFlags: .command)
         XCTAssertTrue(app.sheets["save-panel"].waitForExistence(timeout: 10))
         goTo(directory.path)
@@ -100,7 +101,7 @@ import AppKit
         let output = directory.appendingPathComponent("batch.html")
         try Data("A,B\n1,2".utf8).write(to: input)
         try Data("KEEP".utf8).write(to: output)
-        app.buttons["batchConvert"].click()
+        app.buttons["batchConvert"].firstMatch.click()
         XCTAssertTrue(app.sheets["open-panel"].waitForExistence(timeout: 5))
         goTo(input.path)
         app.sheets["open-panel"].buttons["OKButton"].click()
@@ -144,7 +145,7 @@ import AppKit
         let picker = app.descendants(matching: .any).matching(identifier: "presetPicker").firstMatch
         picker.click(); app.menuItems["Classroom"].click()
         app.buttons["loadPreset"].click()
-        app.buttons["copyHTML"].click()
+        app.buttons["copyHTML"].firstMatch.click()
         XCTAssertTrue(app.staticTexts["Copied complete HTML document"].waitForExistence(timeout: 5))
         XCTAssertFalse((NSPasteboard.general.string(forType: .string) ?? "<style>").contains("<style>"))
         app.buttons["Delete"].click()

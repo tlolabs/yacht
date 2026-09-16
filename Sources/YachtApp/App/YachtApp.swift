@@ -1,4 +1,5 @@
 import SwiftUI
+import Carbon
 
 @main
 struct YachtApp: App {
@@ -46,6 +47,19 @@ struct YachtApp: App {
 @MainActor
 final class FileOpenDelegate: NSObject, NSApplicationDelegate {
     let workspace = Workspace()
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // Older SwiftUI app delegates can consume Open Documents without forwarding
+        // the URL array. Receive that one event directly, including cold launches.
+        NSAppleEventManager.shared().setEventHandler(
+            self, andSelector: #selector(openDocuments(_:reply:)),
+            forEventClass: AEEventClass(kCoreEventClass), andEventID: AEEventID(kAEOpenDocuments))
+    }
+    @objc private func openDocuments(_ event: NSAppleEventDescriptor, reply: NSAppleEventDescriptor) {
+        guard let files = event.paramDescriptor(forKeyword: AEKeyword(keyDirectObject)),
+              files.numberOfItems > 0 else { return }
+        let urls = (1...files.numberOfItems).compactMap { files.atIndex($0)?.fileURLValue }
+        workspace.receive(urls)
+    }
     func application(_ application: NSApplication, open urls: [URL]) {
         workspace.receive(urls)
     }

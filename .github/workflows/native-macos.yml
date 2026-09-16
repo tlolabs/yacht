@@ -23,7 +23,7 @@ jobs:
             arch: arm64
             apple_arch: arm64
             triple: aarch64-apple-darwin
-          # Tahoe Intel VMs crash in iconservicesagent/Metal during AX queries.
+          # Avoid the iconservicesagent/Metal crash observed on macos-26-intel.
           - runner: macos-15-intel
             xcode: '26.3'
             arch: x64
@@ -203,5 +203,22 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           test "$RELEASE_TAG" = "v$(python3 script/sync_version.py)"
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          release = Path('release')
+          expected = {f'SHA256SUMS-{os}-{arch}' for os in ('macos', 'windows', 'linux') for arch in ('x64', 'arm64')}
+          manifests = {p.name for p in release.glob('SHA256SUMS-*') if not p.name.endswith('.asc')}
+          assert manifests == expected, (manifests, expected)
+          for name in sorted(manifests):
+              lines = (release / name).read_text(encoding='utf-8-sig').splitlines()
+              assert len(lines) == (3 if '-macos-' in name else 2), name
+              for line in lines:
+                  digest, filename = line.split(maxsplit=1)
+                  assert filename == Path(filename).name, filename
+                  with (release / filename).open('rb') as artifact:
+                      assert hashlib.file_digest(artifact, 'sha256').hexdigest() == digest, filename
+          print('All six architecture manifests and 14 package/CLI checksums passed.')
+          PY
           printf '%s\n' "Commit: $GITHUB_SHA" "Version: $RELEASE_TAG" > release/BUILD_INFO.txt
           gh release create "$RELEASE_TAG" release/* --verify-tag --generate-notes --title "YACHT $RELEASE_TAG" --notes 'Native macOS, Windows and Linux applications with the same Rust core. Default CI artifacts are unsigned (macOS ad-hoc signed); see DISTRIBUTION.md.'
