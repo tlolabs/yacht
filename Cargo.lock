@@ -321,7 +321,7 @@ dependencies = [
 
 [[package]]
 name = "yacht-cli"
-version = "2.0.2"
+version = "2.1.0"
 dependencies = [
  "ctrlc",
  "serde_json",
@@ -330,7 +330,7 @@ dependencies = [
 
 [[package]]
 name = "yacht-core"
-version = "2.0.2"
+version = "2.1.0"
 dependencies = [
  "regex",
  "serde",
@@ -341,7 +341,7 @@ dependencies = [
 
 [[package]]
 name = "yacht-ffi"
-version = "2.0.2"
+version = "2.1.0"
 dependencies = [
  "serde_json",
  "yacht-core",

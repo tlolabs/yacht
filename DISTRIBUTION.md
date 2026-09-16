@@ -19,8 +19,8 @@ cargo bench -p yacht-core --bench conversion
 python3 script/verify_compatibility.py
 ```
 
-Python differential testing uses the preserved Tk-based reference module, so a
-Python installation with tkinter is required for that test only. Core/CLI binaries
+Compatibility testing uses Python standard-library code and frozen reference
+fixtures; tkinter and the archived converter are not required. Core/CLI binaries
 do not depend on Python. Cargo.lock is committed; do not regenerate it in release CI.
 
 ## macOS
@@ -113,7 +113,7 @@ Ubuntu 24.04 x64/ARM64 baseline (glibc 2.39). GTK 4.10+, libadwaita 1.4+, WebKit
 6.0, Python 3 and PyGObject. The .deb declares these dependencies.
 
 ```sh
-sudo apt install python3-gi python3-tk gir1.2-gtk-4.0 gir1.2-adw-1 \
+sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 \
   gir1.2-webkit-6.0 xvfb dbus-x11 at-spi2-core desktop-file-utils
 cargo build --workspace --locked
 YACHT_LIBRARY="$PWD/target/debug/libyacht_ffi.so" python3 platform/linux/yacht.py
@@ -148,11 +148,12 @@ names include the commit SHA; retention is 30 days.
 
 Stable publication depends on every platform job, verifies the tag matches the
 workspace version, and publishes packages/checksums plus BUILD_INFO.txt. Development
-and nightly artifacts are downloaded from their successful Actions run; no new
-stable release/tag is created by this migration. Update Cargo.toml, run version
+and nightly artifacts are downloaded from their successful Actions run. Update
+Cargo.toml, increment the macOS build number, run version
 sync, commit the metadata and lockfiles, pass tests/manual acceptance, then tag
 `v<workspace-version>`. Credentials are optional; release notes must accurately
-state the signing state. The legacy Python workflow remains manual/v1-tag only.
+state the signing state. Legacy packaging is preserved only on the
+[archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2).
 
 Required human acceptance includes screen readers, keyboard-only navigation,
 light/dark/high contrast/scaling, native pickers, file manager behavior and the
