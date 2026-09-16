@@ -158,8 +158,11 @@ import AppKit
         app.buttons["copyHTML"].firstMatch.click()
         XCTAssertTrue(app.staticTexts["Copied complete HTML document"].waitForExistence(timeout: 5))
         XCTAssertFalse((NSPasteboard.general.string(forType: .string) ?? "<style>").contains("<style>"))
-        app.buttons["Delete"].click()
-        app.buttons.matching(identifier: "Delete").allElementsBoundByIndex.last!.click()
+        app.windows.firstMatch.buttons["Delete"].click()
+        let confirmation = app.sheets["alert"]
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
+        confirmation.buttons["Delete"].click()
+        XCTAssertTrue(confirmation.waitForNonExistence(timeout: 5))
     }
     func testSettingsAppearanceAndPreviewRows() throws {
         try launch()

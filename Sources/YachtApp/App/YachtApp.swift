@@ -1,4 +1,5 @@
 import SwiftUI
+import OSLog
 
 @main
 struct YachtApp: App {
@@ -46,7 +47,18 @@ struct YachtApp: App {
 @MainActor
 final class FileOpenDelegate: NSObject, NSApplicationDelegate {
     let workspace = Workspace()
+    private let logger = Logger(subsystem: "com.local.yacht.csvhtmltranslator", category: "FileOpen")
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        logger.info("Native file-open delegate ready")
+    }
     func application(_ application: NSApplication, open urls: [URL]) {
+        logger.info("Received \(urls.count, privacy: .public) file URLs")
         workspace.receive(urls)
+    }
+    func application(_ application: NSApplication, openFiles filenames: [String]) {
+        // Accept filename-based delivery as well as URL-based delivery.
+        logger.info("Received \(filenames.count, privacy: .public) file paths")
+        workspace.receive(filenames.map { URL(fileURLWithPath: $0) })
+        application.reply(toOpenOrPrint: .success)
     }
 }
