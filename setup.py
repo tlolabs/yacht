@@ -6,8 +6,8 @@ APP = ["yacht.py"]
 OPTIONS = {
     "argv_emulation": True,
     "plist": {
-        "CFBundleName": "Y.A.C.H.T.",
-        "CFBundleDisplayName": "Y.A.C.H.T.",
+        "CFBundleName": "YACHT",
+        "CFBundleDisplayName": "YACHT",
         "CFBundleIdentifier": "com.local.yacht.csvhtmltranslator",
         "CFBundleVersion": "1.1.0",
         "CFBundleShortVersionString": "1.1.0",
@@ -24,7 +24,7 @@ OPTIONS = {
 setup(
     name="yacht",
     version="1.1.0",
-    description="Y.A.C.H.T. - Yet Another CSV HTML Translator",
+    description="YACHT - Yet Another CSV HTML Translator",
     long_description=Path("README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
     url="https://github.com/tlolabs/yacht",

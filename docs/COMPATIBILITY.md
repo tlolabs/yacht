@@ -4,9 +4,9 @@ The baseline is `703bcd2`; captured fixtures were committed before Swift impleme
 
 ## Preserved
 
-All sixteen styling values and their defaults; built-in styled/unstyled resets; custom preset load/save/delete and compatible JSON; album sample; single and batch conversion; complete-document HTML copy; read-only source; numeric alignment intent; percent left-alignment; embedded CSS; original table/wrapper classes; GUI/CLI styling controls; default `.html` filenames; bundle name and identifier; GPLv3. The repository never contained a custom icon or automatic updater.
+All sixteen styling values and their defaults; built-in styled/unstyled resets; custom preset load/save/delete and compatible JSON; album sample; single and batch conversion; complete-document HTML copy; read-only source; numeric alignment intent; percent left-alignment; embedded CSS; original table/wrapper classes; GUI/CLI styling controls; default `.html` filenames; bundle identifier; GPLv3. The repository never contained a custom icon or automatic updater.
 
-The native CLI accepts all former style flags, multiple files and single-file `-o`/`--output`. Python remains runnable on other platforms. Legacy distribution CI is retained for manual runs and `v1.*` tags; native tags use `v2*` onward.
+The native CLI accepts all former style flags, multiple files and single-file `-o`/`--output`. The Rust CLI and native WinUI/GTK interfaces replace the platform-specific production cores; Python remains runnable as a reference. Legacy distribution CI is retained for manual runs and `v1.*` tags; native tags use `v2*` onward.
 
 ## Output changes
 
@@ -30,3 +30,25 @@ Default styled/unstyled snapshots for ordinary, quoted, Unicode, escaped and BOM
 - Large-data preview/source limits are visible. Export and clipboard output remain complete.
 
 No raw HTML, inline CSS, fragment export, custom table width or general CSV editing feature existed. Those features are intentionally outside this rewrite.
+
+## Rust migration (2.0.1 development)
+
+The HTML/application display name changes from the dotted legacy name to YACHT,
+including `<title>YACHT Table</title>`. Historical Python snapshots remain unchanged;
+regression tests normalize only this requested title change and the earlier approved
+semantic corrections. Production CSV/style/preset/export behavior is now Rust-owned.
+
+The existing bundle/signing ID, UserDefaults domain and keys, macOS Application
+Support/Y.A.C.H.T. preset directory and legacy ~/.yacht_presets.json path are retained.
+Python remains in both original/reference locations until owner acceptance. The
+root Python copy has the requested display-name cleanup; legacy-python is frozen.
+
+Preview also enforces a hard HTML byte cap after its existing estimate, preventing
+unbounded preview markup from extremely large CSS class/font strings. Full copy and
+export remain complete. Unsafe CSS values ending in a newline are rejected by an
+absolute-end grammar; this closes the previous regex end-anchor ambiguity.
+
+The installed CLI remains `yacht` with the same flags and ordering. Developer-only
+`swift run yacht` becomes `cargo run -p yacht-cli --`. Windows GUI is YachtApp.exe
+because YACHT.exe would collide with yacht.exe on case-insensitive file systems.
+Portable presets keep the same object-of-styles JSON schema across all frontends.

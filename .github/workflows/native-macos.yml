@@ -1,31 +1,40 @@
-name: Native macOS
+name: Native cross-platform
 on:
   push:
     branches: [main]
     tags: ['v*', '!v1.*']
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '17 9 * * *'
 permissions:
   contents: read
 concurrency:
   group: native-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 jobs:
-  verify:
+  macos:
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 35
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
-      - name: Toolchain
-        run: swift --version && xcodebuild -version
-      - name: Verify generated Xcode project
-        run: python3 script/generate_project.py && git diff --exit-code -- Yacht.xcodeproj
-      - name: Core tests
-        run: swift test
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.98.1'
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+          components: rustfmt,clippy
+      - name: Rust quality gates
+        run: cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings && cargo test --workspace --locked
+      - name: Verify generated files
+        run: python3 script/sync_version.py && python3 script/generate_project.py && git diff --exit-code -- Yacht.xcodeproj Support/Info.plist platform/windows/Version.props platform/windows/YACHT/app.manifest
+      - name: Swift binding tests
+        run: ./script/build_rust_macos.sh && swift test
       - name: CLI and Python regression tests
         run: python3 script/verify_compatibility.py
+      - name: Native ctypes binding tests
+        run: cargo build --workspace --locked && python3 script/test_native_binding.py target/debug/libyacht_ffi.dylib
       - name: macOS UI tests
         run: xcodebuild -project Yacht.xcodeproj -scheme Yacht -derivedDataPath build -destination 'platform=macOS,arch=arm64' -resultBundlePath build/UITests.xcresult test -quiet
       - name: Package universal development build
@@ -33,33 +42,137 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: UI-test-results
+          name: macOS-UI-test-results
           path: build/UITests.xcresult
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
-          name: Y.A.C.H.T.-macos-universal
+          name: YACHT-macos-universal-${{ github.sha }}
           path: |
-            release/*.dmg
-            release/*.zip
+            release/YACHT-*.dmg
+            release/YACHT-*.zip
             release/yacht
-            release/SHA256SUMS
+            release/SHA256SUMS-macos
+          if-no-files-found: error
+          retention-days: 30
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            arch: x64
+            triple: x86_64-pc-windows-msvc
+            platform: x64
+          - runner: windows-11-arm
+            arch: arm64
+            triple: aarch64-pc-windows-msvc
+            platform: ARM64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.98.1'
+          targets: ${{ matrix.triple }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rust and CLI compatibility
+        shell: bash
+        run: cargo test --workspace --locked && python script/verify_compatibility.py
+      - name: Build library and C# integration tests
+        shell: pwsh
+        run: |
+          cargo build --workspace --locked --release --target ${{ matrix.triple }}
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dotnet build platform/windows/Tests/NativeIntegration.csproj -c Release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Copy-Item target/${{ matrix.triple }}/release/yacht_ffi.dll platform/windows/Tests/bin/Release/net8.0/
+          dotnet platform/windows/Tests/bin/Release/net8.0/NativeIntegration.dll
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python script/test_native_binding.py target/${{ matrix.triple }}/release/yacht_ffi.dll
+      - name: Ensure Inno Setup
+        shell: pwsh
+        run: |
+          if (!(Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup --no-progress -y; if ($LASTEXITCODE) { exit $LASTEXITCODE } }
+      - name: Package native Windows application
+        shell: pwsh
+        run: ./script/package_windows.ps1 -Architecture ${{ matrix.arch }}
+      - name: WinUI runtime integration
+        shell: pwsh
+        run: ./platform/windows/test_ui.ps1 -Executable "$PWD/target/windows-${{ matrix.arch }}/YachtApp.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YACHT-windows-${{ matrix.arch }}-${{ github.sha }}
+          path: |
+            release/YACHT-*-windows-*
+            release/SHA256SUMS-windows-*
+          if-no-files-found: error
+          retention-days: 30
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.98.1'
+      - name: Install native runtime and UI test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi python3-tk gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 xvfb dbus-x11 desktop-file-utils
+      - name: Rust, CLI and native binding tests
+        run: |
+          cargo test --workspace --locked
+          python3 script/verify_compatibility.py
+          cargo build --workspace --locked
+          python3 script/test_native_binding.py target/debug/libyacht_ffi.so
+      - name: GTK runtime integration
+        env:
+          YACHT_LIBRARY: ${{ github.workspace }}/target/debug/libyacht_ffi.so
+        run: dbus-run-session -- xvfb-run -a python3 platform/linux/test_ui.py
+      - name: Package and validate Linux artifacts
+        run: |
+          desktop-file-validate platform/linux/data/*.desktop
+          ./script/package_linux.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YACHT-linux-${{ matrix.arch }}-${{ github.sha }}
+          path: |
+            release/YACHT-*-linux-*
+            release/SHA256SUMS-linux-*
           if-no-files-found: error
           retention-days: 30
   release:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: verify
-    runs-on: ubuntu-latest
+    needs: [macos,windows,linux]
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: Y.A.C.H.T.-macos-universal
+          pattern: YACHT-*-${{ github.sha }}
           path: release
-      - name: Publish tagged release
+          merge-multiple: true
+      - name: Publish one tested commit across every platform
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: gh release create "$RELEASE_TAG" release/* --verify-tag --generate-notes --title "Y.A.C.H.T. $RELEASE_TAG" --notes 'Native macOS build for Apple Silicon and Intel, macOS 14+. Development signatures only; this build is not notarized.'
+        run: |
+          test "$RELEASE_TAG" = "v$(python3 script/sync_version.py)"
+          printf '%s\n' "Commit: $GITHUB_SHA" "Version: $RELEASE_TAG" > release/BUILD_INFO.txt
+          gh release create "$RELEASE_TAG" release/* --verify-tag --generate-notes --title "YACHT $RELEASE_TAG" --notes 'Native macOS, Windows and Linux applications with the same Rust core. Default CI artifacts are unsigned (macOS ad-hoc signed); see DISTRIBUTION.md.'

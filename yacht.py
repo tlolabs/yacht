@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Y.A.C.H.T. - Yet Another CSV HTML Translator."""
+"""YACHT - Yet Another CSV HTML Translator."""
 
 from __future__ import annotations
 
@@ -158,7 +158,7 @@ def generate_html_chunks(header: list[str], rows: Iterable[list[str]], options: 
     yield '<html lang="en">\n'
     yield "<head>\n"
     yield '  <meta charset="utf-8">\n'
-    yield "  <title>Y.A.C.H.T. Table</title>\n"
+    yield "  <title>YACHT Table</title>\n"
     
     if css_lines:
         yield "  <style>\n"
@@ -230,7 +230,7 @@ def parse_bool(value: str) -> bool:
 
 def cli_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Y.A.C.H.T. - Yet Another CSV HTML Translator (CSV to styled HTML tables)"
+        description="YACHT - Yet Another CSV HTML Translator (CSV to styled HTML tables)"
     )
     parser.add_argument("csv_files", nargs="*", help="Input CSV file path(s)")
     parser.add_argument("-o", "--output", help="Output HTML path (valid only with one input CSV)")
@@ -281,7 +281,7 @@ def options_from_args(args: argparse.Namespace) -> StyleOptions:
 class CsvToHtmlApp:
     def __init__(self, root: tk.Tk, initial_csv: str | None = None) -> None:
         self.root = root
-        self.root.title("Y.A.C.H.T. - Yet Another CSV HTML Translator")
+        self.root.title("YACHT - Yet Another CSV HTML Translator")
         self.root.geometry("1180x760")
 
         startup_csv = initial_csv

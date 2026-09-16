@@ -13,3 +13,7 @@ release/
 DerivedData/
 *.xcresult/
 xcuserdata/
+
+/target/
+platform/windows/**/bin/
+platform/windows/**/obj/

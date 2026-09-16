@@ -8,7 +8,7 @@
 		"36992FD9EFCC35941EC8F506" = {
 			"isa" = "PBXFileReference";
 			"explicitFileType" = "wrapper.application";
-			"path" = "Y.A.C.H.T..app";
+			"path" = "YACHT.app";
 			"sourceTree" = "BUILT_PRODUCTS_DIR";
 		};
 		"1BDCCF10062BC847C2914E5C" = {
@@ -206,6 +206,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "BA3BF7DAC3040388A0E99B12";
 		};
+		"04427C5FDCA3246C73B8DFDD" = {
+			"isa" = "PBXShellScriptBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = ();
+			"inputPaths" = ();
+			"outputPaths" = ();
+			"shellPath" = "/bin/bash";
+			"shellScript" = "cd \"$SRCROOT\" && ./script/build_rust_macos.sh";
+			"alwaysOutOfDate" = "1";
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
 		"8ECC8B5D05B79F879ACDF1A2" = {
 			"isa" = "PBXResourcesBuildPhase";
 			"buildActionMask" = "2147483647";
@@ -236,6 +247,7 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"ENABLE_HARDENED_RUNTIME" = "YES";
 				"SWIFT_STRICT_CONCURRENCY" = "complete";
+				"ENABLE_USER_SCRIPT_SANDBOXING" = "NO";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
 				"DEBUG_INFORMATION_FORMAT" = "dwarf";
@@ -256,6 +268,7 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"ENABLE_HARDENED_RUNTIME" = "YES";
 				"SWIFT_STRICT_CONCURRENCY" = "complete";
+				"ENABLE_USER_SCRIPT_SANDBOXING" = "NO";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
 				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
@@ -271,7 +284,7 @@
 			"isa" = "XCBuildConfiguration";
 			"name" = "Debug";
 			"buildSettings" = {
-				"PRODUCT_NAME" = "Y.A.C.H.T.";
+				"PRODUCT_NAME" = "YACHT";
 				"EXECUTABLE_NAME" = "YachtApp";
 				"PRODUCT_MODULE_NAME" = "YachtNativeApp";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.local.yacht.csvhtmltranslator";
@@ -287,7 +300,7 @@
 			"isa" = "XCBuildConfiguration";
 			"name" = "Release";
 			"buildSettings" = {
-				"PRODUCT_NAME" = "Y.A.C.H.T.";
+				"PRODUCT_NAME" = "YACHT";
 				"EXECUTABLE_NAME" = "YachtApp";
 				"PRODUCT_MODULE_NAME" = "YachtNativeApp";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.local.yacht.csvhtmltranslator";
@@ -354,11 +367,11 @@
 		"7D1043473D55BFA90E8530D3" = {
 			"isa" = "PBXNativeTarget";
 			"buildConfigurationList" = "388C1FCB1C8BF19EBF062851";
-			"buildPhases" = ("949D493B91791558E87BC5D7", "BD92572B49AC16A86614498D", "8ECC8B5D05B79F879ACDF1A2");
+			"buildPhases" = ("04427C5FDCA3246C73B8DFDD", "949D493B91791558E87BC5D7", "BD92572B49AC16A86614498D", "8ECC8B5D05B79F879ACDF1A2");
 			"buildRules" = ();
 			"dependencies" = ();
 			"name" = "Yacht";
-			"productName" = "Y.A.C.H.T.";
+			"productName" = "YACHT";
 			"productReference" = "36992FD9EFCC35941EC8F506";
 			"productType" = "com.apple.product-type.application";
 			"packageProductDependencies" = ("8D6A224FA1D1DD751157EB0C");

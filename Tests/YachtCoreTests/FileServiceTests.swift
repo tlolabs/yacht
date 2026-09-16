@@ -60,3 +60,27 @@ final class FileServiceTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), "KEEP")
     }
 }
+
+final class RustSettingsTests: XCTestCase {
+    func testSharedBehaviorDefaultsAndValidation() throws {
+        var settings = BehaviorSettings.defaults
+        XCTAssertTrue(settings.rememberStyle)
+        XCTAssertEqual(settings.previewRows, 200)
+        settings.lastStyle = .unstyled
+        XCTAssertEqual(try settings.initialStyle(), .unstyled)
+        settings.rememberStyle = false
+        XCTAssertEqual(try settings.initialStyle(), StyleOptions())
+        settings.previewRows = 0
+        XCTAssertThrowsError(try settings.initialStyle())
+    }
+    func testSharedBatchInfersTSVAndReportsCollision() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let input = directory.appendingPathComponent("table.tsv")
+        try Data("A\tB\n1\t2".utf8).write(to: input)
+        let output = try FileService.batchItem(input, style: .unstyled, delimiter: .comma, overwrite: false)
+        XCTAssertTrue(try String(contentsOf: output, encoding: .utf8).contains("Field #2"))
+        XCTAssertThrowsError(try FileService.batchItem(input, style: .unstyled, delimiter: .comma, overwrite: false))
+    }
+}

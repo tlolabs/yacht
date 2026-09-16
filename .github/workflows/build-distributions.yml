@@ -70,35 +70,35 @@ jobs:
         run: |
           python setup.py py2app
           mkdir -p release/dmg-root
-          cp -R "dist/Y.A.C.H.T..app" release/dmg-root/
+          cp -R "dist/YACHT.app" release/dmg-root/
           hdiutil create \
-            -volname "Y.A.C.H.T." \
+            -volname "YACHT" \
             -srcfolder release/dmg-root \
             -ov \
             -format UDZO \
-            "release/Y.A.C.H.T.-${{ matrix.label }}.dmg"
+            "release/YACHT-${{ matrix.label }}.dmg"
 
       - name: Build Windows app
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          pyinstaller --name "Y.A.C.H.T" --windowed --onefile --add-data "BTE.csv;." yacht.py
+          pyinstaller --name "YACHT" --windowed --onefile --add-data "BTE.csv;." yacht.py
           New-Item -ItemType Directory -Force -Path release
-          Compress-Archive -Path "dist/Y.A.C.H.T.exe" -DestinationPath "release/Y.A.C.H.T-${{ matrix.label }}.zip" -Force
+          Compress-Archive -Path "dist/YACHTexe" -DestinationPath "release/YACHT-${{ matrix.label }}.zip" -Force
 
       - name: Build Linux app
         if: runner.os == 'Linux'
         run: |
-          pyinstaller --name "Y.A.C.H.T" --onefile --add-data "BTE.csv:." yacht.py
+          pyinstaller --name "YACHT" --onefile --add-data "BTE.csv:." yacht.py
           mkdir -p release/linux
-          cp "dist/Y.A.C.H.T" release/linux/
+          cp "dist/YACHT" release/linux/
           cp LICENSE README.md release/linux/
-          tar -czf "release/Y.A.C.H.T-${{ matrix.label }}.tar.gz" -C release/linux .
+          tar -czf "release/YACHT-${{ matrix.label }}.tar.gz" -C release/linux .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Y.A.C.H.T-${{ matrix.label }}
+          name: YACHT-${{ matrix.label }}
           path: release/*
           if-no-files-found: error
 

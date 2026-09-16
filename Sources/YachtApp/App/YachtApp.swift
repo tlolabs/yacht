@@ -3,10 +3,12 @@ import SwiftUI
 @main
 struct YachtApp: App {
     @NSApplicationDelegateAdaptor(FileOpenDelegate.self) private var fileOpenDelegate
+    private var colorScheme: ColorScheme? { workspace.preferences.appearance == "Dark" ? .dark : workspace.preferences.appearance == "Light" ? .light : nil }
     private var workspace: Workspace { fileOpenDelegate.workspace }
     var body: some Scene {
-        WindowGroup("Y.A.C.H.T.", id: "main") {
+        WindowGroup("YACHT", id: "main") {
             ContentView(workspace: workspace)
+                .preferredColorScheme(colorScheme)
                 .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         }
         .handlesExternalEvents(matching: ["*"])
@@ -33,10 +35,10 @@ struct YachtApp: App {
                 Button("HTML Source") { workspace.section = "source" }.keyboardShortcut("2")
             }
             CommandGroup(replacing: .help) {
-                Link("Y.A.C.H.T. User Guide", destination: URL(string: "https://github.com/tlolabs/yacht#using-yacht")!)
+                Link("YACHT User Guide", destination: URL(string: "https://github.com/tlolabs/yacht#using-yacht")!)
             }
         }
-        Settings { SettingsView(preferences: workspace.preferences) }
+        Settings { SettingsView(preferences: workspace.preferences).preferredColorScheme(colorScheme) }
     }
 }
 

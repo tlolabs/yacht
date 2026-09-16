@@ -1,0 +1,15 @@
+[package]
+name = "yacht-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+regex.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
+[[bench]]
+name = "conversion"
+harness = false

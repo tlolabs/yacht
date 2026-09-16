@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+<id>com.local.yacht.csvhtmltranslator</id>
+<name>YACHT</name><summary>Convert CSV and TSV into styled HTML tables</summary>
+<metadata_license>CC0-1.0</metadata_license><project_license>GPL-3.0-only</project_license>
+<description><p>Preview, style, copy and export accessible HTML tables using a shared Rust core and native GTK controls.</p></description>
+<launchable type="desktop-id">com.local.yacht.csvhtmltranslator.desktop</launchable>
+<url type="homepage">https://github.com/tlolabs/yacht</url>
+<content_rating type="oars-1.1"/>
+</component>
