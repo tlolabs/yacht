@@ -111,7 +111,17 @@ import AppKit
         XCTAssertEqual(try String(contentsOf: output, encoding: .utf8), "KEEP")
         app.buttons["Done"].click()
     }
-    func testFinderOpenRetainsEverySelectedFile() async throws {
+    func finderOpen(_ urls: [URL], withApplicationAt bundle: URL) throws {
+        // Send the Launch Services request from its own process. In older XCTest,
+        // synchronous UI queries in an async MainActor test can stall NSWorkspace delivery.
+        let request = Process()
+        request.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        request.arguments = ["-a", bundle.path] + urls.map(\.path)
+        try request.run()
+        request.waitUntilExit()
+        XCTAssertEqual(request.terminationStatus, 0)
+    }
+    func testFinderOpenRetainsEverySelectedFile() throws {
         try launch()
         let first = directory.appendingPathComponent("first.csv")
         let second = directory.appendingPathComponent("Café.csv")
@@ -119,7 +129,7 @@ import AppKit
         try Data("Name,Value\nSecond,2\n".utf8).write(to: second)
         let bundle = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("YACHT.app")
         XCTAssertTrue(FileManager.default.fileExists(atPath: bundle.path))
-        _ = try await NSWorkspace.shared.open([first, second], withApplicationAt: bundle, configuration: .init())
+        try finderOpen([first, second], withApplicationAt: bundle)
         app.activate()
         XCTAssertTrue(app.buttons["Convert"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "value == %@ OR label == %@", first.path, first.path)).firstMatch.exists)
@@ -129,7 +139,7 @@ import AppKit
         XCTAssertTrue(try String(contentsOf: first.deletingPathExtension().appendingPathExtension("html"), encoding: .utf8).contains("First</td>"))
         XCTAssertTrue(try String(contentsOf: second.deletingPathExtension().appendingPathExtension("html"), encoding: .utf8).contains("Second</td>"))
         app.buttons["Done"].click()
-        _ = try await NSWorkspace.shared.open([second], withApplicationAt: bundle, configuration: .init())
+        try finderOpen([second], withApplicationAt: bundle)
         app.activate()
         XCTAssertTrue(app.webViews.staticTexts["Second"].waitForExistence(timeout: 10))
         XCTAssertEqual(app.windows.count, 1)
