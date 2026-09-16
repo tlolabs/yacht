@@ -1,19 +1,24 @@
 # YACHT — Yet Another CSV HTML Translator
 
+<img src="assets/icons/YACHT.png" alt="YACHT sailboat and table icon" width="112">
+
 Convert CSV and TSV files into styled, accessible HTML tables. One Rust core powers
 the shared command-line tool and native SwiftUI, WinUI 3 and GTK/libadwaita interfaces.
 
 The Rust/native rewrite replaces the former Tk application. Legacy implementations,
 packaging and migration records are preserved on the [2.0.2 archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2).
-Current regression fixtures retain compatibility coverage. See [feature parity](docs/FEATURE-PARITY.md)
+Current Rust and native integration tests cover conversion behavior. See [feature parity](docs/FEATURE-PARITY.md)
 and [verification evidence](docs/VERIFICATION.md) for test scope.
 
 ## Installation and first launch
 
+There are **six platform-specific builds**. macOS Intel and macOS ARM64 are separate
+downloads; neither Mac package is a universal binary.
+
 | Platform | Baseline | Distribution |
 |---|---|---|
-| macOS Apple Silicon (ARM64) | macOS 14+ | YACHT-macos-arm64 DMG or ZIP |
-| macOS Intel (x64) | macOS 14+ | YACHT-macos-x64 DMG or ZIP |
+| macOS Apple Silicon (ARM64) | macOS 14+ | [ARM64 DMG](https://github.com/tlolabs/yacht/releases/latest/download/YACHT-macos-arm64.dmg) or [ZIP](https://github.com/tlolabs/yacht/releases/latest/download/YACHT-macos-arm64.zip) |
+| macOS Intel (x64) | macOS 14+ | [Intel x64 DMG](https://github.com/tlolabs/yacht/releases/latest/download/YACHT-macos-x64.dmg) or [ZIP](https://github.com/tlolabs/yacht/releases/latest/download/YACHT-macos-x64.zip) |
 | Windows x64 | Windows 10 1809+ | `windows-x64` per-user installer or portable ZIP |
 | Windows ARM64 | Windows 10 1809+ | `windows-arm64` per-user installer or portable ZIP |
 | Linux x64 | Ubuntu 24.04 baseline; GTK 4.10+, libadwaita 1.4+ | `linux-x64` `.deb` or tar archive |
@@ -150,8 +155,12 @@ feature. Linux tar archives require the listed native packages.
 
 On a Mac with Xcode and Rust, `./script/build_and_run.sh` builds and launches
 `dist/YACHT.app`; the Codex Run action uses the same entrypoint. All Rust business
-logic is under `crates/`; SwiftUI stays under `Sources/YachtApp`, and other native
-frontends are under `platform/`. Frozen compatibility fixtures remain under `Tests/`; the GTK Python frontend is part of the current native rewrite.
+logic is under `crates/`. All native frontends are grouped under `platform/macos`,
+`platform/windows`, and `platform/linux`; macOS binding/UI tests live with that frontend.
+Shared artwork is under `assets/icons`. Root `Package.swift` and `Yacht.xcodeproj`
+remain build entry points. The GTK Python frontend is part of the current native
+rewrite. Archived Python application data and generated HTML fixtures are absent
+from the active tree.
 
 ## Context and license
 

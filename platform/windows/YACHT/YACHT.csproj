@@ -6,6 +6,7 @@
     <AssemblyName>YachtApp</AssemblyName>
     <RootNamespace>YACHT</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\..\assets\icons\YACHT.ico</ApplicationIcon>
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' and '$(Platform)' == 'ARM64'">win-arm64</RuntimeIdentifier>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
@@ -21,6 +22,7 @@
   <Import Project="..\Version.props" />
   <ItemGroup><PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" /></ItemGroup>
   <ItemGroup><Content Include="..\..\..\target\$(RustTarget)\release\yacht_ffi.dll" Link="yacht_ffi.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="..\..\..\assets\icons\YACHT.ico" Link="YACHT.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
   <!-- Unpackaged MRT Core builds generate the PRI but omit it from publish.
        Track https://github.com/microsoft/WindowsAppSDK/issues/6720. -->
   <Target Name="PublishYachtResources" BeforeTargets="ComputeResolvedFilesToPublishList"

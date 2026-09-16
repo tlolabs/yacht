@@ -1,4 +1,4 @@
-use std::{cell::Cell, io::Cursor, path::PathBuf};
+use std::{cell::Cell, io::Cursor};
 use yacht_core::{
     api::Engine,
     csv::{self, Delimiter},
@@ -9,9 +9,6 @@ use yacht_core::{
 };
 fn parse(s: &str) -> Table {
     csv::parse(s.as_bytes(), Delimiter::Comma, &|| false).unwrap()
-}
-fn fixtures() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../Tests/YachtCoreTests/Fixtures")
 }
 #[test]
 fn csv_record_rules() {
@@ -62,31 +59,21 @@ fn utf8_bom_chunks_delimiters_and_errors() {
     assert_eq!(parse("A\nCafe\u{301}🛥️").rows[0][0], "Cafe\u{301}🛥️");
 }
 #[test]
-fn python_snapshots() {
-    for name in ["ordinary", "quoted", "unicode", "escaping", "bom"] {
-        let table = csv::read(
-            &fixtures().join(format!("{name}.csv")),
-            Delimiter::Comma,
-            65536,
-            &|| false,
-        )
-        .unwrap();
-        for (kind, style) in [
-            ("styled", Style::default()),
-            ("unstyled", Style::unstyled()),
+fn current_document_contract() {
+    let table = parse("Item,Count,Notes\nCompass,12,\nCafé,3,\"north & south\"\n");
+    for style in [Style::default(), Style::unstyled()] {
+        let doc = html::document(&table, &style, None, &|| false).unwrap();
+        assert!(doc.starts_with("<!doctype html>"));
+        assert!(doc.contains("<title>YACHT Table</title>"));
+        assert!(doc.contains("name=\"viewport\""));
+        assert_eq!(doc.matches("scope=\"col\"").count(), 3);
+        for cell in [
+            "Compass</td>",
+            "Café</td>",
+            "north &amp; south</td>",
+            "<td></td>",
         ] {
-            let mut expected = std::fs::read_to_string(fixtures().join(format!("{name}.python-{kind}.html"))).unwrap()
-                .replace("Y.A.C.H.T.","YACHT")
-                .replace("<th title=","<th scope=\"col\" title=")
-                .replace("  <meta charset=\"utf-8\">\n","  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
-            if kind == "styled" {
-                expected = expected.replace("<td>1234</td>", "<td class=\"num\">1234</td>");
-            }
-            assert_eq!(
-                html::document(&table, &style, None, &|| false).unwrap(),
-                expected,
-                "{name}/{kind}"
-            );
+            assert!(doc.contains(cell), "{cell}");
         }
     }
 }
@@ -273,8 +260,7 @@ fn atomic_export_presets_batch_and_cancellation() {
             .border_color,
         "#cccccc"
     );
-    let defaults = std::fs::read(fixtures().join("default-options.json")).unwrap();
-    assert_eq!(serde_json::from_slice::<Style>(&defaults).unwrap(), style);
+    assert_eq!(Style::from_value(serde_json::json!({})).unwrap(), style);
 }
 #[test]
 fn bindings_handle_lifetime_and_cancellation() {

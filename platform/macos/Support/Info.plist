@@ -9,6 +9,7 @@
 <key>CFBundleShortVersionString</key><string>2.1.0</string>
 <key>CFBundleVersion</key><string>5</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
+<key>CFBundleIconFile</key><string>YACHT.icns</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
 <key>NSHighResolutionCapable</key><true/>
 <key>NSHumanReadableCopyright</key><string>YACHT contributors. GNU GPL v3.</string>

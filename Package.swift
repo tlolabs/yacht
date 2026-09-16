@@ -7,8 +7,8 @@ let package = Package(
     products: [.library(name: "YachtCore", targets: ["YachtCore"]), .executable(name: "YachtApp", targets: ["YachtApp"])],
     targets: [
         .systemLibrary(name: "CYacht", path: "bindings/c"),
-        .target(name: "YachtCore", dependencies: ["CYacht"], linkerSettings: [.unsafeFlags(["-L", root + "/target/swift"]), .linkedLibrary("yacht_ffi"), .linkedLibrary("iconv")]),
-        .executableTarget(name: "YachtApp", dependencies: ["YachtCore"]),
-        .testTarget(name: "YachtCoreTests", dependencies: ["YachtCore"], resources: [.copy("Fixtures")])
+        .target(name: "YachtCore", dependencies: ["CYacht"], path: "platform/macos/Sources/YachtCore", linkerSettings: [.unsafeFlags(["-L", root + "/target/swift"]), .linkedLibrary("yacht_ffi"), .linkedLibrary("iconv")]),
+        .executableTarget(name: "YachtApp", dependencies: ["YachtCore"], path: "platform/macos/Sources/YachtApp"),
+        .testTarget(name: "YachtCoreTests", dependencies: ["YachtCore"], path: "platform/macos/Tests/YachtCoreTests")
     ]
 )

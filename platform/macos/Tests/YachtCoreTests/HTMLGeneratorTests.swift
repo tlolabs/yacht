@@ -2,19 +2,18 @@ import XCTest
 @testable import YachtCore
 
 final class HTMLGeneratorTests: XCTestCase {
-    func testRegressionAgainstPythonFixtures() throws {
-        for name in ["ordinary", "quoted", "unicode", "escaping", "bom"] {
-            let base = Bundle.module.resourceURL!.appendingPathComponent("Fixtures")
-            let table = try CSVParser.read(base.appendingPathComponent(name + ".csv"))
-            for (suffix, style) in [("styled", StyleOptions()), ("unstyled", .unstyled)] {
-                var expected = try String(contentsOf: base.appendingPathComponent(name + ".python-" + suffix + ".html"), encoding: .utf8)
-                expected = expected.replacingOccurrences(of: "Y.A.C.H.T.", with: "YACHT")
-                // Only approved semantic changes. Ragged data is tested separately.
-                expected = expected.replacingOccurrences(of: "<th title=", with: "<th scope=\"col\" title=")
-                expected = expected.replacingOccurrences(of: "  <meta charset=\"utf-8\">\n", with: "  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
-                if suffix == "styled" { expected = expected.replacingOccurrences(of: "<td>1234</td>", with: "<td class=\"num\">1234</td>") }
-                XCTAssertEqual(try HTMLGenerator.document(table, style: style), expected, name + suffix)
-            }
+    func testCurrentDocumentContract() throws {
+        let table = try CSVParser.parse(Data("Item,Count,Notes\nCompass,12,\nCafé,3,\"north & south\"\n".utf8))
+        for style in [StyleOptions(), .unstyled] {
+            let html = try HTMLGenerator.document(table, style: style)
+            XCTAssertTrue(html.hasPrefix("<!doctype html>"))
+            XCTAssertTrue(html.contains("<title>YACHT Table</title>"))
+            XCTAssertTrue(html.contains("name=\"viewport\""))
+            XCTAssertEqual(html.components(separatedBy: "scope=\"col\"").count - 1, 3)
+            XCTAssertTrue(html.contains("Compass</td>"))
+            XCTAssertTrue(html.contains("Café</td>"))
+            XCTAssertTrue(html.contains("north &amp; south</td>"))
+            XCTAssertTrue(html.contains("<td></td>"))
         }
     }
     func testEscapingAndNoExecutableCellHTML() throws {

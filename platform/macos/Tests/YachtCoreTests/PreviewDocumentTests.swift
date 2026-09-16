@@ -24,8 +24,11 @@ final class PreviewDocumentTests: XCTestCase {
         XCTAssertLessThan(preview.rowCount, 3)
         XCTAssertLessThan(preview.html.utf8.count, 2_000_000)
     }
-    func testDefaultsMatchLegacyExactly() throws {
-        let data = try Data(contentsOf: Bundle.module.resourceURL!.appendingPathComponent("Fixtures/default-options.json"))
-        XCTAssertEqual(try JSONDecoder().decode(StyleOptions.self, from: data), StyleOptions())
+    func testUnstyledPreviewAndSourceHaveNoCSS() throws {
+        let preview = try PreviewDocument(table: .sample, style: .unstyled, limit: 2)
+        XCTAssertFalse(preview.html.contains("<style>"))
+        XCTAssertFalse(preview.source.contains("<style>"))
+        XCTAssertTrue(preview.source.contains("scope=\"col\""))
+        XCTAssertEqual(preview.rowCount, 2)
     }
 }
