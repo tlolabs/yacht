@@ -44,23 +44,47 @@ ad-hoc packaging (`build/RustMigrationAcceptedUITests.xcresult`). Tests cover sa
 malformed input, semantic escaping, preset save/load/delete, native Open/Save,
 batch replacement protection, Finder multiple files, appearance and preview settings.
 
-## Not claimed locally
+## Native CI follow-up
 
-Windows WinUI/XAML/runtime/installer and Linux GTK runtime/deb/tar verification
-require their native hosts. Their implementation and mandatory CI gates are present,
-and their first native CI run is in progress on the published refactor branch. A macOS attempt to
-run the Windows XAML compiler failed loading its Windows tooling dependencies;
-C# compile/binding checks are not represented as a Windows application build.
+**All five required platform jobs passed** for source commit `b3505be` on
+September 16, 2026: https://github.com/tlolabs/yacht/actions/runs/35068094113.
+macOS universal, Windows x64/ARM64 and Linux x64/ARM64 artifacts were uploaded
+only after their required checks passed. The tagged release job was skipped.
 
-Intel GUI runtime execution, Windows/Linux ARM64 runtime execution, full screen-reader,
-high-contrast/display-scaling and owner dataset acceptance remain pending. No code
-signing credentials, notarization submission, stable tag or public release
-were performed. Following explicit owner authorization, commit `3ba4988` was pushed
-to `codex/rust-native-core` and native CI was dispatched:
-https://github.com/tlolabs/yacht/actions/runs/35065304188. Results will be recorded
-after the platform jobs complete. A focused scan of
-changed/new text files found no private-key or common access-token patterns; this
-is not a comprehensive security audit. macOS packaging now defaults to an explicit local-only unsigned
+Owner-authorized branch: `codex/rust-native-core`. Native CI has now executed on
+macOS 26 (Apple Silicon), Ubuntu 24.04 x64/ARM64 and Windows Server 2025 x64 /
+Windows 11 ARM64.
+
+- macOS: Rust quality gates, generated-file consistency, all 25 Swift tests,
+  differential CLI and ctypes tests, all eight UI tests and universal DMG/ZIP
+  packaging passed in https://github.com/tlolabs/yacht/actions/runs/35066573379.
+- Linux: Rust tests, all CLI differential cases, ctypes bindings, real GTK runtime
+  workflows and DEB/tar packaging passed on both architectures. The GTK suite drives
+  startup, all sixteen controls, file load, preview/source, styles, preset save,
+  clipboard, export, settings and batch. Example evidence:
+  https://github.com/tlolabs/yacht/actions/runs/35065733023.
+- Windows: Rust, CLI differential, C# bindings and ctypes bindings passed natively
+  on both architectures. WinUI startup, file open, preview/source, styles, presets,
+  clipboard, export, settings and batch passed, followed by successful artifact
+  uploads in https://github.com/tlolabs/yacht/actions/runs/35068094113 (`b3505be`).
+  Both architectures produced installers and ZIPs. CI identified a Windows App SDK
+  bug omitting the generated application PRI from publish output; an explicit
+  publish target and missing-resource gate fix that omission. It also identified
+  delayed native control events cancelling style previews; unchanged values now
+  avoid redundant renders.
+- CI exposed Git checkout newline conversion of reference fixtures and a test read
+  using Windows' default encoding. Fixture bytes are now preserved by attributes,
+  and generated HTML is read explicitly as UTF-8.
+- Windows restore now selects Windows runtime identifiers explicitly, preventing
+  the build host from contaminating the NuGet lockfile.
+- Linux CI starts D-Bus inside its virtual display and grants the bubblewrap helper
+  user-namespace access through an AppArmor profile. WebKit sandboxing stays enabled.
+
+Intel Mac UI execution, full screen-reader, high-contrast/display-scaling and owner
+real-dataset acceptance remain pending. No signing credentials, notarization
+submission, stable tag or public release were used. A focused scan of changed/new
+text files found no private-key or common access-token patterns; this is not a
+comprehensive security audit. macOS packaging defaults to explicit local unsigned
 mode; signing and notarization require separate command-line modes.
 
 ## Performance sample
