@@ -139,7 +139,7 @@ public sealed partial class MainWindow : Window
         var dialog = new ContentDialog { XamlRoot = Root.XamlRoot, Title = title, Content = content, PrimaryButtonText = primary, CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.Close }; return await dialog.ShowAsync();
     }
     private async Task Error(string message) { status.Text = message; await Dialog("YACHT", new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap }); }
-    private void Edit(string key, JsonNode value) { if (changingStyle) return; style[key] = value; _ = Render(); }
+    private void Edit(string key, JsonNode value) { if (changingStyle || JsonNode.DeepEquals(style[key], value)) return; style[key] = value; _ = Render(); }
     private async Task SetStyle(JsonObject value)
     {
         changingStyle = true; style = value;
@@ -234,10 +234,11 @@ public sealed partial class MainWindow : Window
             try
             {
                 Directory.CreateDirectory(directory);
+                if (webReady is not null) await webReady;
                 var input = Path.Combine(directory, "Café.csv"); File.WriteAllText(input, "A,B\n<script>,🛥\n1,2,3\n");
                 await Load(input); if (table is null || table.Metadata["row_count"]!.GetValue<int>() != 2) throw new Exception("native open");
                 await SetStyle(Core.Style("unstyled"));
-                if (!source.Text.Contains("&lt;script&gt;") || source.Text.Contains("<style>")) throw new Exception("native preview/source");
+                if (!source.Text.Contains("&lt;script&gt;") || source.Text.Contains("<style>")) throw new Exception($"native preview/source: {status.Text}; source length={source.Text.Length}");
                 presetName.Text = "CI-" + Guid.NewGuid(); await SavePreset(); await LoadPreset();
                 await Copy(); if (!(await Clipboard.GetContent().GetTextAsync()).Contains("&lt;script&gt;")) throw new Exception("native clipboard");
                 var current = table; var output = Path.Combine(directory, "out.html"); var options = style.DeepClone();
