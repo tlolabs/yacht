@@ -163,8 +163,11 @@ matrix before claiming release readiness.
 The original vector master is `assets/icons/YACHT.svg`. Its table-grid sail connects
 YACHT's name with the CSV-to-HTML workflow. Committed PNG, ICNS and ICO files come
 from `script/generate_icons.sh` (macOS, librsvg and ImageMagick). Regeneration is not
-required for normal app builds. macOS embeds the ICNS as a bundle resource; Windows
-embeds the ICO in its executable and installer and loads it for the window; Linux
+required for normal app builds. macOS compiles the layered Icon Composer document
+`assets/icons/YACHT.icon` with Xcode 26, including native light, dark and tintable
+appearances and a generated ICNS fallback for older macOS. Edit that document in
+Icon Composer; the flat export script does not overwrite it. Windows embeds the
+ICO in its executable and installer and loads it for the window; Linux
 ships the scalable SVG in the hicolor icon theme. All six architectures use the same
 artwork. Artwork changes on main appear in subsequent builds; existing tagged
 release assets are immutable.

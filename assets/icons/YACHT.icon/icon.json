@@ -1,0 +1,42 @@
+{
+  "fill": {
+    "automatic-gradient": "extended-srgb:0.02745,0.11765,0.21961,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "04-Wave.svg",
+          "name": "04-Wave"
+        },
+        {
+          "image-name": "03-Hull.svg",
+          "name": "03-Hull"
+        },
+        {
+          "image-name": "02-Teal-Sail.svg",
+          "name": "02-Teal-Sail"
+        },
+        {
+          "image-name": "01-Table-Sail.svg",
+          "name": "01-Table-Sail"
+        }
+      ],
+      "name": "Sailboat",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.2
+      }
+    }
+  ],
+  "supported-platforms": {
+    "circles": [
+      "watchOS"
+    ],
+    "squares": "shared"
+  }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regenerate committed native assets from the single SVG master on macOS.
+# Regenerate flat exports from the SVG master; the macOS app uses YACHT.icon.
 # Requires librsvg (rsvg-convert), ImageMagick (magick), and Apple's iconutil.
 set -euo pipefail
 cd "$(dirname "$0")/.."

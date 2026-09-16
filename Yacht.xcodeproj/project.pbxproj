@@ -208,8 +208,8 @@
 		};
 		"505364735B51E078221B70DB" = {
 			"isa" = "PBXFileReference";
-			"lastKnownFileType" = "image.icns";
-			"path" = "assets/icons/YACHT.icns";
+			"lastKnownFileType" = "folder.iconcomposer.icon";
+			"path" = "assets/icons/YACHT.icon";
 			"sourceTree" = "SOURCE_ROOT";
 		};
 		"6AF61B1962C56FF1D9E94B84" = {
@@ -299,6 +299,7 @@
 				"PRODUCT_MODULE_NAME" = "YachtNativeApp";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.local.yacht.csvhtmltranslator";
 				"INFOPLIST_FILE" = "platform/macos/Support/Info.plist";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "YACHT";
 				"LD_RUNPATH_SEARCH_PATHS" = ("$(inherited)", "@executable_path/../Frameworks");
 				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
 				"DEBUG_INFORMATION_FORMAT" = "dwarf";
@@ -315,6 +316,7 @@
 				"PRODUCT_MODULE_NAME" = "YachtNativeApp";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.local.yacht.csvhtmltranslator";
 				"INFOPLIST_FILE" = "platform/macos/Support/Info.plist";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "YACHT";
 				"LD_RUNPATH_SEARCH_PATHS" = ("$(inherited)", "@executable_path/../Frameworks");
 				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
 				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
