@@ -39,7 +39,7 @@ Builds an optimized universal ARM64/x86_64 app and CLI, verifies architecture an
 - `release/yacht`
 - `release/SHA256SUMS`
 
-The DMG includes an Applications shortcut, CLI, README and license. App identity remains `com.local.yacht.csvhtmltranslator`; native version starts at 2.0.0. No icon asset existed in the Python repository, so the native build currently uses the system application icon.
+The DMG includes an Applications shortcut, CLI, README and license. App identity remains `com.local.yacht.csvhtmltranslator`; the current native version is 2.0.1 (build 3). No icon asset existed in the Python repository, so the native build currently uses the system application icon.
 
 ## Signing and notarization
 
