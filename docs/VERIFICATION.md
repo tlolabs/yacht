@@ -48,16 +48,17 @@ batch replacement protection, Finder multiple files, appearance and preview sett
 
 Windows WinUI/XAML/runtime/installer and Linux GTK runtime/deb/tar verification
 require their native hosts. Their implementation and mandatory CI gates are present,
-but those jobs have not been executed from this working tree. A macOS attempt to
+and their first native CI run is in progress on the published refactor branch. A macOS attempt to
 run the Windows XAML compiler failed loading its Windows tooling dependencies;
 C# compile/binding checks are not represented as a Windows application build.
 
 Intel GUI runtime execution, Windows/Linux ARM64 runtime execution, full screen-reader,
 high-contrast/display-scaling and owner dataset acceptance remain pending. No code
-signing credentials, notarization submission, stable tag, push or public release
-were performed. Automatic approval review blocked publishing the refactor to the
-public repository without explicit owner authorization, so native CI dispatch is
-pending that approval. All changes remain local and uncommitted. A focused scan of
+signing credentials, notarization submission, stable tag or public release
+were performed. Following explicit owner authorization, commit `3ba4988` was pushed
+to `codex/rust-native-core` and native CI was dispatched:
+https://github.com/tlolabs/yacht/actions/runs/35065304188. Results will be recorded
+after the platform jobs complete. A focused scan of
 changed/new text files found no private-key or common access-token patterns; this
 is not a comprehensive security audit. macOS packaging now defaults to an explicit local-only unsigned
 mode; signing and notarization require separate command-line modes.
