@@ -56,13 +56,13 @@ jobs:
         run: xcodebuild -project Yacht.xcodeproj -scheme Yacht -derivedDataPath build -destination 'platform=macOS,arch=${{ matrix.apple_arch }}' -resultBundlePath build/UITests.xcresult test -quiet
       - name: Package native macOS development build
         run: ./script/package.sh --arch ${{ matrix.arch }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: macOS-${{ matrix.arch }}-UI-test-results
           path: build/UITests.xcresult
           if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: YACHT-macos-${{ matrix.arch }}-${{ github.sha }}
           path: |
@@ -123,7 +123,7 @@ jobs:
       - name: WinUI runtime integration
         shell: pwsh
         run: ./platform/windows/test_ui.ps1 -Executable "$PWD/target/windows-${{ matrix.arch }}/YachtApp.exe"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: YACHT-windows-${{ matrix.arch }}-${{ github.sha }}
           path: |
@@ -175,7 +175,7 @@ jobs:
         run: |
           desktop-file-validate platform/linux/data/*.desktop
           ./script/package_linux.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: YACHT-linux-${{ matrix.arch }}-${{ github.sha }}
           path: |
