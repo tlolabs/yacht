@@ -35,7 +35,8 @@ necessary even for rows with automated verification.
 
 Review this table after CI, updating I to V only with actual platform evidence.
 All six OS/architecture combinations have independent native runner jobs. The
-macOS split is awaiting its first complete CI run; see VERIFICATION.md for evidence.
+macOS split is awaiting its first complete CI run; Intel uses macOS 15/Xcode 26.3
+to avoid the macOS 26 Intel VM icon-service crash. See VERIFICATION.md for evidence.
 
 ## Manual release acceptance
 

@@ -14,9 +14,12 @@ and [verification evidence](docs/VERIFICATION.md) for test scope.
 |---|---|---|
 | macOS Apple Silicon (ARM64) | macOS 14+ | YACHT-macos-arm64 DMG or ZIP |
 | macOS Intel (x64) | macOS 14+ | YACHT-macos-x64 DMG or ZIP |
-| Windows x64 / ARM64 | Windows 10 1809+ | Per-user installer or portable ZIP |
-| Linux x64 / ARM64 | Ubuntu 24.04 baseline; GTK 4.10+, libadwaita 1.4+ | `.deb` or dependency-aware tar archive |
+| Windows x64 | Windows 10 1809+ | `windows-x64` per-user installer or portable ZIP |
+| Windows ARM64 | Windows 10 1809+ | `windows-arm64` per-user installer or portable ZIP |
+| Linux x64 | Ubuntu 24.04 baseline; GTK 4.10+, libadwaita 1.4+ | `linux-x64` `.deb` or tar archive |
+| Linux ARM64 | Ubuntu 24.04 baseline; GTK 4.10+, libadwaita 1.4+ | `linux-arm64` `.deb` or tar archive |
 
+Download stable builds from [GitHub Releases](https://github.com/tlolabs/yacht/releases).
 Use artifacts from a successful [Native cross-platform run](https://github.com/tlolabs/yacht/actions/workflows/native-macos.yml)
 for development/nightly builds. Stable versions use matching `v2.*` or later tags.
 Every platform artifact in a stable release must pass its platform tests and use

@@ -19,17 +19,20 @@ jobs:
       matrix:
         include:
           - runner: macos-26
+            xcode: '26.6'
             arch: arm64
             apple_arch: arm64
             triple: aarch64-apple-darwin
-          - runner: macos-26-intel
+          # Tahoe Intel VMs crash in iconservicesagent/Metal during AX queries.
+          - runner: macos-15-intel
+            xcode: '26.3'
             arch: x64
             apple_arch: x86_64
             triple: x86_64-apple-darwin
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 35
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
