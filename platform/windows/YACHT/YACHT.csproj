@@ -20,7 +20,7 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <Import Project="..\Version.props" />
-  <ItemGroup><PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" /></ItemGroup>
+  <ItemGroup><PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" /></ItemGroup>
   <ItemGroup><Content Include="..\..\..\target\$(RustTarget)\release\yacht_ffi.dll" Link="yacht_ffi.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
   <ItemGroup><Content Include="..\..\..\assets\icons\YACHT.ico" Link="YACHT.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
   <!-- Unpackaged MRT Core builds generate the PRI but omit it from publish.
