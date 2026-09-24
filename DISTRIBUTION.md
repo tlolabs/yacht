@@ -144,13 +144,17 @@ runs the shared Rust/CLI regressions and its native binding/runtime tests before
 artifact upload. No platform job is allowed to fail optionally. Uploaded artifact
 names include the commit SHA; retention is 30 days.
 
-Stable publication depends on every platform job, verifies the tag matches the
+A draft release depends on every platform job, verifies the tag matches the
 workspace version, and publishes packages/checksums plus BUILD_INFO.txt. Development
 and nightly artifacts are downloaded from their successful Actions run. Update
 Cargo.toml, increment the macOS build number, run version
 sync, commit the metadata and lockfiles, pass tests/manual acceptance, then tag
-`v<workspace-version>`. Credentials are optional; release notes must accurately
-state the signing state. Legacy packaging is preserved only on the
+`v<workspace-version>`. CI creates a draft with development signatures. Before publishing a stable release,
+build both Mac architectures from the exact tagged commit using `--notarize`,
+replace the draft's Mac DMG, ZIP, CLI and checksum assets with the verified signed
+outputs, and update its notes to state the signing status. Verify the app and DMG
+staples and all release checksums before publishing. Keep signing credentials in
+the local Keychain; they are not needed on GitHub. Legacy packaging is preserved only on the
 [archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2).
 
 Required human acceptance includes screen readers, keyboard-only navigation,
