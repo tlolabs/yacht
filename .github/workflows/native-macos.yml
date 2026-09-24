@@ -226,4 +226,4 @@ jobs:
           print('All six architecture manifests and 14 package/CLI checksums passed.')
           PY
           printf '%s\n' "Commit: $GITHUB_SHA" "Version: $RELEASE_TAG" > release/BUILD_INFO.txt
-          gh release create "$RELEASE_TAG" release/* --verify-tag --generate-notes --title "YACHT $RELEASE_TAG" --notes 'Native macOS, Windows and Linux applications with the same Rust core. Default CI artifacts are unsigned (macOS ad-hoc signed); see DISTRIBUTION.md.'
+          gh release create "$RELEASE_TAG" release/* --draft --verify-tag --generate-notes --title "YACHT $RELEASE_TAG" --notes 'Native macOS, Windows and Linux applications with the same Rust core. Default CI artifacts are unsigned (macOS ad-hoc signed); see DISTRIBUTION.md.'

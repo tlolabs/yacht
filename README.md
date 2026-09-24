@@ -31,9 +31,9 @@ Every platform artifact in a stable release must pass its platform tests and use
 the same repository commit. Artifacts are not claimed available until CI succeeds.
 
 - **Mac:** open the DMG and drag YACHT to Applications, or extract the app ZIP.
-  Development builds have ad-hoc signatures; downloaded builds may require explicit
-  approval in System Settings → Privacy & Security. Developer ID/notarization is
-  optional infrastructure, not currently claimed for unsigned builds.
+  Stable releases starting with v2.1.1 use Developer ID signing and Apple
+  notarization for both Mac architectures. Development builds have ad-hoc
+  signatures and may require approval in System Settings → Privacy & Security.
 - **Windows:** run the per-user setup executable, or extract the entire portable ZIP
   and run `YachtApp.exe`. Keep its DLLs together. The CLI is `yacht.exe`.
   Microsoft Edge WebView2 Runtime is required for table preview; install the

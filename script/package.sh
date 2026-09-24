@@ -71,6 +71,9 @@ if [[ -n "${NOTARY_PROFILE:-}" ]]; then
   codesign --force --timestamp --sign "$SIGNING_IDENTITY" "release/$ARTIFACT.dmg"
   xcrun notarytool submit "release/$ARTIFACT.dmg" --keychain-profile "$NOTARY_PROFILE" --wait
   xcrun stapler staple "release/$ARTIFACT.dmg"
+  xcrun stapler validate "release/$ARTIFACT.dmg"
+  codesign --verify --strict "release/$ARTIFACT.dmg"
+  spctl --assess --type execute --verbose "$DIST_DIR/YACHT.app"
 fi
 ditto -c -k --keepParent "$DIST_DIR/YACHT.app" "release/$ARTIFACT.zip"
 cp "$DIST_DIR/yacht" "release/yacht-macos-$PACKAGE_ARCH"
