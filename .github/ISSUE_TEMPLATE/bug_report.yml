@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a reproducible problem in YACHT.
+title: 'Bug: '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: For security vulnerabilities, use private reporting from SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: YACHT version
+      placeholder: '2.1.1'
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: ['macOS (ARM64)', 'macOS (x64)', 'Windows (x64)', 'Windows (ARM64)', 'Linux (x64)', 'Linux (ARM64)']
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Attach a small sample file only if it contains no private data.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true

@@ -1,0 +1,16 @@
+name: Security report
+description: Redirect sensitive reports to private vulnerability reporting.
+title: 'Security report redirect'
+labels: [security]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not enter vulnerability details here. Use [private vulnerability reporting](https://github.com/tlolabs/yacht/security/advisories/new) if available, following [SECURITY.md](../../SECURITY.md). Public security email: TBD.
+  - type: checkboxes
+    id: redirect
+    attributes:
+      label: Redirect
+      options:
+        - label: I will use a private channel and will not post exploit details in this issue.
+          required: true

@@ -2,7 +2,7 @@
 AppId=com.local.yacht.csvhtmltranslator
 AppName=YACHT
 AppVersion={#Version}
-AppPublisher=YACHT contributors
+AppPublisher=Thomas Lothian
 AppPublisherURL=https://github.com/tlolabs/yacht
 DefaultDirName={localappdata}\Programs\YACHT
 DefaultGroupName=YACHT

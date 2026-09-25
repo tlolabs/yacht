@@ -13,21 +13,47 @@ concurrency:
   group: native-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 jobs:
+  compliance:
+    name: Repository compliance
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check platform and dependency metadata
+        run: |
+          python3 script/check_platforms.py
+          python3 script/dependency_inventory.py --check
+          python3 script/check_compliance.py
+  tag-policy:
+    name: Release tag policy
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check version and stable tag signature
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 script/check_release_tag.py
   macos:
-    name: macOS ${{ matrix.display }}
+    name: macOS (${{ matrix.display }})
     strategy:
       fail-fast: false
       matrix:
         include:
           - runner: macos-26
-            display: Apple Silicon ARM64
+            display: ARM64
             xcode: '26.6'
             arch: arm64
             apple_arch: arm64
             triple: aarch64-apple-darwin
           # Avoid the iconservicesagent/Metal crash observed on macos-26-intel.
           - runner: macos-15-intel
-            display: Intel x64
+            display: x64
             xcode: '26.3'
             arch: x64
             apple_arch: x86_64
@@ -58,6 +84,7 @@ jobs:
       - name: macOS UI tests
         run: xcodebuild -project Yacht.xcodeproj -scheme Yacht -derivedDataPath build -destination 'platform=macOS,arch=${{ matrix.apple_arch }}' -resultBundlePath build/UITests.xcresult test -quiet
       - name: Package native macOS development build
+        if: github.event_name != 'schedule' || matrix.arch == 'arm64'
         run: ./script/package.sh --arch ${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         if: always()
@@ -66,6 +93,7 @@ jobs:
           path: build/UITests.xcresult
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
+        if: github.event_name != 'schedule' || matrix.arch == 'arm64'
         with:
           name: YACHT-macos-${{ matrix.arch }}-${{ github.sha }}
           path: |
@@ -118,16 +146,23 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python script/test_native_binding.py target/${{ matrix.triple }}/release/yacht_ffi.dll
       - name: Ensure Inno Setup
+        if: github.event_name != 'schedule'
         shell: pwsh
         run: |
           if (!(Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup --no-progress -y; if ($LASTEXITCODE) { exit $LASTEXITCODE } }
       - name: Package native Windows application
+        if: github.event_name != 'schedule'
         shell: pwsh
         run: ./script/package_windows.ps1 -Architecture ${{ matrix.arch }}
+      - name: Publish native Windows application for scheduled UI test
+        if: github.event_name == 'schedule'
+        shell: pwsh
+        run: ./script/package_windows.ps1 -Architecture ${{ matrix.arch }} -BuildOnly
       - name: WinUI runtime integration
         shell: pwsh
         run: ./platform/windows/test_ui.ps1 -Executable "$PWD/target/windows-${{ matrix.arch }}/YachtApp.exe"
       - uses: actions/upload-artifact@v4
+        if: github.event_name != 'schedule'
         with:
           name: YACHT-windows-${{ matrix.arch }}-${{ github.sha }}
           path: |
@@ -177,10 +212,12 @@ jobs:
           YACHT_LIBRARY: ${{ github.workspace }}/target/debug/libyacht_ffi.so
         run: xvfb-run -a dbus-run-session -- python3 platform/linux/test_ui.py
       - name: Package and validate Linux artifacts
+        if: github.event_name != 'schedule'
         run: |
           desktop-file-validate platform/linux/data/*.desktop
           ./script/package_linux.sh
       - uses: actions/upload-artifact@v4
+        if: github.event_name != 'schedule'
         with:
           name: YACHT-linux-${{ matrix.arch }}-${{ github.sha }}
           path: |
@@ -188,42 +225,3 @@ jobs:
             release/SHA256SUMS-linux-*
           if-no-files-found: error
           retention-days: 30
-  release:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: [macos,windows,linux]
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: YACHT-*-${{ github.sha }}
-          path: release
-          merge-multiple: true
-      - name: Publish one tested commit across every platform
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          test "$RELEASE_TAG" = "v$(python3 script/sync_version.py)"
-          python3 - <<'PY'
-          from pathlib import Path
-          import hashlib
-          release = Path('release')
-          expected = {f'SHA256SUMS-{os}-{arch}' for os in ('macos', 'windows', 'linux') for arch in ('x64', 'arm64')}
-          manifests = {p.name for p in release.glob('SHA256SUMS-*') if not p.name.endswith('.asc')}
-          assert manifests == expected, (manifests, expected)
-          for name in sorted(manifests):
-              lines = (release / name).read_text(encoding='utf-8-sig').splitlines()
-              assert len(lines) == (3 if '-macos-' in name else 2), name
-              for line in lines:
-                  digest, filename = line.split(maxsplit=1)
-                  assert filename == Path(filename).name, filename
-                  with (release / filename).open('rb') as artifact:
-                      assert hashlib.file_digest(artifact, 'sha256').hexdigest() == digest, filename
-          print('All six architecture manifests and 14 package/CLI checksums passed.')
-          PY
-          printf '%s\n' "Commit: $GITHUB_SHA" "Version: $RELEASE_TAG" > release/BUILD_INFO.txt
-          gh release create "$RELEASE_TAG" release/* --draft --verify-tag --generate-notes --title "YACHT $RELEASE_TAG" --notes 'Native macOS, Windows and Linux applications with the same Rust core. Default CI artifacts are unsigned (macOS ad-hoc signed); see DISTRIBUTION.md.'

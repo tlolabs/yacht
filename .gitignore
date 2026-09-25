@@ -13,5 +13,6 @@ DerivedData/
 xcuserdata/
 
 /target/
+signpath-readiness.local.md
 platform/windows/**/bin/
 platform/windows/**/obj/
