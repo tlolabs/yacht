@@ -11,7 +11,7 @@
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
 <key>NSHighResolutionCapable</key><true/>
-<key>NSHumanReadableCopyright</key><string>YACHT contributors. GNU GPL v3.</string>
+<key>NSHumanReadableCopyright</key><string>Copyright © Thomas Lothian.</string>
 <key>CFBundleDocumentTypes</key><array><dict>
 <key>CFBundleTypeName</key><string>CSV and TSV Table</string>
 <key>CFBundleTypeRole</key><string>Viewer</string>

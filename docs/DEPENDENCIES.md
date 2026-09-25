@@ -1,5 +1,7 @@
 # Dependencies
 
+YACHT is a TLO Labs open-source project. Thomas Lothian's original code and artwork are declared GPL-3.0-or-later. Third-party components retain their own terms. The [licensing audit](LICENSE_AUDIT.md) assesses the Windows package and SignPath eligibility separately.
+
 Versions are controlled by Cargo.lock, rust-toolchain.toml and the Windows NuGet
 lockfile. Regenerate locks through their package manager; commit them with updates.
 No paid services or runtime network APIs are required for conversion.
@@ -23,8 +25,20 @@ No paid services or runtime network APIs are required for conversion.
 | librsvg / ImageMagick / iconutil | Regenerate committed SVG-derived native icons | Local developer tools; `script/generate_icons.sh` | macOS artwork regeneration only; not required to build or run |
 | GitHub Actions | Build/test/artifact release infrastructure | .github/workflows; Dependabot monthly | Standard hosted runners |
 
+**Direct dependency licenses.** The cached manifests for serde, serde_json, regex,
+tempfile, thiserror and ctrlc state MIT or Apache-2.0 alternatives. The locked
+WebView2 SDK/loader files are BSD-3-Clause; the separately installed Evergreen
+runtime has Microsoft terms. The exact .NET runtime packs audited for v2.1.1 contain
+MIT license files. The Windows App SDK/WinUI binary packages, Windows ML package and
+Windows SDK projections have separate Microsoft terms; their source repositories'
+licenses are not a substitute for the shipped NuGet terms. Apple frameworks follow
+the installed macOS terms. GTK, libadwaita, WebKitGTK, Python and PyGObject use the
+licenses of the installed distribution packages. See the [file-level Windows audit](LICENSE_AUDIT.md)
+and [third-party notices](../THIRD_PARTY_NOTICES.md) for exact package versions,
+license evidence and redistribution distinctions.
+
 GTK packages are distribution-managed rather than vendored; install through the
 supported distro repositories so security fixes apply normally. macOS uses system
 WebKit; Windows preview requires the installed WebView2 runtime. No third-party UI
 framework or web-based application shell is introduced. C# NuGet and Cargo locks
-include transitive libraries; consult them for exact dependency versions/hashes.
+include transitive libraries; consult them and the generated [dependency inventory](dependency-inventory.json) for exact dependency versions/hashes. Dependency-license concerns should be reported prominently, not fail ordinary build/test CI automatically. A release SBOM must accompany each stable artifact.

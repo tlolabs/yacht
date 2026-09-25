@@ -1,7 +1,7 @@
 # Developer guide
 
 Start with [architecture](ARCHITECTURE.md), [behavior](BEHAVIOR.md),
-[parity](FEATURE-PARITY.md) and [build instructions](../DISTRIBUTION.md).
+[parity](FEATURE-PARITY.md) and [build instructions](BUILDING.md).
 
 ## Bindings
 
@@ -93,4 +93,4 @@ publication and cancellation under errors; never truncate outputs as preparation
 
 Native runtime smoke tests complement core tests, not replace human accessibility
 and platform acceptance. Only mark parity verified after actual execution on the
-stated host/architecture. Version/packaging/signing details live in DISTRIBUTION.md.
+stated host/architecture. Version/packaging/signing details live in BUILDING.md and RELEASING.md.

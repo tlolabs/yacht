@@ -20,12 +20,12 @@ mkdir -p "$stage/usr/share/icons/hicolor/scalable/apps"
 cp assets/icons/YACHT.svg "$stage/usr/share/icons/hicolor/scalable/apps/com.local.yacht.csvhtmltranslator.svg"
 cp platform/linux/data/*.desktop "$stage/usr/share/applications/"
 cp platform/linux/data/*.xml "$stage/usr/share/metainfo/"
-cp LICENSE README.md DEPENDENCIES.md "$stage/usr/share/doc/yacht/"
+cp LICENSE LICENSE-NOTICE.md README.md THIRD_PARTY_NOTICES.md PRIVACY.md docs/DEPENDENCIES.md "$stage/usr/share/doc/yacht/"
 cat > "$stage/DEBIAN/control" <<CONTROL
 Package: yacht
 Version: $version
 Architecture: $arch
-Maintainer: YACHT contributors <noreply@github.com>
+Maintainer: Thomas Lothian <TBD>
 Section: utils
 Priority: optional
 Depends: libc6 (>= 2.39), python3 (>= 3.10), python3-gi, gir1.2-gtk-4.0 (>= 4.10), gir1.2-adw-1 (>= 1.4), gir1.2-webkit-6.0

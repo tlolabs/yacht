@@ -20,7 +20,7 @@ style, safety and batch checks. All eight local macOS UI tests passed with no sk
 the built app contains the intended ICNS resource and passes signature verification.
 The native icon is supplied as macOS ICNS, Windows
 multi-resolution ICO and Linux SVG from one vector master. See
-[distribution instructions](../DISTRIBUTION.md#app-icon) for regeneration.
+[building instructions](BUILDING.md#app-icon) for regeneration.
 
 The [Native cross-platform workflow](https://github.com/tlolabs/yacht/actions/workflows/native-macos.yml)
 validates six independent native builds on every main push:

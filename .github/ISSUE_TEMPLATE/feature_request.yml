@@ -1,0 +1,22 @@
+name: Feature request
+description: Suggest a workflow or capability for YACHT.
+title: 'Feature: '
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Workflow and problem
+      description: Describe what you are trying to accomplish.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: platforms
+    attributes:
+      label: Relevant platforms

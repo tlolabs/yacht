@@ -2,47 +2,44 @@
 
 <img src="assets/icons/YACHT.png" alt="YACHT sailboat and table icon" width="112">
 
-Convert CSV and TSV files into styled, accessible HTML tables. One Rust core powers
-the shared command-line tool and native SwiftUI, WinUI 3 and GTK/libadwaita interfaces.
+**A TLO Labs open-source project.** YACHT converts CSV and TSV files into styled,
+accessible HTML tables. One Rust core powers a command-line tool and native
+macOS, Windows, and Linux interfaces. Thomas Lothian maintains the project.
 
 The Rust/native rewrite replaces the former Tk application. Legacy implementations,
 packaging and migration records are preserved on the [2.0.2 archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2).
 Current Rust and native integration tests cover conversion behavior. See [feature parity](docs/FEATURE-PARITY.md)
 and [verification evidence](docs/VERIFICATION.md) for test scope.
 
-## Installation and first launch
+## Download and supported platforms
 
-There are **six platform-specific builds**. macOS Intel and macOS ARM64 are separate
-downloads; neither Mac package is a universal binary.
+The repository builds six platform-specific targets. The [support matrix](docs/SUPPORT_MATRIX.md)
+distinguishes personal testing from CI validation and records minimum OS versions.
+Check the asset list and signing notes on [GitHub Releases](https://github.com/tlolabs/yacht/releases)
+before downloading; availability can vary by release.
 
-| Platform | Baseline | Distribution |
+| Target | Minimum | Current package formats |
 |---|---|---|
-| macOS Apple Silicon (ARM64) | macOS 14+ | [ARM64 DMG](https://github.com/tlolabs/yacht/releases/latest/download/YACHT-macos-arm64.dmg) or [ZIP](https://github.com/tlolabs/yacht/releases/latest/download/YACHT-macos-arm64.zip) |
-| macOS Intel (x64) | macOS 14+ | [Intel x64 DMG](https://github.com/tlolabs/yacht/releases/latest/download/YACHT-macos-x64.dmg) or [ZIP](https://github.com/tlolabs/yacht/releases/latest/download/YACHT-macos-x64.zip) |
-| Windows x64 | Windows 10 1809+ | `windows-x64` per-user installer or portable ZIP |
-| Windows ARM64 | Windows 10 1809+ | `windows-arm64` per-user installer or portable ZIP |
-| Linux x64 | Ubuntu 24.04 baseline; GTK 4.10+, libadwaita 1.4+ | `linux-x64` `.deb` or tar archive |
-| Linux ARM64 | Ubuntu 24.04 baseline; GTK 4.10+, libadwaita 1.4+ | `linux-arm64` `.deb` or tar archive |
+| macOS (ARM64/x64) | macOS 14.0 | Architecture-specific app ZIP; historical releases also have DMG |
+| Windows (x64/ARM64) | Windows 10 1809 | Portable ZIP; historical releases also have per-user installer |
+| Linux (x64/ARM64) | Ubuntu 24.04, glibc 2.39 | Current `.deb` or tar; AppImage is planned |
 
-Download stable builds from [GitHub Releases](https://github.com/tlolabs/yacht/releases).
 Use artifacts from a successful [Native cross-platform run](https://github.com/tlolabs/yacht/actions/workflows/native-macos.yml)
-for development/nightly builds. Stable versions use matching `v2.*` or later tags.
-Every platform artifact in a stable release must pass its platform tests and use
-the same repository commit. Artifacts are not claimed available until CI succeeds.
+for clearly marked unsupported development builds. Nightly runnable packages are
+intended only for macOS (ARM64); CI may still test other targets.
 
-- **Mac:** open the DMG and drag YACHT to Applications, or extract the app ZIP.
-  Stable releases starting with v2.1.1 use Developer ID signing and Apple
-  notarization for both Mac architectures. Development builds have ad-hoc
-  signatures and may require approval in System Settings → Privacy & Security.
-- **Windows:** run the per-user setup executable, or extract the entire portable ZIP
+- **macOS:** extract the app ZIP and move YACHT to Applications. If a historical
+  release has a DMG, open it and drag YACHT to Applications. Check that release's
+  signature notes; development builds use ad-hoc signatures.
+- **Windows:** extract the entire portable ZIP
   and run `YachtApp.exe`. Keep its DLLs together. The CLI is `yacht.exe`.
   Microsoft Edge WebView2 Runtime is required for table preview; install the
   [Microsoft runtime](https://developer.microsoft.com/microsoft-edge/webview2/)
-  if it is absent. Unsigned development installers may trigger SmartScreen.
-- **Linux:** `sudo apt install ./YACHT-<version>-linux-<arch>.deb` installs the native
+  if it is absent. Historical per-user installers may be available.
+- **Linux:** a current `.deb` installs the native
   dependencies and desktop entry. Launch YACHT or `yacht-gui`. For the tar archive,
   install Python/PyGObject, GTK, libadwaita and WebKitGTK as described in
-  [DISTRIBUTION.md](DISTRIBUTION.md), extract, and run `bin/yacht-gui`.
+  [BUILDING.md](docs/BUILDING.md), extract, and run `bin/yacht-gui`.
 
 First launch shows the album sample. No account, upload, or paid service is needed.
 Existing `~/.yacht_presets.json` presets are copied when the native preset store does
@@ -149,9 +146,10 @@ feature. Linux tar archives require the listed native packages.
 
 ## Development and project references
 
-[Build, packaging, CI and signing](DISTRIBUTION.md) · [Architecture](docs/ARCHITECTURE.md)
-· [Canonical behavior](docs/BEHAVIOR.md) · [Bindings/development](docs/DEVELOPMENT.md)
-· [Dependencies](DEPENDENCIES.md) · [Parity](docs/FEATURE-PARITY.md)
+[Building](docs/BUILDING.md) · [Testing](docs/TESTING.md) · [Releasing](docs/RELEASING.md)
+· [Architecture](docs/ARCHITECTURE.md) · [Canonical behavior](docs/BEHAVIOR.md)
+· [Bindings/development](docs/DEVELOPMENT.md) · [Dependencies](docs/DEPENDENCIES.md)
+· [Parity](docs/FEATURE-PARITY.md)
 
 On a Mac with Xcode and Rust, `./script/build_and_run.sh` builds and launches
 `dist/YACHT.app`; the Codex Run action uses the same entrypoint. All Rust business
@@ -162,14 +160,18 @@ remain build entry points. The GTK Python frontend is part of the current native
 rewrite. Archived Python application data and generated HTML fixtures are absent
 from the active tree.
 
-## Context and license
+## Project, privacy and licensing
 
-This tool supports a teaching workflow. I am an instructor first, and write code
-when it solves practical problems in classes or a media environment. The project
-is shared for transparency and educational use, as-is, without warranty or
-guaranteed support. Bug reports and pull requests are welcome; response times may
-vary during the academic term.
+YACHT supports a teaching workflow. It is shared for transparency and educational
+use, as-is, without warranty or guaranteed support. Bug reports and pull requests
+are welcome; response times may vary.
 
-GNU General Public License v3.0. See [LICENSE](LICENSE). Distributed modifications
-must retain applicable license and source availability requirements. Repository
-and tagged releases provide corresponding source.
+Thomas Lothian's original code and artwork are licensed GNU General Public License
+v3.0 or later. See [LICENSE](LICENSE) and [license notice](LICENSE-NOTICE.md).
+Third-party components retain their own terms. The [licensing audit](docs/LICENSE_AUDIT.md)
+examines the Windows distribution separately. See [third-party notices](THIRD_PARTY_NOTICES.md) and
+[dependencies](docs/DEPENDENCIES.md).
+
+YACHT converts files locally and has no automatic updater. See [privacy](PRIVACY.md),
+[security](SECURITY.md), [support](SUPPORT.md), [contributing](CONTRIBUTING.md),
+[code signing policy](CODE_SIGNING_POLICY.md), and [changelog](CHANGELOG.md).

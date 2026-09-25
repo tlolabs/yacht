@@ -1,0 +1,9 @@
+{
+  "macos_minimum": "14.0",
+  "windows_minimum_build": "10.0.17763",
+  "linux_baseline": "Ubuntu 24.04",
+  "linux_glibc_minimum": "2.39",
+  "linux_gtk_minimum": "4.10",
+  "linux_libadwaita_minimum": "1.4",
+  "linux_webkitgtk_api": "6.0"
+}

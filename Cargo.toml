@@ -5,8 +5,11 @@ resolver = "2"
 version = "2.1.1"
 edition = "2021"
 rust-version = "1.85"
-license = "GPL-3.0-only"
+license = "GPL-3.0-or-later"
 repository = "https://github.com/tlolabs/yacht"
+homepage = "https://github.com/tlolabs/yacht"
+authors = ["Thomas Lothian"]
+description = "A TLO Labs open-source project for converting CSV and TSV to HTML tables"
 [workspace.dependencies]
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"

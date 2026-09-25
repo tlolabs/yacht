@@ -1,9 +1,11 @@
-# Building, testing and distribution
+# Building and packaging
+
+This guide records the current build scripts and historical package formats. The target stable release procedure and its unresolved signing work are in [RELEASING.md](RELEASING.md). Test coverage and commands are in [TESTING.md](TESTING.md).
 
 Cargo.toml's workspace version is authoritative. `script/sync_version.py` updates
 macOS and Windows metadata without changing the existing Mac build number.
 All release platforms use the same commit. Platform minima and dependency ownership
-are listed in [DEPENDENCIES.md](DEPENDENCIES.md). See [verification](docs/VERIFICATION.md)
+are listed in [DEPENDENCIES.md](DEPENDENCIES.md). See [verification](VERIFICATION.md)
 for what was actually executed locally; a configured CI job is not proof it passed.
 
 ## Shared Rust and CLI
@@ -99,6 +101,13 @@ filenames are case-insensitive). Inno registers Open With entries without taking
 over the user's default CSV application. Runtime smoke tests need an interactive
 Windows desktop and WebView2 runtime. They isolate preference writes.
 
+The package script copies the exact NuGet package license and notice files into
+`ThirdPartyLicenses/` before making the ZIP or installer. The historical v2.1.1 ZIPs
+did not contain that folder. A framework-dependent build that relies on separately
+installed Windows App Runtime and .NET is described as a candidate in the
+[licensing audit](LICENSE_AUDIT.md); it requires native Windows launch and inventory
+verification before becoming the default portable package.
+
 Set YACHT_SIGNING_THUMBPRINT to a certificate in the signing user's certificate
 store and make signtool available to sign/verify app, core DLL, CLI and installer.
 Without credentials development packages still build. Import a secret certificate
@@ -137,30 +146,17 @@ packages remain buildable. Architecture-specific Linux CI runs the code natively
 
 ## CI and releases
 
-The Native cross-platform workflow runs on PRs, main pushes, nightly schedules,
-manual requests and non-v1 version tags. macOS, Windows and Linux each have
-separate native x64 and ARM64 jobs: six required platform jobs. Every job
-runs the shared Rust/CLI regressions and its native binding/runtime tests before
-artifact upload. No platform job is allowed to fail optionally. Uploaded artifact
-names include the commit SHA; retention is 30 days.
+The Native cross-platform workflow builds/tests six native targets on pull requests
+and main. Platform checks run separately, and successful development artifacts are
+retained for 30 days. A runnable nightly package is intended only for macOS (ARM64);
+the other nightly targets may compile/test without packaging.
 
-A draft release depends on every platform job, verifies the tag matches the
-workspace version, and publishes packages/checksums plus BUILD_INFO.txt. Development
-and nightly artifacts are downloaded from their successful Actions run. Update
-Cargo.toml, increment the macOS build number, run version
-sync, commit the metadata and lockfiles, pass tests/manual acceptance, then tag
-`v<workspace-version>`. CI creates a draft with development signatures. Before publishing a stable release,
-build both Mac architectures from the exact tagged commit using `--notarize`,
-replace the draft's Mac DMG, ZIP, CLI and checksum assets with the verified signed
-outputs, and update its notes to state the signing status. Verify the app and DMG
-staples and all release checksums before publishing. Keep signing credentials in
-the local Keychain; they are not needed on GitHub. Legacy packaging is preserved only on the
+The previous tag workflow created a draft release from development-signed artifacts.
+That is not an official stable release under the current [code signing policy](../CODE_SIGNING_POLICY.md).
+Use [RELEASING.md](RELEASING.md) for the target release process and its open
+credentials, license, and packaging gates. Do not promote an unsigned development
+artifact by renaming it. Legacy packaging is preserved only on the
 [archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2).
-
-Required human acceptance includes screen readers, keyboard-only navigation,
-light/dark/high contrast/scaling, native pickers, file manager behavior and the
-owner's real CSV/preset collection. Record actual platform evidence in the parity
-matrix before claiming release readiness.
 
 ## App icon
 

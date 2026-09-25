@@ -3,9 +3,15 @@ updates:
   - package-ecosystem: cargo
     directory: /
     schedule: {interval: weekly}
+    open-pull-requests-limit: 10
+    labels: [dependencies]
   - package-ecosystem: nuget
     directory: /platform/windows/YACHT
     schedule: {interval: weekly}
+    open-pull-requests-limit: 10
+    labels: [dependencies, 'platform: Windows']
   - package-ecosystem: github-actions
     directory: /
     schedule: {interval: monthly}
+    open-pull-requests-limit: 10
+    labels: [dependencies, build]

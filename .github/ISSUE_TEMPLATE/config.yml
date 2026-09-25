@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a vulnerability privately
+    url: https://github.com/tlolabs/yacht/security/advisories/new
+    about: Follow SECURITY.md and avoid public exploit details.
