@@ -14,15 +14,21 @@ impl Table {
         }
         let mut header = records.remove(0);
         let original = header.len();
-        let width = records
-            .iter()
-            .map(Vec::len)
-            .max()
-            .unwrap_or(0)
-            .max(original)
-            .max(1);
-        let short_row_count = records.iter().filter(|r| r.len() < original).count();
-        let extra_row_count = records.iter().filter(|r| r.len() > original).count();
+        let mut width = original;
+        let mut short_row_count = 0;
+        let mut extra_row_count = 0;
+        for r in &records {
+            let len = r.len();
+            if len > width {
+                width = len;
+            }
+            if len < original {
+                short_row_count += 1;
+            } else if len > original {
+                extra_row_count += 1;
+            }
+        }
+        let width = width.max(1);
         for i in original..width {
             header.push(format!("Column {}", i + 1));
         }
