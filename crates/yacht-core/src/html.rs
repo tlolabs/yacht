@@ -1,7 +1,13 @@
 use crate::{check, style::Style, table::Table, Cancel, Result};
 use std::io::Write;
 pub fn escape(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
+    if !text
+        .bytes()
+        .any(|b| matches!(b, b'&' | b'<' | b'>' | b'"' | b'\''))
+    {
+        return text.to_owned();
+    }
+    let mut out = String::with_capacity(text.len() + 16);
     for c in text.chars() {
         match c {
             '&' => out.push_str("&amp;"),
@@ -15,10 +21,19 @@ pub fn escape(text: &str) -> String {
     out
 }
 pub fn is_numeric(text: &str) -> bool {
+    let trimmed = text.trim();
+    let bytes = trimmed.as_bytes();
+    if bytes.is_empty() {
+        return false;
+    }
+    let first = bytes[0];
+    if !first.is_ascii_digit() && first != b'+' && first != b'-' {
+        return false;
+    }
     let mut digits = 0;
     let mut grouped = false;
     let mut fraction = false;
-    for (index, b) in text.trim().bytes().enumerate() {
+    for (index, &b) in bytes.iter().enumerate() {
         if index == 0 && (b == b'+' || b == b'-') {
             continue;
         }
@@ -46,9 +61,24 @@ pub fn is_numeric(text: &str) -> bool {
 }
 /// Writes directly to the caller's buffered sink, including very large cells.
 fn escaped(text: &str, out: &mut impl Write, cancel: Cancel<'_>) -> Result<()> {
+    let bytes = text.as_bytes();
+    if !bytes
+        .iter()
+        .any(|&b| matches!(b, b'&' | b'<' | b'>' | b'"' | b'\''))
+    {
+        if bytes.len() <= 65536 {
+            out.write_all(bytes)?;
+            return Ok(());
+        }
+        for chunk in bytes.chunks(65536) {
+            check(cancel)?;
+            out.write_all(chunk)?;
+        }
+        return Ok(());
+    }
     let mut start = 0;
-    for (i, b) in text.bytes().enumerate() {
-        if i % 65536 == 0 {
+    for (i, &b) in bytes.iter().enumerate() {
+        if (i & 0xffff) == 0 && i > 0 {
             check(cancel)?;
         }
         let replacement = match b {
@@ -59,11 +89,11 @@ fn escaped(text: &str, out: &mut impl Write, cancel: Cancel<'_>) -> Result<()> {
             b'\'' => "&#x27;",
             _ => continue,
         };
-        out.write_all(&text.as_bytes()[start..i])?;
+        out.write_all(&bytes[start..i])?;
         out.write_all(replacement.as_bytes())?;
         start = i + 1;
     }
-    out.write_all(&text.as_bytes()[start..])?;
+    out.write_all(&bytes[start..])?;
     Ok(())
 }
 pub fn write(
@@ -139,7 +169,11 @@ pub fn document(
     row_limit: Option<usize>,
     cancel: Cancel<'_>,
 ) -> Result<String> {
-    let mut out = vec![];
+    let rows_to_render = row_limit.unwrap_or(table.rows.len()).min(table.rows.len());
+    let cols = table.header.len().max(1);
+    let estimated =
+        1024 + rows_to_render.saturating_mul(cols.saturating_mul(16).saturating_add(24));
+    let mut out = Vec::with_capacity(estimated.min(128 * 1024 * 1024));
     write(table, s, row_limit, &mut out, cancel)?;
     Ok(String::from_utf8(out).expect("generator writes UTF-8"))
 }
