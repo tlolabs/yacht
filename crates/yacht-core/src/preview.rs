@@ -76,19 +76,33 @@ pub fn generate(table: &Table, style: &Style, limit: usize, cancel: Cancel<'_>) 
             html = sink.text();
         }
     }
-    let mut sink = Excerpt {
-        bytes: vec![],
-        truncated: false,
-        budget: SOURCE_BUDGET,
-    };
-    let result = html::write(table, style, None, &mut sink, cancel);
-    let truncated = sink.truncated;
-    if !truncated {
-        result?;
-    }
+    let (source, truncated) =
+        if !unavailable && (table.rows.len() <= count || html.len() >= SOURCE_BUDGET) {
+            if html.len() <= SOURCE_BUDGET {
+                (html.clone(), false)
+            } else {
+                let mut bytes = html.as_bytes()[..SOURCE_BUDGET].to_vec();
+                if let Err(e) = std::str::from_utf8(&bytes) {
+                    bytes.truncate(e.valid_up_to());
+                }
+                (String::from_utf8(bytes).expect("UTF-8 prefix"), true)
+            }
+        } else {
+            let mut sink = Excerpt {
+                bytes: vec![],
+                truncated: false,
+                budget: SOURCE_BUDGET,
+            };
+            let result = html::write(table, style, None, &mut sink, cancel);
+            let truncated = sink.truncated;
+            if !truncated {
+                result?;
+            }
+            (sink.text(), truncated)
+        };
     Ok(Preview {
         html,
-        source: sink.text(),
+        source,
         row_count: count,
         source_truncated: truncated,
         preview_unavailable: unavailable,
