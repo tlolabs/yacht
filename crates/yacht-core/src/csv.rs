@@ -1,9 +1,6 @@
 use crate::{check, invalid, table::Table, Cancel, Result};
 use serde::{Deserialize, Serialize};
-use std::{
-    io::{BufReader, Read},
-    path::Path,
-};
+use std::{io::Read, path::Path};
 #[derive(Debug, Clone, Copy, Default, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Delimiter {
@@ -56,7 +53,7 @@ impl Parser {
         Self {
             delimiter: d.byte(),
             state: State::Start,
-            field: vec![],
+            field: Vec::with_capacity(64),
             row: vec![],
             records: vec![],
             started: false,
@@ -74,9 +71,13 @@ impl Parser {
         ))
     }
     fn field(&mut self) -> Result<()> {
-        let value = std::str::from_utf8(&self.field)
-            .map_err(|_| self.fail("input is not valid UTF-8. Save the file as UTF-8 CSV."))?
-            .to_owned();
+        let value = if self.field.is_empty() {
+            String::new()
+        } else {
+            std::str::from_utf8(&self.field)
+                .map_err(|_| self.fail("input is not valid UTF-8. Save the file as UTF-8 CSV."))?
+                .to_owned()
+        };
         self.row.push(value);
         self.field.clear();
         Ok(())
@@ -85,14 +86,16 @@ impl Parser {
         if self.started {
             self.field()?;
         }
-        self.records.push(std::mem::take(&mut self.row));
+        let cap = self.row.len();
+        self.records
+            .push(std::mem::replace(&mut self.row, Vec::with_capacity(cap)));
         self.started = false;
         self.state = State::Start;
         Ok(())
     }
     fn consume(&mut self, bytes: &[u8], cancel: Cancel<'_>) -> Result<()> {
         for (index, &b) in bytes.iter().enumerate() {
-            if index % 65536 == 0 {
+            if (index & 0xffff) == 0 {
                 check(cancel)?;
             }
             if b == 0 {
@@ -204,12 +207,18 @@ pub fn read_stream(
         return Err(invalid("CSV read buffer must be positive."));
     }
     let mut parser = Parser::new(delimiter);
-    let mut prefix = vec![];
-    reader.by_ref().take(3).read_to_end(&mut prefix)?;
-    if prefix != [0xef, 0xbb, 0xbf] {
-        parser.consume(&prefix, cancel)?;
+    let mut prefix = [0u8; 3];
+    let mut prefix_len = 0;
+    while prefix_len < 3 {
+        let n = reader.read(&mut prefix[prefix_len..])?;
+        if n == 0 {
+            break;
+        }
+        prefix_len += n;
     }
-    let mut reader = BufReader::with_capacity(chunk_size.min(1024 * 1024), reader);
+    if prefix_len < 3 || prefix != [0xef, 0xbb, 0xbf] {
+        parser.consume(&prefix[..prefix_len], cancel)?;
+    }
     let mut buffer = vec![0; chunk_size.min(1024 * 1024)];
     loop {
         check(cancel)?;
