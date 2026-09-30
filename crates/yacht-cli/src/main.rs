@@ -47,7 +47,7 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
         println!("{HELP}");
         return Ok(());
     }
-    let mut style = serde_json::to_value(Style::default())?;
+    let mut style = Style::default();
     let (mut inputs, mut output, mut delimiter, mut overwrite, mut positional) =
         (vec![], None, Delimiter::Comma, false, false);
     let mut args = args.into_iter();
@@ -66,7 +66,7 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
                 continue;
             }
             "--unstyled" => {
-                style = serde_json::to_value(Style::unstyled())?;
+                style = Style::unstyled();
                 continue;
             }
             _ => {}
@@ -84,42 +84,62 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
             continue;
         }
         if flag == "--delimiter" {
-            delimiter = serde_json::from_value(serde_json::json!(value))
-                .map_err(|_| invalid(format!("Unknown delimiter: {value}")))?;
+            delimiter = match value.as_str() {
+                "comma" => Delimiter::Comma,
+                "tab" => Delimiter::Tab,
+                "semicolon" => Delimiter::Semicolon,
+                "pipe" => Delimiter::Pipe,
+                _ => return Err(invalid(format!("Unknown delimiter: {value}"))),
+            };
             continue;
         }
-        let key = match flag.as_str() {
-            "--font-size" => "font_size_px",
-            "--cell-padding" => "cell_padding_px",
-            "--border-width" => "border_width_px",
-            "--border-spacing" => "border_spacing_px",
-            "--zebra" => "zebra_enabled",
-            "--hover" => "hover_enabled",
-            "--table-class" => "table_class",
-            "--font-family" => "font_family",
-            "--border-style" => "border_style",
-            "--border-color" => "border_color",
-            "--header-bg" => "header_bg",
-            "--header-text-color" => "header_text_color",
-            "--body-bg" => "body_bg",
-            "--zebra-bg" => "zebra_bg",
-            "--hover-bg" => "hover_bg",
-            "--border-collapse" => "border_collapse",
+        match flag.as_str() {
+            "--font-size" => {
+                style.font_size_px = value
+                    .parse::<i64>()
+                    .map_err(|_| invalid(format!("{flag} requires an integer.")))?;
+            }
+            "--cell-padding" => {
+                style.cell_padding_px = value
+                    .parse::<i64>()
+                    .map_err(|_| invalid(format!("{flag} requires an integer.")))?;
+            }
+            "--border-width" => {
+                style.border_width_px = value
+                    .parse::<i64>()
+                    .map_err(|_| invalid(format!("{flag} requires an integer.")))?;
+            }
+            "--border-spacing" => {
+                style.border_spacing_px = value
+                    .parse::<i64>()
+                    .map_err(|_| invalid(format!("{flag} requires an integer.")))?;
+            }
+            "--zebra" => {
+                style.zebra_enabled = match value.to_lowercase().as_str() {
+                    "1" | "true" | "yes" | "y" | "on" => true,
+                    "0" | "false" | "no" | "n" | "off" => false,
+                    _ => return Err(invalid(format!("Invalid boolean: {value}"))),
+                };
+            }
+            "--hover" => {
+                style.hover_enabled = match value.to_lowercase().as_str() {
+                    "1" | "true" | "yes" | "y" | "on" => true,
+                    "0" | "false" | "no" | "n" | "off" => false,
+                    _ => return Err(invalid(format!("Invalid boolean: {value}"))),
+                };
+            }
+            "--table-class" => style.table_class = value,
+            "--font-family" => style.font_family = value,
+            "--border-style" => style.border_style = value,
+            "--border-color" => style.border_color = value,
+            "--header-bg" => style.header_bg = value,
+            "--header-text-color" => style.header_text_color = value,
+            "--body-bg" => style.body_bg = value,
+            "--zebra-bg" => style.zebra_bg = value,
+            "--hover-bg" => style.hover_bg = value,
+            "--border-collapse" => style.border_collapse = value,
             _ => return Err(invalid(format!("Unknown option: {flag}. See --help."))),
-        };
-        style[key] = if key.ends_with("_px") {
-            serde_json::json!(value
-                .parse::<i64>()
-                .map_err(|_| invalid(format!("{flag} requires an integer.")))?)
-        } else if key.ends_with("_enabled") {
-            serde_json::json!(match value.to_lowercase().as_str() {
-                "1" | "true" | "yes" | "y" | "on" => true,
-                "0" | "false" | "no" | "n" | "off" => false,
-                _ => return Err(invalid(format!("Invalid boolean: {value}"))),
-            })
-        } else {
-            serde_json::json!(value)
-        };
+        }
     }
     if inputs.is_empty() {
         return Err(invalid("Choose at least one input CSV."));
@@ -127,7 +147,6 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
     if output.is_some() && inputs.len() != 1 {
         return Err(invalid("--output can only be used with one input CSV."));
     }
-    let style = Style::from_value(style)?;
     style.validate()?;
     let mut failures = 0;
     for input in inputs {
