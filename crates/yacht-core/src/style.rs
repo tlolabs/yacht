@@ -118,6 +118,20 @@ impl Style {
     }
 }
 pub fn safe_color(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    // Fast path: standard hex colors (#RGB, #RGBA, #RRGGBB, #RRGGBBAA)
+    if bytes.first() == Some(&b'#') {
+        let len = bytes.len();
+        if (len == 4 || len == 5 || len == 7 || len == 9)
+            && bytes[1..].iter().all(|b| b.is_ascii_hexdigit())
+        {
+            return true;
+        }
+    }
+    // Fast path: pure ASCII alphabetic keywords (e.g. "transparent", "white", "black")
+    if !bytes.is_empty() && bytes.iter().all(|b| b.is_ascii_alphabetic()) {
+        return true;
+    }
     static COLOR: LazyLock<Regex> = LazyLock::new(|| {
         Regex::new(r"\A(?:#[0-9a-fA-F]{3}|#[0-9a-fA-F]{4}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|[a-zA-Z]+|(?:rgb|hsl)a?\([0-9.,% /+\-]+\))\z").unwrap()
     });
