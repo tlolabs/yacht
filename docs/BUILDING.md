@@ -54,10 +54,9 @@ the matching Rust target installed, but CI tests each architecture on its own na
 runner (`macos-26` with Xcode 26.6 and `macos-15-intel` with Xcode 26.3). Use `arch=x86_64` for Intel XCTest runs.
 
 Outputs per `<arch>` (`arm64` or `x64`): `dist/macos-<arch>/YACHT.app`,
-`dist/macos-<arch>/yacht`, `release/YACHT-macos-<arch>.dmg`,
-`release/YACHT-macos-<arch>.zip`, `release/yacht-macos-<arch>` and
-`release/SHA256SUMS-macos-<arch>`. Both packages install the same `YACHT.app`;
-choose the package matching the Mac's processor. Each shipped executable is checked
+`dist/macos-<arch>/yacht`, `release/YACHT-macos-<arch>.zip`,
+`release/yacht-macos-<arch>` and `release/SHA256SUMS-macos-<arch>`.
+Choose the ZIP matching the Mac's processor. Each shipped executable is checked
 to contain exactly the requested architecture. CLI and checksum filenames remain
 unique when release artifacts are combined.
 Bundle ID remains `com.local.yacht.csvhtmltranslator`. Application Support/Y.A.C.H.T.
@@ -73,7 +72,7 @@ NOTARY_PROFILE='yacht-notary' ./script/package.sh --notarize --arch arm64
 
 Default builds (`--unsigned`) are ad-hoc signed and explicitly ignore ambient signing/notary credentials. Use `--sign` for signing without upload, or `--notarize` for explicit notarization. Provision a certificate/private key in an ephemeral
 CI keychain or local Keychain; create a notary profile with `xcrun notarytool
-store-credentials`. The script signs app/CLI, notarizes/staples the app and DMG,
+store-credentials`. The script signs app/CLI, notarizes/staples the app,
 verifies signatures/architectures, then creates checksums. Never commit credentials.
 CI intentionally produces development signatures until credentials are configured.
 

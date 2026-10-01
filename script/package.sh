@@ -65,17 +65,11 @@ rm -rf -- "$DIST_DIR/YACHT.app"
 ditto "$STAGING_DIR/YACHT.app" "$DIST_DIR/YACHT.app"
 codesign --verify --deep --strict "$DIST_DIR/YACHT.app"
 cp "$STAGING_DIR/yacht" "$DIST_DIR/yacht"
-ln -s /Applications "$STAGING_DIR/Applications"
-hdiutil create -volname 'YACHT' -srcfolder "$STAGING_DIR" -ov -format UDZO "release/$ARTIFACT.dmg"
 if [[ -n "${NOTARY_PROFILE:-}" ]]; then
-  codesign --force --timestamp --sign "$SIGNING_IDENTITY" "release/$ARTIFACT.dmg"
-  xcrun notarytool submit "release/$ARTIFACT.dmg" --keychain-profile "$NOTARY_PROFILE" --wait
-  xcrun stapler staple "release/$ARTIFACT.dmg"
-  xcrun stapler validate "release/$ARTIFACT.dmg"
-  codesign --verify --strict "release/$ARTIFACT.dmg"
   spctl --assess --type execute --verbose "$DIST_DIR/YACHT.app"
 fi
 ditto -c -k --keepParent "$DIST_DIR/YACHT.app" "release/$ARTIFACT.zip"
 cp "$DIST_DIR/yacht" "release/yacht-macos-$PACKAGE_ARCH"
-(cd release && shasum -a 256 "$ARTIFACT.dmg" "$ARTIFACT.zip" "yacht-macos-$PACKAGE_ARCH" > "SHA256SUMS-macos-$PACKAGE_ARCH")
+(cd release && shasum -a 256 "$ARTIFACT.zip" "yacht-macos-$PACKAGE_ARCH" > "SHA256SUMS-macos-$PACKAGE_ARCH")
+rm -f -- "release/$ARTIFACT.dmg"
 echo "Packaged macOS $PACKAGE_ARCH app and CLI in release/"

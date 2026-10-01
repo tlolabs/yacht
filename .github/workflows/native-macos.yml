@@ -97,7 +97,6 @@ jobs:
         with:
           name: YACHT-macos-${{ matrix.arch }}-${{ github.sha }}
           path: |
-            release/YACHT-macos-${{ matrix.arch }}.dmg
             release/YACHT-macos-${{ matrix.arch }}.zip
             release/yacht-macos-${{ matrix.arch }}
             release/SHA256SUMS-macos-${{ matrix.arch }}
