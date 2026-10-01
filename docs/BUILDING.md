@@ -115,13 +115,14 @@ in the script.
 ## Linux
 
 Ubuntu 24.04 x64/ARM64 baseline (glibc 2.39), .NET SDK 10.0.401 for building,
-and system WebKitGTK 4.1, GTK3, ICU, Fontconfig and X11 libraries. GTK3 is only the
+and system WebKitGTK 4.1, GTK3, ICU, Fontconfig and X11 libraries.
+`xdg-utils` supplies file-manager and browser integration. GTK3 is only the
 native WebView dependency, not an alternative application UI. The .deb declares
 runtime dependencies; Python is only needed for build/test tooling.
 
 ```sh
 sudo apt install libicu74 libfontconfig1 libx11-6 libice6 libsm6 libgtk-3-0t64 \
-  libwebkit2gtk-4.1-0 xvfb dbus-x11 at-spi2-core desktop-file-utils
+  libwebkit2gtk-4.1-0 libssl3t64 xdg-utils xvfb dbus-x11 at-spi2-core desktop-file-utils
 cargo build --workspace --locked
 python3 script/test_native_binding.py target/debug/libyacht_ffi.so
 dotnet build platform/avalonia/Tests/NativeIntegration.csproj -c Release

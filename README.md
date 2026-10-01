@@ -21,7 +21,7 @@ before downloading; availability can vary by release.
 | Target | Minimum | Current package formats |
 |---|---|---|
 | macOS (ARM64/x64) | macOS 14.0 | Architecture-specific app ZIP; historical releases also have DMG |
-| Windows (x64/ARM64) | Windows 10 1809 | Portable ZIP; historical releases also have per-user installer |
+| Windows (x64/ARM64) | Windows 10 1809 | Per-user installer and portable ZIP |
 | Linux (x64/ARM64) | Ubuntu 24.04, glibc 2.39 | Current `.deb` or tar; AppImage is planned |
 
 Use artifacts from a successful [Native cross-platform run](https://github.com/tlolabs/yacht/actions/workflows/native-macos.yml)
@@ -31,11 +31,11 @@ intended only for macOS (ARM64); CI may still test other targets.
 - **macOS:** extract the app ZIP and move YACHT to Applications. If a historical
   release has a DMG, open it and drag YACHT to Applications. Check that release's
   signature notes; development builds use ad-hoc signatures.
-- **Windows:** extract the entire portable ZIP
+- **Windows:** run the per-user installer, or extract the entire portable ZIP
   and run `YachtApp.exe`. Keep its DLLs together. The CLI is `yacht.exe`.
   Microsoft Edge WebView2 Runtime is required for table preview; install the
   [Microsoft runtime](https://developer.microsoft.com/microsoft-edge/webview2/)
-  if it is absent. Historical per-user installers may be available.
+  if it is absent.
 - **Linux:** a current `.deb` installs the native
   dependencies and desktop entry. Launch YACHT or `yacht-gui`. For the tar archive,
   install the native WebKitGTK and graphics dependencies described in

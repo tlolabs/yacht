@@ -31,7 +31,7 @@ Architecture: $arch
 Maintainer: Thomas Lothian <TBD>
 Section: utils
 Priority: optional
-Depends: libc6 (>= 2.39), libicu74, libfontconfig1, libx11-6, libice6, libsm6, libgtk-3-0t64, libwebkit2gtk-4.1-0, libssl3t64
+Depends: libc6 (>= 2.39), libicu74, libfontconfig1, libx11-6, libice6, libsm6, libgtk-3-0t64, libwebkit2gtk-4.1-0, libssl3t64, xdg-utils
 Description: Yet Another CSV HTML Translator
  Shared Avalonia interface and shared Rust CLI for styled HTML tables.
 CONTROL
