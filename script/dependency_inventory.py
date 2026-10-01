@@ -26,24 +26,46 @@ def cargo_packages():
 
 
 def nuget_packages():
-    lock = json.loads((ROOT / "platform/windows/YACHT/packages.lock.json").read_text())
-    framework = lock["dependencies"]["net8.0-windows10.0.19041"]
-    for name, package in framework.items():
+    lock = json.loads((ROOT / "platform/avalonia/YACHT/packages.lock.json").read_text())
+    seen = set()
+    for framework in lock["dependencies"].values():
+        for name, package in framework.items():
+            identity = (name, package["resolved"])
+            if identity in seen:
+                continue
+            seen.add(identity)
+            yield {
+                "ecosystem": "nuget", "name": name, "version": package["resolved"],
+                "source": "nuget.org", "scope": package["type"].lower(),
+                "license": "BSD-3-Clause and bundled notices" if name == "Avalonia.Angle.Windows.Natives" else "MIT and bundled native notices",
+            }
+
+
+
+SWIFT_LOCK = "Yacht.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+
+
+def swift_packages():
+    lock = json.loads((ROOT / SWIFT_LOCK).read_text())
+    package_lock = json.loads((ROOT / "Package.resolved").read_text())
+    if package_lock["pins"] != lock["pins"]:
+        raise SystemExit("SwiftPM and Xcode dependency locks disagree")
+    for pin in lock["pins"]:
         yield {
-            "ecosystem": "nuget",
-            "name": name,
-            "version": package["resolved"],
-            "source": "nuget.org",
-            "scope": package["type"].lower(),
-            "license": "NOASSERTION",
+            "ecosystem": "swiftpm",
+            "name": "Sparkle" if pin["identity"] == "sparkle" else pin["identity"],
+            "version": pin["state"]["version"],
+            "revision": pin["state"]["revision"],
+            "source": pin["location"],
+            "license": "MIT (see bundled Sparkle LICENSE)" if pin["identity"] == "sparkle" else "NOASSERTION",
         }
 
 
 def build_inventory():
-    packages = sorted([*cargo_packages(), *nuget_packages()], key=lambda p: (p["ecosystem"], p["name"].lower()))
+    packages = sorted([*cargo_packages(), *nuget_packages(), *swift_packages()], key=lambda p: (p["ecosystem"], p["name"].lower()))
     return {
         "schema": "tlo-labs-dependency-inventory/v1",
-        "source_locks": ["Cargo.lock", "platform/windows/YACHT/packages.lock.json"],
+        "source_locks": ["Cargo.lock", "platform/avalonia/YACHT/packages.lock.json", "Package.resolved", SWIFT_LOCK],
         "license_note": "NOASSERTION means the lockfile does not record a license. Review upstream package licenses and release SBOM; see docs/DEPENDENCIES.md and docs/LICENSE_AUDIT.md.",
         "packages": packages,
     }

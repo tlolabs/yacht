@@ -15,6 +15,9 @@ struct YachtApp: App {
         .handlesExternalEvents(matching: ["*"])
         .defaultSize(width: 1000, height: 650)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") { fileOpenDelegate.updater.check() }.disabled(workspace.working || workspace.importing || workspace.showExporter || workspace.showImporter || workspace.showBatch)
+            }
             CommandGroup(replacing: .newItem) {
                 Button("Open CSV…") { workspace.chooseFile() }.keyboardShortcut("o")
                 Menu("Open Recent") {
@@ -39,7 +42,7 @@ struct YachtApp: App {
                 Link("YACHT User Guide", destination: URL(string: "https://github.com/tlolabs/yacht#using-yacht")!)
             }
         }
-        Settings { SettingsView(preferences: workspace.preferences).preferredColorScheme(colorScheme) }
+        Settings { SettingsView(preferences: workspace.preferences, updater: fileOpenDelegate.updater).preferredColorScheme(colorScheme) }
     }
 }
 
@@ -47,9 +50,23 @@ struct YachtApp: App {
 @MainActor
 final class FileOpenDelegate: NSObject, NSApplicationDelegate {
     let workspace = Workspace()
+    let updater = ApplicationUpdater()
     private let logger = Logger(subsystem: "com.local.yacht.csvhtmltranslator", category: "FileOpen")
     func applicationDidFinishLaunching(_ notification: Notification) {
+        updater.isBusy = { [weak self] in (self?.workspace.working ?? true) || (self?.workspace.importing ?? true) || (self?.workspace.showExporter ?? true) || (self?.workspace.showImporter ?? true) || (self?.workspace.showBatch ?? true) }
+        updater.start()
         logger.info("Native file-open delegate ready")
+    }
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if updater.isBusy() {
+            let alert = NSAlert()
+            alert.messageText = "Finish the current operation before quitting"
+            alert.informativeText = "Finish or cancel the import, export or batch operation, then try again."
+            alert.addButton(withTitle: "Keep Working")
+            alert.runModal()
+            return .terminateCancel
+        }
+        return updater.allowsTermination(hasWork: workspace.table != nil) ? .terminateNow : .terminateCancel
     }
     func application(_ application: NSApplication, open urls: [URL]) {
         logger.info("Received \(urls.count, privacy: .public) file URLs")

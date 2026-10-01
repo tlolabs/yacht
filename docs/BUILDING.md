@@ -79,21 +79,21 @@ CI intentionally produces development signatures until credentials are configure
 ## Windows
 
 Windows 10 1809+, Visual Studio 2022 Build Tools with Windows SDK/C++ desktop tools,
-.NET 8 SDK, Rust MSVC toolchain and Inno Setup 6. Microsoft Edge WebView2 Runtime is
+.NET 10 SDK (10.0.401), Rust MSVC toolchain and Inno Setup 6. Microsoft Edge WebView2 Runtime is
 needed for preview (normally present on current Windows; install on older hosts).
-Native controls are WinUI 3; WebView2 is only the document preview.
+The UI is shared Avalonia; WebView2 is only the document preview.
 
 ```powershell
 rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
 ./script/package_windows.ps1 -Architecture x64
 # On an ARM64 host, use -Architecture arm64.
-dotnet build platform/windows/Tests/NativeIntegration.csproj -c Release
-Copy-Item target/x86_64-pc-windows-msvc/release/yacht_ffi.dll platform/windows/Tests/bin/Release/net8.0/
-dotnet platform/windows/Tests/bin/Release/net8.0/NativeIntegration.dll
+dotnet build platform/avalonia/Tests/NativeIntegration.csproj -c Release
+Copy-Item target/x86_64-pc-windows-msvc/release/yacht_ffi.dll platform/avalonia/Tests/bin/Release/net10.0/
+dotnet platform/avalonia/Tests/bin/Release/net10.0/NativeIntegration.dll
 ./platform/windows/test_ui.ps1 -Executable "$PWD/target/windows-x64/YachtApp.exe"
 ```
 
-Packaging uses NuGet locked restore and publishes the .NET/Windows App SDK runtime
+Packaging uses NuGet locked restore and publishes the self-contained .NET runtime
 with the app, Rust DLL and CLI. Outputs: per-user Inno installer, portable ZIP and
 SHA256SUMS-windows-<arch>. The GUI is YachtApp.exe; yacht.exe is the CLI (Windows
 filenames are case-insensitive). Inno registers Open With entries without taking
@@ -102,10 +102,8 @@ Windows desktop and WebView2 runtime. They isolate preference writes.
 
 The package script copies the exact NuGet package license and notice files into
 `ThirdPartyLicenses/` before making the ZIP or installer. The historical v2.1.1 ZIPs
-did not contain that folder. A framework-dependent build that relies on separately
-installed Windows App Runtime and .NET is described as a candidate in the
-[licensing audit](LICENSE_AUDIT.md); it requires native Windows launch and inventory
-verification before becoming the default portable package.
+did not contain that folder. The new packages contain Avalonia and its open-source rendering dependencies;
+retired Windows App SDK binaries are not part of this packaging path.
 
 Set YACHT_SIGNING_THUMBPRINT to a certificate in the signing user's certificate
 store and make signtool available to sign/verify app, core DLL, CLI and installer.
@@ -116,19 +114,24 @@ in the script.
 
 ## Linux
 
-Ubuntu 24.04 x64/ARM64 baseline (glibc 2.39). GTK 4.10+, libadwaita 1.4+, WebKitGTK
-6.0, Python 3 and PyGObject. The .deb declares these dependencies.
+Ubuntu 24.04 x64/ARM64 baseline (glibc 2.39), .NET SDK 10.0.401 for building,
+and system WebKitGTK 4.1, GTK3, ICU, Fontconfig and X11 libraries. GTK3 is only the
+native WebView dependency, not an alternative application UI. The .deb declares
+runtime dependencies; Python is only needed for build/test tooling.
 
 ```sh
-sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 \
-  gir1.2-webkit-6.0 xvfb dbus-x11 at-spi2-core desktop-file-utils
+sudo apt install libicu74 libfontconfig1 libx11-6 libice6 libsm6 libgtk-3-0t64 \
+  libwebkit2gtk-4.1-0 xvfb dbus-x11 at-spi2-core desktop-file-utils
 cargo build --workspace --locked
-YACHT_LIBRARY="$PWD/target/debug/libyacht_ffi.so" python3 platform/linux/yacht.py
 python3 script/test_native_binding.py target/debug/libyacht_ffi.so
-YACHT_LIBRARY="$PWD/target/debug/libyacht_ffi.so" \
-  xvfb-run -a dbus-run-session -- python3 platform/linux/test_ui.py
+dotnet build platform/avalonia/Tests/NativeIntegration.csproj -c Release
+cp target/debug/libyacht_ffi.so platform/avalonia/Tests/bin/Release/net10.0/
+dotnet platform/avalonia/Tests/bin/Release/net10.0/NativeIntegration.dll
 ./script/package_linux.sh
 ```
+
+CI runs `script/test_avalonia_ui.py` against the published application in an
+Xvfb/DBus session. This verifies the native WebView rather than a simulated browser.
 
 WebKit keeps its process sandbox enabled. Ubuntu hosts must permit the distro
 `/usr/bin/bwrap` helper to create user namespaces. If startup reports a denied UID
@@ -142,6 +145,22 @@ native dependencies; they are not universal static binaries. The desktop entry
 registers CSV/TSV handling and the native launcher. The shared YACHT icon is installed into the hicolor theme and referenced by the desktop entry. Optional YACHT_GPG_KEY signs
 the checksum manifest with an already-provisioned GnuPG key; unsigned development
 packages remain buildable. Architecture-specific Linux CI runs the code natively.
+
+## Internal macOS ARM64 Avalonia reference
+
+On macOS 15 or newer, install the SDK pinned in `global.json`, then run:
+
+```sh
+./script/package_avalonia_internal.sh
+python3 script/test_avalonia_ui.py 'dist/internal/YACHT Avalonia Internal.app/Contents/MacOS/YachtApp'
+open 'dist/internal/YACHT Avalonia Internal.app'
+```
+
+`DOTNET` may point to a repository-local SDK executable. The bundle is ad-hoc signed
+for local execution, with no Developer ID or notarization requirement. It has a
+separate identity and data store, no production updater, and no Intel target.
+Download it from the `YACHT-Avalonia-INTERNAL-macos-arm64-*` workflow artifact.
+It is never the production Mac download. See [isolation safeguards](AVALONIA-MIGRATION.md).
 
 ## CI and releases
 

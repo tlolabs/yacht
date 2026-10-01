@@ -4,7 +4,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 if [[ -z "${DEVELOPER_DIR:-}" && -d /Applications/Xcode.app/Contents/Developer ]]; then export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer; fi
 MODE="${1:-run}"
-pkill -x YachtApp >/dev/null 2>&1 || true
+# Do not terminate a user's conversion or overwrite a running application.
+if pgrep -x YachtApp >/dev/null; then
+  echo 'Quit YACHT after saving your work before rebuilding the development app.' >&2
+  exit 1
+fi
 xcodebuild -project Yacht.xcodeproj -scheme Yacht -configuration Debug -derivedDataPath build -destination 'platform=macOS' build -quiet
 mkdir -p dist
 rm -rf -- "$ROOT_DIR/dist/YACHT.app"

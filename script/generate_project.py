@@ -17,6 +17,9 @@ product_test = add('product-tests', isa='PBXFileReference', explicitFileType='wr
 package = add('package', isa='XCLocalSwiftPackageReference', relativePath='.')
 core_product = add('core-product', isa='XCSwiftPackageProductDependency', package=package, productName='YachtCore')
 core_build = add('core-build', isa='PBXBuildFile', productRef=core_product)
+sparkle_package = add('sparkle-package', isa='XCRemoteSwiftPackageReference', repositoryURL='https://github.com/sparkle-project/Sparkle', requirement={'kind':'exactVersion','version':'2.9.6'})
+sparkle_product = add('sparkle-product', isa='XCSwiftPackageProductDependency', package=sparkle_package, productName='Sparkle')
+sparkle_build = add('sparkle-build', isa='PBXBuildFile', productRef=sparkle_product)
 groups = []
 phases = {}
 for target, folder in [('app', 'platform/macos/Sources/YachtApp'), ('tests', 'platform/macos/UITests')]:
@@ -27,7 +30,7 @@ for target, folder in [('app', 'platform/macos/Sources/YachtApp'), ('tests', 'pl
         refs.append(ref); builds.append(add(relative+'-build', isa='PBXBuildFile', fileRef=ref))
     groups.append(add(target+'-group', isa='PBXGroup', name=folder, children=refs, sourceTree='<group>'))
     sources = add(target+'-sources', isa='PBXSourcesBuildPhase', buildActionMask=2147483647, files=builds, runOnlyForDeploymentPostprocessing=0)
-    frameworks = add(target+'-frameworks', isa='PBXFrameworksBuildPhase', buildActionMask=2147483647, files=[core_build] if target=='app' else [], runOnlyForDeploymentPostprocessing=0)
+    frameworks = add(target+'-frameworks', isa='PBXFrameworksBuildPhase', buildActionMask=2147483647, files=[core_build, sparkle_build] if target=='app' else [], runOnlyForDeploymentPostprocessing=0)
     phases[target] = [sources, frameworks]
 license_ref = add('license-ref', isa='PBXFileReference', lastKnownFileType='text', path='LICENSE', sourceTree='SOURCE_ROOT')
 license_build = add('license-build', isa='PBXBuildFile', fileRef=license_ref)
@@ -53,9 +56,9 @@ app_configs=configs('app', {'PRODUCT_NAME':'YACHT', 'EXECUTABLE_NAME':'YachtApp'
 test_configs=configs('tests', {'ENABLE_HARDENED_RUNTIME':'NO', 'PRODUCT_NAME':'YachtUITests', 'PRODUCT_BUNDLE_IDENTIFIER':'com.local.yacht.uitests', 'GENERATE_INFOPLIST_FILE':'YES', 'TEST_TARGET_NAME':'Yacht', 'LD_RUNPATH_SEARCH_PATHS':['$(inherited)', '@executable_path/../Frameworks', '@loader_path/../Frameworks']})
 proxy=add('test-proxy',isa='PBXContainerItemProxy',containerPortal=project_id,proxyType=1,remoteGlobalIDString=app_id,remoteInfo='Yacht')
 dep=add('test-dependency',isa='PBXTargetDependency',target=app_id,targetProxy=proxy)
-add('app', isa='PBXNativeTarget', buildConfigurationList=app_configs, buildPhases=phases['app'], buildRules=[], dependencies=[], name='Yacht', productName='YACHT', productReference=product_app, productType='com.apple.product-type.application', packageProductDependencies=[core_product])
+add('app', isa='PBXNativeTarget', buildConfigurationList=app_configs, buildPhases=phases['app'], buildRules=[], dependencies=[], name='Yacht', productName='YACHT', productReference=product_app, productType='com.apple.product-type.application', packageProductDependencies=[core_product,sparkle_product])
 add('tests', isa='PBXNativeTarget', buildConfigurationList=test_configs, buildPhases=phases['tests'], buildRules=[], dependencies=[dep], name='YachtUITests', productName='YachtUITests', productReference=product_test, productType='com.apple.product-type.bundle.ui-testing')
-add('project', isa='PBXProject', attributes={'LastUpgradeCheck':'2600', 'BuildIndependentTargetsInParallel':'YES', 'TargetAttributes':{test_id:{'TestTargetID':app_id}}}, buildConfigurationList=project_configs, compatibilityVersion='Xcode 14.0', developmentRegion='en', knownRegions=['en','Base'], mainGroup=main, productRefGroup=products, projectDirPath='', projectRoot='', targets=[app_id,test_id], packageReferences=[package])
+add('project', isa='PBXProject', attributes={'LastUpgradeCheck':'2600', 'BuildIndependentTargetsInParallel':'YES', 'TargetAttributes':{test_id:{'TestTargetID':app_id}}}, buildConfigurationList=project_configs, compatibilityVersion='Xcode 14.0', developmentRegion='en', knownRegions=['en','Base'], mainGroup=main, productRefGroup=products, projectDirPath='', projectRoot='', targets=[app_id,test_id], packageReferences=[package,sparkle_package])
 p=root/'Yacht.xcodeproj';p.mkdir(exist_ok=True)
 (p/'project.pbxproj').write_text('// !$*UTF8*$!\n'+serialize({'archiveVersion':1,'classes':{},'objectVersion':56,'objects':objects,'rootObject':project_id})+'\n')
 scheme=p/'xcshareddata/xcschemes/Yacht.xcscheme';scheme.parent.mkdir(parents=True,exist_ok=True)

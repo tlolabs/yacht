@@ -1,4 +1,12 @@
-# Cross-platform feature parity
+# Current shared UI parity
+
+The pre-migration verification table below records the retired WinUI/GTK frontend;
+it does not qualify the Avalonia replacement. The complete current feature audit,
+including retained commands, dialogs, shortcuts, settings, updater behavior and
+remaining native acceptance, is in [AVALONIA-MIGRATION.md](AVALONIA-MIGRATION.md).
+Current test/build evidence is in [VERIFICATION.md](VERIFICATION.md).
+
+# Historical native frontend parity
 
 Status: **V** implemented and verified within the listed test scope; **I** implemented,
 remaining native/manual acceptance pending. I is not an unsupported feature or acceptance claim.

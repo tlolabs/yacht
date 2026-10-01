@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-01",
+  "application": "YACHT",
+  "source": "uncommitted working tree",
+  "base_commit": "ed110ba27c9b7384bddf99e0925f73a33527d0e9",
+  "new_commit": null,
+  "release_tag": null,
+  "github_release": null,
+  "version_a": null,
+  "version_b": null,
+  "tests": {
+    "rust": {
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0
+    },
+    "swift": {
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0
+    },
+    "python_release_gates": {
+      "passed": 6,
+      "failed": 0,
+      "optimization_modes": [
+        "normal",
+        "-O"
+      ]
+    },
+    "csv_roundtrip_cases": 60,
+    "native_abi": "passed",
+    "sparkle_real_tool_feed_roundtrip_and_tamper_rejection": "passed",
+    "macos_ui": {
+      "planned": 10,
+      "passed": 0,
+      "status": "blocked before tests by macOS automation initialization timeout",
+      "results": [
+        "build/qualification-tests.xcresult",
+        "build/qualification-ui-final.xcresult",
+        "build/qualification-ui-recovery.xcresult"
+      ]
+    },
+    "manual_packaged_arm64_smoke": "launch, displayed 2.1.1, unconfigured update fallback, HTML source, accessible disabled updater setting and normal quit passed"
+  },
+  "checks_passed": [
+    "cargo fmt",
+    "clippy warnings denied",
+    "Xcode static analysis",
+    "actionlint",
+    "shellcheck all scripts",
+    "generated file determinism",
+    "platform contract",
+    "dependency inventory",
+    "license structure",
+    "Python syntax",
+    "changed-source credential pattern scan"
+  ],
+  "artifacts": [
+    {
+      "path": "release/YACHT-macos-arm64.zip",
+      "arch": "arm64",
+      "sha256": "9cf62fd83eaafcfd8e0f3fa5dfca302dc38e2a32bc416e9078565ca3420e2c0c",
+      "configuration": "Release",
+      "version": "2.1.1",
+      "signature": "ad-hoc",
+      "notarized": false,
+      "production": false
+    },
+    {
+      "path": "release/YACHT-macos-x64.zip",
+      "arch": "x64",
+      "sha256": "bb1ee81e1f95275f6e6cb43786fab991a326d910c8932ac50dc11d7eb2ec6316",
+      "configuration": "Release",
+      "version": "2.1.1",
+      "signature": "ad-hoc",
+      "notarized": false,
+      "production": false
+    }
+  ],
+  "production_packaging": "failed: Production update signing identity/public key is not configured",
+  "local_developer_id_available": true,
+  "local_notarization_profile_available": true,
+  "repository_actions_secrets_configured": false,
+  "production_trust_configured": false,
+  "end_to_end_qualified_targets": [],
+  "end_to_end_transition": "NOT PERFORMED: no updater-capable authenticated VERSION A or published VERSION B",
+  "remaining": [
+    "Resolve XCTest automation-mode initialization and run all 10 native UI tests without desktop contention",
+    "Implement enforceable pinned macOS Developer ID/notarization validation during updater installation",
+    "Provision per-application update trust and protected release credentials",
+    "Implement and qualify normal production signing/publication pipeline; resolve six-target metadata vs independent-platform publication contract",
+    "Establish genuine updater-capable VERSION A bridge build before VERSION B",
+    "Windows native build/UI/Authenticode/installer and licensing qualification",
+    "Linux AppImage packaging, GPG/provenance validation and installation adapter",
+    "Consolidate concurrent updater libraries before declaring fleet standardization"
+  ]
+}

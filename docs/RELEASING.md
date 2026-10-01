@@ -10,7 +10,7 @@ The Git tag is the release version: stable `vMAJOR.MINOR.PATCH`, prerelease `vMA
 | Prerelease | Tagged beta/RC; clearly marked prerelease, no production signing |
 | Development | `main` build; clearly unsupported, no production signing, artifact retention 30 days; routine runnable nightly package only for macOS (ARM64) |
 
-GitHub Releases are the canonical direct download and update source. No application component downloads or installs updates automatically. A future project website should link to GitHub releases. Native app stores, if used, are the exception.
+GitHub Releases are the canonical direct download and update source. The candidate updater uses signed GitHub Release metadata and native adapters; see [the update release contract](updater/RELEASE-CONTRACT.md). Production keys and full installation qualification are still required. A future project website should link to GitHub releases. Native app stores, if used, are the exception.
 
 ## Target stable pipeline
 

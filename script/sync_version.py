@@ -11,7 +11,7 @@ version = re.search(
 p = root / "platform/macos/Support/Info.plist"
 p.write_text(
     re.sub(
-        r"(<key>CFBundleShortVersionString</key><string>)[^<]+",
+        r"(<key>(?:CFBundleShortVersionString|CFBundleVersion)</key><string>)[^<]+",
         lambda m: m[1] + version,
         p.read_text(),
     )
@@ -19,7 +19,7 @@ p.write_text(
 (root / "platform/windows/Version.props").write_text(
     f"<Project><PropertyGroup><Version>{version}</Version></PropertyGroup></Project>\n"
 )
-p = root / "platform/windows/YACHT/app.manifest"
+p = root / "platform/windows/app.manifest"
 p.write_text(
     re.sub(
         r'(<assemblyIdentity version=")[^"]+',

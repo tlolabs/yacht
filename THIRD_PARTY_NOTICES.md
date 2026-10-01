@@ -1,3 +1,14 @@
+# Shared UI dependency update
+
+The Avalonia migration replaces the former Windows App SDK/WinUI and GTK application
+presentation dependencies. Avalonia 12.1.3 and WebView 12.1.0 use MIT licenses;
+SkiaSharp, HarfBuzzSharp and ANGLE retain their native third-party notices. Exact
+license provenance is in `licenses/avalonia/SOURCES.md`. Packages include
+`ThirdPartyLicenses` (inside Resources for the internal Mac bundle), collected from
+the locked NuGet packages and matched .NET runtime pack. See
+[dependency review](docs/AVALONIA-MIGRATION.md). Historical package statements below
+continue to describe already-published releases, not the new shared UI binaries.
+
 # Third-party notices
 
 YACHT source is declared under the repository [LICENSE](LICENSE). Third-party software retains its own copyright and license terms. This file identifies major third-party components; the machine-readable inventory and release SBOM provide exact versions.
@@ -14,3 +25,12 @@ YACHT source is declared under the repository [LICENSE](LICENSE). Third-party so
 | GTK 4, libadwaita, WebKitGTK, PyGObject, Python | Linux native interface and preview | Distribution packages and their respective licenses; installed by the OS package manager |
 
 No third-party source or artwork is vendored in the tracked repository. The icon artwork is documented as original in `assets/icons/README.md`. Do not remove upstream notices from published runtime files. Windows packaging must include the applicable Microsoft license and notice texts when those files are redistributed. The [audit](docs/LICENSE_AUDIT.md) distinguishes YACHT's GPL source license, the combined Windows package, and SignPath eligibility.
+
+## Update components
+
+The macOS frontend embeds [Sparkle 2.9.6](https://github.com/sparkle-project/Sparkle),
+under its upstream permissive license. Its full license is shipped as
+`Contents/Resources/Sparkle-LICENSE`. The independent updater uses ring (Ed25519),
+RustCrypto sha2, semver, reqwest/rustls, base64 and tempfile. See the locked
+dependency inventory for the full transitive set. webpki-roots contains trust
+anchor data under CDLA-Permissive-2.0; preserve its data license in release notices.

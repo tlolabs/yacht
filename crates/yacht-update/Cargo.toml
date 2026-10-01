@@ -1,0 +1,9 @@
+[package]
+name = "yacht-update"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tlo-updater = { path = "../../updater" }
+serde_json = "1.0"

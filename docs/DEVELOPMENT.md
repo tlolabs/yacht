@@ -79,17 +79,12 @@ Finder multi-open handling in NSApplicationDelegate. SwiftPM tests now verify th
 real Rust ABI, not an independent Swift algorithm. New app/UI files require project
 regeneration; the bindings library files are discovered by SwiftPM.
 
-Windows uses programmatic native controls in MainWindow plus a small XAML root.
-P/Invoke loads the packaged library using an absolute application-relative path.
-File dialogs are initialized with the window HWND. Keep async results tied to their
-request cancellation token; do not block the dispatcher with parsing or HTML work.
-C# binding tests and the in-app native smoke harness exercise the shipped adapter.
-
-Linux uses Python only for GTK/GIO presentation and ctypes. The Rust library sits
-beside core.py in the installed application directory. YACHT_LIBRARY selects a
-build library for development/tests. ThreadPoolExecutor performs core work; only
-GLib.idle_add completion mutates GTK widgets. Tests run under a DBus session/Xvfb.
-The legacy Tk converter is never imported by the application.
+Windows, Linux and the internal Mac reference use the shared implementation in
+`platform/avalonia`. Keep presentation state and commands in `MainViewModel`,
+platform operations behind `IDesktopServices`, and business behavior in Rust.
+P/Invoke loads the library from the application directory. C# integration tests
+exercise the same binding and view model without a graphical session; the common
+smoke harness runs the actual window/native preview. See [migration details](AVALONIA-MIGRATION.md).
 
 ## Feature changes
 

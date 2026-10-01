@@ -21,10 +21,8 @@ require("Package.swift", r"\.macOS\(\.v(\d+)\)", macos.split(".")[0])
 require("Yacht.xcodeproj/project.pbxproj", r'"MACOSX_DEPLOYMENT_TARGET" = "([^"]+)"', macos)
 require("platform/macos/Support/Info.plist", r"<key>LSMinimumSystemVersion</key><string>([^<]+)", macos)
 windows = minimum["windows_minimum_build"]
-require("platform/windows/YACHT/YACHT.csproj", r"<TargetPlatformMinVersion>([^<]+)", windows + ".0")
 require("platform/windows/installer/YACHT.iss", r"^MinVersion=([^\n]+)", windows)
 linux = minimum["linux_glibc_minimum"]
 require("script/package_linux.sh", r"libc6 \(>= ([^)]+)\)", linux)
-require("script/package_linux.sh", r"gir1\.2-gtk-4\.0 \(>= ([^)]+)\)", minimum["linux_gtk_minimum"])
-require("script/package_linux.sh", r"gir1\.2-adw-1 \(>= ([^)]+)\)", minimum["linux_libadwaita_minimum"])
+require("script/package_linux.sh", r"libwebkit2gtk-([0-9.]+)-0", minimum["linux_webkitgtk_api"])
 print("Platform minimum metadata matches config/platforms.json")

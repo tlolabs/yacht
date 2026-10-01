@@ -190,4 +190,25 @@ import AppKit
         appearance.click(); app.menuItems["System"].click()
     }
 
+    func testUnconfiguredUpdateCheckPreservesUsableApplication() throws {
+        try launch()
+        app.menuBars.menuBarItems["YACHT"].click()
+        app.menuItems["Check for Updates…"].click()
+        let message = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "Updates are not configured in this build", "Updates are not configured in this build")).firstMatch
+        XCTAssertTrue(message.waitForExistence(timeout: 5))
+        app.buttons["OK"].firstMatch.click()
+        app.buttons["copyHTML"].firstMatch.click()
+        XCTAssertTrue(app.staticTexts["Copied complete HTML document"].waitForExistence(timeout: 10))
+        XCTAssertTrue(NSPasteboard.general.string(forType: .string)?.contains("Friction, Baby") == true)
+    }
+
+    func testUnconfiguredAutomaticUpdatesControlIsAccessibleAndDisabled() throws {
+        try launch()
+        app.typeKey(",", modifierFlags: .command)
+        let automatic = app.switches["automaticUpdates"]
+        XCTAssertTrue(automatic.waitForExistence(timeout: 10))
+        XCTAssertFalse(automatic.isEnabled)
+        XCTAssertTrue(app.staticTexts["Automatic updates are not configured in this build."].exists)
+    }
+
 }

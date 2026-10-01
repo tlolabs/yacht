@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Exercise the shipped C ABI through the GTK client's real ctypes adapter."""
+"""Exercise the shipped C ABI through an independent ctypes test adapter."""
 
 from pathlib import Path
 import sys, tempfile, threading, json, concurrent.futures
 
 root = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(root / "platform/linux"))
-from core import Core, CoreError
+from binding_test_support import Core, CoreError
 
 core = Core(sys.argv[1])
 with tempfile.TemporaryDirectory(prefix="yacht-binding-") as directory:

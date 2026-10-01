@@ -1,0 +1,9 @@
+{
+  "application_id": "com.local.yacht.csvhtmltranslator",
+  "repository": "tlolabs/yacht",
+  "keys": {},
+  "windows_publisher": "",
+  "macos_team_id": "",
+  "linux_gpg_fingerprint": "",
+  "sparkle_public_key": ""
+}

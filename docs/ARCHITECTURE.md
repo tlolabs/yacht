@@ -1,9 +1,9 @@
-# Shared behavior, native presentation
+# Shared core and presentation
 
 ```
 SwiftUI → Swift typed adapter ─┐
-WinUI 3 → C# P/Invoke ─────────┼→ yacht-ffi (C ABI / JSON v1) → yacht-core
-GTK 4/libadwaita → ctypes ─────┘                               ↑
+Avalonia → view model → C# ───┘→ yacht-ffi (C ABI / JSON v1) → yacht-core
+  Windows, Linux, internal Mac                               ↑
                                                       Rust yacht CLI
 ```
 
@@ -38,10 +38,10 @@ They do not provide crash isolation from an abort or out-of-memory condition.
 | crates/yacht-ffi, bindings/c | Stable ABI, allocation/cancellation contract |
 | platform/macos/Sources/YachtCore | Swift adapters and editable native projections only |
 | platform/macos/Sources/YachtApp | Preserved SwiftUI views, stores and macOS integrations |
-| platform/windows/YACHT | WinUI 3, P/Invoke, native Windows preferences |
-| platform/linux | PyGObject GTK/libadwaita, ctypes, native Linux preferences |
+| platform/avalonia/YACHT | Shared AXAML, view model, services and P/Invoke |
+| platform/windows, platform/linux | OS packaging and integration metadata |
 | platform/macos/Tests, platform/macos/UITests | Existing Swift binding and macOS UI coverage |
-| platform/windows/Tests, platform/linux/test_ui.py | Native runtime integration |
+| platform/avalonia/Tests, script/test_avalonia_ui.py | Shared presentation and native runtime integration |
 | script, .github | Version generation, tests, packaging and required CI gates |
 
 The macOS source, binding tests, UI tests and Info.plist live under platform/macos.
@@ -49,14 +49,13 @@ Root Xcode/SwiftPM entry points reference those paths; YachtCore remains a Swift
 binding facade, not a second business implementation. Shared icon artwork and native
 formats live under assets/icons. The former Swift CLI and Python/Tk application are
 preserved in Git history and on the [2.0.2 archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2).
-Archived Python data and output fixtures have been removed. The current GTK Python
-adapter remains required and routes all conversion behavior through Rust.
+Archived Python data and output fixtures have been removed. The retired WinUI/GTK presentation exists only in history. An independent Python
+ctypes test adapter remains under script/ and is not shipped.
 
 ## Operation lifecycle
 
 Parsing incrementally consumes UTF-8 bytes and stores sparse rows. Native worker
-queues call the ABI off the UI thread. Swift Task cancellation, C# CancellationToken
-and GTK threading.Event feed the same Rust checks. Preview edits debounce, cancel
+queues call the ABI off the UI thread. Swift Task cancellation and C# CancellationToken feed the same Rust checks. Preview edits debounce, cancel
 obsolete requests and discard stale completion. Metadata drives native row counts;
 full rows are materialized only for Swift compatibility/test consumers. Copy builds
 the complete string; file export streams and does not allocate full HTML.
@@ -70,17 +69,17 @@ replacement confirmation. Swift's staged FileDocument workflow is preserved.
 
 macOS: SwiftUI, AppKit clipboard/Finder/browser bridge, security-scoped file access,
 complete Finder open arrays, WKWebView, UserDefaults/SceneStorage and Settings.
-Windows: WinUI controls, HWND-initialized WinRT pickers, clipboard/DataPackage,
-Explorer reveal, file associations and WebView2 restricted to table preview.
-The GUI executable is YachtApp.exe to avoid a case-insensitive collision with the
-shared CLI yacht.exe. Linux: GTK/GIO dialogs, FileList drops, clipboard, file-manager
-DBus reveal, desktop/MIME registration, GLib preferences and WebKitGTK preview.
-GTK's Python code is a native presentation adapter; it does not import the legacy
-Python converter or implement any CSV/HTML logic.
+Windows/Linux/internal Mac: shared Avalonia AXAML, view models, commands and
+Fluent styles. Desktop services handle native pickers, clipboard, file-manager
+integration and native WebView engines. The GUI executable is YachtApp.exe on
+Windows to avoid colliding with yacht.exe. Linux desktop/MIME registration remains.
+See [migration architecture and storage contracts](AVALONIA-MIGRATION.md).
 
 Controls use native accessible names and focus traversal; HTML uses scoped headers.
-Appearance is independent of export colors. There is no automatic updater or
-notification workflow inherited from the reference app. Completion remains visible
+Appearance is independent of export colors. The [candidate updater architecture](updater/ARCHITECTURE.md)
+adds authenticated GitHub checks with native installation adapters; production
+trust configuration and installation qualification remain open. No notification
+workflow is inherited from the reference app. Completion remains visible
 in the app; no permission-prompting notifications were added speculatively.
 
 ## Rules for future changes

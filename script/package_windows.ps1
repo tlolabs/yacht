@@ -3,18 +3,18 @@ $ErrorActionPreference='Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 $version=python script/sync_version.py
 $triple=if($Architecture -eq 'x64'){'x86_64-pc-windows-msvc'}else{'aarch64-pc-windows-msvc'}
-$platform=if($Architecture -eq 'x64'){'x64'}else{'ARM64'}
 cargo build --workspace --locked --release --target $triple
 if($LASTEXITCODE){throw 'Rust build failed'}
 $publish=Join-Path $PWD "target/windows-$Architecture"
-dotnet restore platform/windows/YACHT/YACHT.csproj -p:Platform=$platform -p:RustTarget=$triple -p:RestoreLockedMode=true
+if(Test-Path $publish){Remove-Item $publish -Recurse -Force}
+dotnet restore platform/avalonia/YACHT/YACHT.csproj -p:RestoreLockedMode=true
 if($LASTEXITCODE){throw 'Locked NuGet restore failed'}
-dotnet publish platform/windows/YACHT/YACHT.csproj --no-restore -c Release -r "win-$Architecture" --self-contained true -p:Platform=$platform -p:RustTarget=$triple -o $publish
-if($LASTEXITCODE){throw 'WinUI publish failed'}
-if(!(Test-Path (Join-Path $publish 'YachtApp.pri'))){throw 'WinUI resource index was not published'}
-Copy-Item "target/$triple/release/yacht.exe",LICENSE,README.md,THIRD_PARTY_NOTICES.md,PRIVACY.md,'docs/DEPENDENCIES.md' $publish
+dotnet publish platform/avalonia/YACHT/YACHT.csproj --no-restore -c Release -r "win-$Architecture" --self-contained true -o $publish
+if($LASTEXITCODE){throw 'Avalonia publish failed'}
+Copy-Item "target/$triple/release/yacht_ffi.dll" $publish
+Copy-Item "target/$triple/release/yacht-update.exe","target/$triple/release/yacht.exe",LICENSE,README.md,THIRD_PARTY_NOTICES.md,PRIVACY.md,'docs/DEPENDENCIES.md' $publish
 Copy-Item LICENSE-NOTICE.md $publish
-python script/collect_windows_notices.py $publish --architecture $Architecture
+python script/collect_avalonia_notices.py $publish --rid "win-$Architecture"
 if($LASTEXITCODE){throw 'Windows third-party notice collection failed'}
 # Signing is optional. Certificate is selected from an ephemeral CI/user store;
 # certificate material/passwords never appear in the repository or command line.
@@ -26,7 +26,7 @@ function Sign([string]$path){
     if($LASTEXITCODE){throw "Signature verification failed: $path"}
   }
 }
-Sign (Join-Path $publish 'YachtApp.exe');Sign (Join-Path $publish 'yacht.exe');Sign (Join-Path $publish 'yacht_ffi.dll')
+Sign (Join-Path $publish 'yacht-update.exe');Sign (Join-Path $publish 'YachtApp.exe');Sign (Join-Path $publish 'yacht.exe');Sign (Join-Path $publish 'yacht_ffi.dll')
 if($BuildOnly){
   & "$publish/yacht.exe" --help
   if($LASTEXITCODE){throw 'Packaged CLI failed'}

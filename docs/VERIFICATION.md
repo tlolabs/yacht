@@ -1,4 +1,40 @@
-# Verification
+# Current Avalonia migration validation — 2026-10-01
+
+Local Apple Silicon validation of the migration candidate:
+
+| Check | Result and scope |
+|---|---|
+| Shared Rust workspace | **VERIFIED**: 35 tests passed, no failures/skips; rustfmt and Clippy with warnings denied passed |
+| CSV/CLI regression | **VERIFIED**: 60 seeded round trips plus safety/batch checks; independent ctypes binding suite passed |
+| Swift native bindings/update safety | **VERIFIED**: 29 tests passed, no failures |
+| Native macOS UI | **VERIFIED**: 10 tests passed, zero failed/skipped; `build/AvaloniaMigration-NativeUITests.xcresult` |
+| Shared C# binding | **VERIFIED**: preserved conversion, overwrite, cancellation, preset, settings, batch and 20 concurrent-request assertions |
+| Shared presentation | **VERIFIED**: 30 assertions for state, commands, presets, migration, cancellation/recovery, active-work guards and preservation of unreadable preferences |
+| Internal Mac ARM64 | **VERIFIED**: clean self-contained Release package; ad-hoc strict signature verification; real native WebView/clipboard/open/export/preset/settings/batch smoke passed |
+| Shared UI inspection | **VERIFIED within scope**: rendered semantic table and accessible form names inspected; Ctrl+2 source switching, settings/cancel and normal closure exercised |
+| Production Mac packaging | **VERIFIED development packaging**: native ARM64 and cross-built x64 app/CLI ZIPs; architecture and nested ad-hoc signature checks passed. Intel runtime was not exercised locally |
+| Production Windows/Linux | **NOT VERIFIED natively locally**: all four self-contained managed targets cross-published; Rust native libraries, installed packages and UI must pass their native CI jobs |
+| Release safety | **VERIFIED policy tests**: 7 tests passed normally and under Python optimization; internal marker/assembly rejection included; real Sparkle signed-feed fixture roundtrip/tamper rejection passed |
+| Repository quality | **VERIFIED**: actionlint, shellcheck, Python compilation, generated project/version checks, license/platform/update/shared-target contracts and dependency inventory |
+| NuGet security data | **VERIFIED within scope**: vulnerability query returned no known vulnerable direct/transitive packages |
+| Performance | **VERIFIED execution**: existing conversion benchmark completed; no performance acceptance threshold changed |
+
+The current Rust core, CLI, C ABI implementation and Swift binding source were not
+rewritten by the presentation migration. The accumulated updater work from the
+preceding task is retained with its explicit qualification limits.
+
+Warnings: native Xcode builds report that already-signed Sparkle components are
+not stripped; development builds use ad-hoc signing. Xcode printed debugger-version
+diagnostics but its authoritative result bundle reports all 10 UI tests passed.
+The internal Mac artifact does not require Developer ID/notarization. These runs do
+not qualify production updater installation; trust configuration and OLD→NEW
+release evidence are still absent. No tag or production release is created.
+
+Windows/Linux native CI and manual screen-reader, scaling, file-manager,
+installation/uninstallation and update-installation acceptance remain distinct
+from these local results. See [architecture and complete parity audit](AVALONIA-MIGRATION.md).
+
+# Historical verification
 
 ## Repository cleanup and app icon
 

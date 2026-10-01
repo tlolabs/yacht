@@ -9,11 +9,14 @@ mkdir -p release
 stage="$(mktemp -d "$PWD/target/linux-package.XXXXXX")"
 trap 'rm -rf "$stage"' EXIT
 mkdir -p "$stage/usr/lib/yacht" "$stage/usr/bin" "$stage/usr/share/applications" "$stage/usr/share/metainfo" "$stage/usr/share/doc/yacht" "$stage/DEBIAN"
-cp target/release/libyacht_ffi.so platform/linux/core.py platform/linux/yacht.py "$stage/usr/lib/yacht/"
+dotnet restore platform/avalonia/YACHT/YACHT.csproj --locked-mode
+dotnet publish platform/avalonia/YACHT/YACHT.csproj --no-restore -c Release -r "linux-$label" --self-contained true -o "$stage/usr/lib/yacht"
+cp target/release/yacht-update target/release/libyacht_ffi.so "$stage/usr/lib/yacht/"
+python3 script/collect_avalonia_notices.py "$stage/usr/lib/yacht" --rid "linux-$label"
 cp target/release/yacht "$stage/usr/bin/"
 cat > "$stage/usr/bin/yacht-gui" <<'LAUNCH'
 #!/bin/sh
-exec /usr/bin/python3 "$(dirname "$(readlink -f "$0")")/../lib/yacht/yacht.py" "$@"
+exec "$(dirname "$(readlink -f "$0")")/../lib/yacht/YachtApp" "$@"
 LAUNCH
 chmod +x "$stage/usr/bin/yacht-gui"
 mkdir -p "$stage/usr/share/icons/hicolor/scalable/apps"
@@ -28,9 +31,9 @@ Architecture: $arch
 Maintainer: Thomas Lothian <TBD>
 Section: utils
 Priority: optional
-Depends: libc6 (>= 2.39), python3 (>= 3.10), python3-gi, gir1.2-gtk-4.0 (>= 4.10), gir1.2-adw-1 (>= 1.4), gir1.2-webkit-6.0
+Depends: libc6 (>= 2.39), libicu74, libfontconfig1, libx11-6, libice6, libsm6, libgtk-3-0t64, libwebkit2gtk-4.1-0, libssl3t64
 Description: Yet Another CSV HTML Translator
- Native GTK interface and shared Rust CLI for styled HTML tables.
+ Shared Avalonia interface and shared Rust CLI for styled HTML tables.
 CONTROL
 dpkg-deb --build --root-owner-group "$stage" "release/YACHT-$version-linux-$label.deb"
 tar -czf "release/YACHT-$version-linux-$label.tar.gz" -C "$stage/usr" .

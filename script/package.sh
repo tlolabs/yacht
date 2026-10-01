@@ -36,8 +36,23 @@ STAGING_DIR="$(mktemp -d "$ROOT_DIR/dist/yacht-package.XXXXXX")"
 trap 'rm -rf "$STAGING_DIR"' EXIT
 ditto "$BUILD_DIR/Build/Products/Release/YACHT.app" "$STAGING_DIR/YACHT.app"
 cp "$CLI_DIR/yacht" "$STAGING_DIR/yacht"
+update_args=("$STAGING_DIR/YACHT.app" --arch "$PACKAGE_ARCH")
+if [[ "$PACKAGE_MODE" == --notarize ]]; then update_args+=(--production); fi
+python3 script/configure_macos_updates.py "${update_args[@]}"
 cp LICENSE README.md "$STAGING_DIR/"
 SIGNING_IDENTITY="${SIGNING_IDENTITY:--}"
+# Sign Sparkle inside out, including its installer and XPC services, before the app.
+FRAMEWORK="$STAGING_DIR/YACHT.app/Contents/Frameworks/Sparkle.framework"
+[[ -d "$FRAMEWORK" ]] || { echo 'Sparkle was not embedded by Xcode' >&2; exit 1; }
+SPARKLE_LICENSE="$BUILD_DIR/SourcePackages/checkouts/Sparkle/LICENSE"
+[[ -f "$SPARKLE_LICENSE" ]] || { echo 'Pinned Sparkle license missing' >&2; exit 1; }
+cp "$SPARKLE_LICENSE" "$STAGING_DIR/YACHT.app/Contents/Resources/Sparkle-LICENSE"
+sign_options=(--force)
+if [[ "$SIGNING_IDENTITY" != '-' ]]; then sign_options+=(--options runtime --timestamp); fi
+while IFS= read -r -d '' nested; do
+  codesign --preserve-metadata=entitlements "${sign_options[@]}" --sign "$SIGNING_IDENTITY" "$nested"
+done < <(find "$FRAMEWORK/Versions" -depth \( -name '*.xpc' -o -name '*.app' -o -name Autoupdate \) -print0)
+codesign "${sign_options[@]}" --sign "$SIGNING_IDENTITY" "$FRAMEWORK"
 if [[ "$SIGNING_IDENTITY" == '-' ]]; then
   codesign --force --sign - "$STAGING_DIR/yacht"
   codesign --force --sign - "$STAGING_DIR/YACHT.app"
@@ -69,6 +84,9 @@ if [[ -n "${NOTARY_PROFILE:-}" ]]; then
   spctl --assess --type execute --verbose "$DIST_DIR/YACHT.app"
 fi
 ditto -c -k --keepParent "$DIST_DIR/YACHT.app" "release/$ARTIFACT.zip"
+if [[ "$PACKAGE_MODE" == --notarize ]]; then
+  python3 script/verify_macos_update.py "release/$ARTIFACT.zip" --arch "$PACKAGE_ARCH"
+fi
 cp "$DIST_DIR/yacht" "release/yacht-macos-$PACKAGE_ARCH"
 (cd release && shasum -a 256 "$ARTIFACT.zip" "yacht-macos-$PACKAGE_ARCH" > "SHA256SUMS-macos-$PACKAGE_ARCH")
 rm -f -- "release/$ARTIFACT.dmg"

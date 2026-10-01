@@ -6,10 +6,10 @@ updates:
     open-pull-requests-limit: 10
     labels: [dependencies]
   - package-ecosystem: nuget
-    directory: /platform/windows/YACHT
+    directory: /platform/avalonia/YACHT
     schedule: {interval: weekly}
     open-pull-requests-limit: 10
-    labels: [dependencies, 'platform: Windows']
+    labels: [dependencies]
   - package-ecosystem: github-actions
     directory: /
     schedule: {interval: monthly}

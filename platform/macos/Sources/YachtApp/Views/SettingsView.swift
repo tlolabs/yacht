@@ -2,6 +2,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @Bindable var preferences: Preferences
+    let updater: ApplicationUpdater
+    @State private var automaticChecks = false
     var body: some View {
         Form {
             Picker("Appearance", selection: $preferences.appearance) { Text("System").tag("System"); Text("Light").tag("Light"); Text("Dark").tag("Dark") }
@@ -14,6 +16,14 @@ struct SettingsView: View {
             .accessibilityLabel("Maximum preview rows").accessibilityIdentifier("previewRows")
             Text("Large previews also have a size limit. Exports and copied HTML always include all rows.")
                 .font(.caption).foregroundStyle(.secondary)
+            Toggle("Automatically check for updates", isOn: $automaticChecks)
+                .disabled(!updater.isConfigured)
+                .accessibilityIdentifier("automaticUpdates")
+                .onAppear { automaticChecks = updater.automaticallyChecks }
+                .onChange(of: automaticChecks) { _, value in updater.automaticallyChecks = value }
+            if !updater.isConfigured {
+                Text("Automatic updates are not configured in this build.").font(.caption).foregroundStyle(.secondary)
+            }
             Button("Clear Recent Files") { preferences.clearRecent() }
             Text("YACHT — Yet Another CSV HTML Translator\nNative macOS edition · GPLv3")
                 .font(.caption).foregroundStyle(.secondary)

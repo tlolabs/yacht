@@ -3,8 +3,8 @@
 <img src="assets/icons/YACHT.png" alt="YACHT sailboat and table icon" width="112">
 
 **A TLO Labs open-source project.** YACHT converts CSV and TSV files into styled,
-accessible HTML tables. One Rust core powers a command-line tool and native
-macOS, Windows, and Linux interfaces. Thomas Lothian maintains the project.
+accessible HTML tables. One Rust core powers a command-line tool, the native
+macOS application, and a shared Avalonia interface for Windows and Linux. Thomas Lothian maintains the project.
 
 The Rust/native rewrite replaces the former Tk application. Legacy implementations,
 packaging and migration records are preserved on the [2.0.2 archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2).
@@ -38,7 +38,7 @@ intended only for macOS (ARM64); CI may still test other targets.
   if it is absent. Historical per-user installers may be available.
 - **Linux:** a current `.deb` installs the native
   dependencies and desktop entry. Launch YACHT or `yacht-gui`. For the tar archive,
-  install Python/PyGObject, GTK, libadwaita and WebKitGTK as described in
+  install the native WebKitGTK and graphics dependencies described in
   [BUILDING.md](docs/BUILDING.md), extract, and run `bin/yacht-gui`.
 
 First launch shows the album sample. No account, upload, or paid service is needed.
@@ -71,7 +71,7 @@ Multiple opened/dropped files also enter batch review. Cancel stops remaining wo
 **Refresh** rereads the source with the current delimiter. Settings controls
 remembered valid style, maximum preview rows, recent-file clearing and appearance.
 Recent files retains ten successfully imported paths. The Mac uses native Settings
-and menus; Windows/Linux expose the equivalent controls in their native windows.
+and menus; Windows/Linux expose the equivalent controls in the shared Avalonia window.
 
 ### Input and output details
 
@@ -136,8 +136,9 @@ panels. The app has no networking or notification permission requirement for
 conversion. Preview blocks scripts and remote resources; Help/browser actions are
 explicit user navigation.
 
-Updates are manual downloads from GitHub; no automatic updater was present or is
-introduced here. Keep a copy of your presets before upgrading development builds.
+A secure updater integration is under development. Native “Check for Updates…”
+controls are available, but production trust keys are not configured yet; use
+manual GitHub downloads for this build. See the [updater status](docs/updater/AUDIT-AND-QUALIFICATION.md). Keep a copy of your presets before upgrading development builds.
 If presets cannot load, the app reports the error and leaves the file intact. Check
 JSON types and style values against [file formats](docs/BEHAVIOR.md). If previews are
 unavailable for large cells, export/copy remain complete. On Windows, a missing
@@ -153,11 +154,13 @@ feature. Linux tar archives require the listed native packages.
 
 On a Mac with Xcode and Rust, `./script/build_and_run.sh` builds and launches
 `dist/YACHT.app`; the Codex Run action uses the same entrypoint. All Rust business
-logic is under `crates/`. All native frontends are grouped under `platform/macos`,
-`platform/windows`, and `platform/linux`; macOS binding/UI tests live with that frontend.
+logic is under `crates/`. The native macOS frontend is under `platform/macos`; shared Windows/Linux presentation
+and tests are under `platform/avalonia`. Windows/Linux packaging metadata remains
+in their platform directories.
 Shared artwork is under `assets/icons`. Root `Package.swift` and `Yacht.xcodeproj`
-remain build entry points. The GTK Python frontend is part of the current native
-rewrite. Archived Python application data and generated HTML fixtures are absent
+remain native macOS build entry points. The internal Mac Avalonia reference uses
+the same shared UI and is excluded from production releases and updates. See the
+[migration and qualification record](docs/AVALONIA-MIGRATION.md). Archived Python application data and generated HTML fixtures are absent
 from the active tree.
 
 ## Project, privacy and licensing
@@ -172,6 +175,6 @@ Third-party components retain their own terms. The [licensing audit](docs/LICENS
 examines the Windows distribution separately. See [third-party notices](THIRD_PARTY_NOTICES.md) and
 [dependencies](docs/DEPENDENCIES.md).
 
-YACHT converts files locally and has no automatic updater. See [privacy](PRIVACY.md),
+YACHT converts files locally. Update checks use GitHub only when configured; no telemetry is sent. See [privacy](PRIVACY.md),
 [security](SECURITY.md), [support](SUPPORT.md), [contributing](CONTRIBUTING.md),
 [code signing policy](CODE_SIGNING_POLICY.md), and [changelog](CHANGELOG.md).

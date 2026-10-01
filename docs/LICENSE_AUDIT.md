@@ -1,3 +1,9 @@
+> Historical audit: the Windows App SDK package paths and binaries below refer to
+> the published pre-Avalonia implementation. They are preserved as release evidence.
+> Current shared-UI dependencies and licensing are documented in
+> [AVALONIA-MIGRATION.md](AVALONIA-MIGRATION.md); no Windows App SDK runtime is
+> bundled by the new packaging path.
+
 # Licensing and provenance audit
 
 Audit updated 2026-09-24. This review distinguishes ownership of YACHT source, linked dependencies, redistribution of Microsoft files, and SignPath Foundation eligibility. It records evidence; it is not a legal opinion.

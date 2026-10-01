@@ -2,7 +2,9 @@
   "schema": "tlo-labs-dependency-inventory/v1",
   "source_locks": [
     "Cargo.lock",
-    "platform/windows/YACHT/packages.lock.json"
+    "platform/avalonia/YACHT/packages.lock.json",
+    "Package.resolved",
+    "Yacht.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
   ],
   "license_note": "NOASSERTION means the lockfile does not record a license. Review upstream package licenses and release SBOM; see docs/DEPENDENCIES.md and docs/LICENSE_AUDIT.md.",
   "packages": [
@@ -15,6 +17,20 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "atomic-waker",
+      "version": "1.1.2",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "base64",
+      "version": "0.22.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "bitflags",
       "version": "2.13.2",
       "source": "crates.io",
@@ -22,8 +38,36 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "block-buffer",
+      "version": "0.10.4",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "block2",
       "version": "0.6.2",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "bumpalo",
+      "version": "3.20.3",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "bytes",
+      "version": "1.12.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "cc",
+      "version": "1.4.7",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -43,6 +87,34 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "chacha20",
+      "version": "0.10.2",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "cpufeatures",
+      "version": "0.2.17",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "cpufeatures",
+      "version": "0.3.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "crypto-common",
+      "version": "0.1.7",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "ctrlc",
       "version": "3.5.2",
       "source": "crates.io",
@@ -50,8 +122,22 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "digest",
+      "version": "0.10.7",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "dispatch2",
       "version": "0.3.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "displaydoc",
+      "version": "0.2.7",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -71,6 +157,76 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "find-msvc-tools",
+      "version": "0.1.13",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "form_urlencoded",
+      "version": "1.2.2",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "futures-channel",
+      "version": "0.3.34",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "futures-core",
+      "version": "0.3.34",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "futures-io",
+      "version": "0.3.34",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "futures-sink",
+      "version": "0.3.34",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "futures-task",
+      "version": "0.3.34",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "futures-util",
+      "version": "0.3.34",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "generic-array",
+      "version": "0.14.7",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "getrandom",
+      "version": "0.2.17",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "getrandom",
       "version": "0.4.3",
       "source": "crates.io",
@@ -78,8 +234,134 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "http",
+      "version": "1.5.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "http-body",
+      "version": "1.1.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "http-body-util",
+      "version": "0.1.5",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "httparse",
+      "version": "1.10.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "hyper",
+      "version": "1.11.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "hyper-rustls",
+      "version": "0.27.9",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "hyper-util",
+      "version": "0.1.20",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "icu_collections",
+      "version": "2.3.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "icu_locale_core",
+      "version": "2.3.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "icu_normalizer",
+      "version": "2.3.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "icu_normalizer_data",
+      "version": "2.3.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "icu_properties",
+      "version": "2.3.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "icu_properties_data",
+      "version": "2.3.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "icu_provider",
+      "version": "2.3.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "idna",
+      "version": "1.1.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "idna_adapter",
+      "version": "1.2.2",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "ipnet",
+      "version": "2.12.2",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "itoa",
       "version": "1.0.18",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "js-sys",
+      "version": "0.3.105",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -99,8 +381,36 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "litemap",
+      "version": "0.8.3",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "log",
+      "version": "0.4.34",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "lru-slab",
+      "version": "0.1.3",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "memchr",
       "version": "2.8.3",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "mio",
+      "version": "1.2.3",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -134,8 +444,50 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "percent-encoding",
+      "version": "2.3.2",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "pin-project-lite",
+      "version": "0.2.17",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "potential_utf",
+      "version": "0.1.6",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "proc-macro2",
       "version": "1.0.107",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "quinn",
+      "version": "0.11.11",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "quinn-proto",
+      "version": "0.11.17",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "quinn-udp",
+      "version": "0.5.15",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -150,6 +502,27 @@
       "ecosystem": "cargo",
       "name": "r-efi",
       "version": "6.0.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rand",
+      "version": "0.10.2",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rand_core",
+      "version": "0.10.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rand_pcg",
+      "version": "0.10.2",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -176,8 +549,71 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "reqwest",
+      "version": "0.12.28",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "ring",
+      "version": "0.17.14",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rustc-hash",
+      "version": "2.1.3",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "rustix",
       "version": "1.1.4",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rustls",
+      "version": "0.23.44",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rustls-pki-types",
+      "version": "1.15.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rustls-webpki",
+      "version": "0.103.15",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rustversion",
+      "version": "1.0.23",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "ryu",
+      "version": "1.0.23",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "semver",
+      "version": "1.0.28",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -211,8 +647,85 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "serde_urlencoded",
+      "version": "0.7.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "sha2",
+      "version": "0.10.9",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "shlex",
+      "version": "2.0.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "slab",
+      "version": "0.4.12",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "smallvec",
+      "version": "1.16.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "socket2",
+      "version": "0.6.5",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "stable_deref_trait",
+      "version": "1.2.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "subtle",
+      "version": "2.6.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "syn",
+      "version": "2.0.119",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "syn",
       "version": "3.0.5",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "sync_wrapper",
+      "version": "1.0.2",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "synstructure",
+      "version": "0.13.2",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -239,8 +752,190 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "tinystr",
+      "version": "0.8.4",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tinyvec",
+      "version": "1.13.3",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tokio",
+      "version": "1.53.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tokio-rustls",
+      "version": "0.26.5",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tower",
+      "version": "0.5.3",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tower-http",
+      "version": "0.6.11",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tower-layer",
+      "version": "0.3.3",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tower-service",
+      "version": "0.3.3",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tracing",
+      "version": "0.1.44",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tracing-core",
+      "version": "0.1.36",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "try-lock",
+      "version": "0.2.5",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "typenum",
+      "version": "1.20.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "unicode-ident",
       "version": "1.0.24",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "untrusted",
+      "version": "0.9.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "url",
+      "version": "2.5.8",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "utf8_iter",
+      "version": "1.0.4",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "version_check",
+      "version": "0.9.5",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "want",
+      "version": "0.3.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "wasi",
+      "version": "0.11.1+wasi-snapshot-preview1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "wasm-bindgen",
+      "version": "0.2.128",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "wasm-bindgen-futures",
+      "version": "0.4.78",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "wasm-bindgen-macro",
+      "version": "0.2.128",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "wasm-bindgen-macro-support",
+      "version": "0.2.128",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "wasm-bindgen-shared",
+      "version": "0.2.128",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "web-sys",
+      "version": "0.3.105",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "web-time",
+      "version": "1.1.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "webpki-roots",
+      "version": "1.0.9",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -254,7 +949,140 @@
     {
       "ecosystem": "cargo",
       "name": "windows-sys",
+      "version": "0.52.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "windows-sys",
       "version": "0.61.2",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "windows-targets",
+      "version": "0.52.6",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "windows_aarch64_gnullvm",
+      "version": "0.52.6",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "windows_aarch64_msvc",
+      "version": "0.52.6",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "windows_i686_gnu",
+      "version": "0.52.6",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "windows_i686_gnullvm",
+      "version": "0.52.6",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "windows_i686_msvc",
+      "version": "0.52.6",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "windows_x86_64_gnu",
+      "version": "0.52.6",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "windows_x86_64_gnullvm",
+      "version": "0.52.6",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "windows_x86_64_msvc",
+      "version": "0.52.6",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "writeable",
+      "version": "0.6.4",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "yoke",
+      "version": "0.8.3",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "yoke-derive",
+      "version": "0.8.2",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "zerofrom",
+      "version": "0.1.8",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "zerofrom-derive",
+      "version": "0.1.7",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "zeroize",
+      "version": "1.9.0",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "zerotrie",
+      "version": "0.2.5",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "zerovec",
+      "version": "0.11.8",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "zerovec-derive",
+      "version": "0.11.6",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -267,131 +1095,227 @@
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.Web.WebView2",
-      "version": "1.0.3719.77",
-      "source": "nuget.org",
-      "scope": "transitive",
-      "license": "NOASSERTION"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "Microsoft.Windows.AI.MachineLearning",
-      "version": "2.1.74",
-      "source": "nuget.org",
-      "scope": "transitive",
-      "license": "NOASSERTION"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "Microsoft.Windows.SDK.BuildTools",
-      "version": "10.0.26100.4654",
-      "source": "nuget.org",
-      "scope": "transitive",
-      "license": "NOASSERTION"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "Microsoft.Windows.SDK.BuildTools.MSIX",
-      "version": "1.7.251221100",
-      "source": "nuget.org",
-      "scope": "transitive",
-      "license": "NOASSERTION"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "Microsoft.WindowsAppSDK",
-      "version": "2.4.0",
+      "name": "Avalonia",
+      "version": "12.1.3",
       "source": "nuget.org",
       "scope": "direct",
-      "license": "NOASSERTION"
+      "license": "MIT and bundled native notices"
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.WindowsAppSDK.AI",
-      "version": "2.4.4",
+      "name": "Avalonia.Angle.Windows.Natives",
+      "version": "2.1.27548.20260419",
       "source": "nuget.org",
       "scope": "transitive",
-      "license": "NOASSERTION"
+      "license": "BSD-3-Clause and bundled notices"
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.WindowsAppSDK.Base",
-      "version": "2.0.4",
+      "name": "Avalonia.BuildServices",
+      "version": "11.3.2",
       "source": "nuget.org",
-      "scope": "transitive",
-      "license": "NOASSERTION"
+      "scope": "direct",
+      "license": "MIT and bundled native notices"
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.WindowsAppSDK.DWrite",
-      "version": "2.1.0",
+      "name": "Avalonia.Controls.ColorPicker",
+      "version": "12.1.3",
       "source": "nuget.org",
-      "scope": "transitive",
-      "license": "NOASSERTION"
+      "scope": "direct",
+      "license": "MIT and bundled native notices"
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.WindowsAppSDK.Foundation",
-      "version": "2.3.9",
+      "name": "Avalonia.Controls.WebView",
+      "version": "12.1.0",
       "source": "nuget.org",
-      "scope": "transitive",
-      "license": "NOASSERTION"
+      "scope": "direct",
+      "license": "MIT and bundled native notices"
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.WindowsAppSDK.InteractiveExperiences",
-      "version": "2.1.6",
+      "name": "Avalonia.Desktop",
+      "version": "12.1.3",
       "source": "nuget.org",
-      "scope": "transitive",
-      "license": "NOASSERTION"
+      "scope": "direct",
+      "license": "MIT and bundled native notices"
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.WindowsAppSDK.ML",
-      "version": "2.1.74",
+      "name": "Avalonia.FreeDesktop",
+      "version": "12.1.3",
       "source": "nuget.org",
       "scope": "transitive",
-      "license": "NOASSERTION"
+      "license": "MIT and bundled native notices"
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.WindowsAppSDK.Runtime",
-      "version": "2.4.0",
+      "name": "Avalonia.FreeDesktop.AtSpi",
+      "version": "12.1.3",
       "source": "nuget.org",
       "scope": "transitive",
-      "license": "NOASSERTION"
+      "license": "MIT and bundled native notices"
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.WindowsAppSDK.Search",
-      "version": "2.4.4",
+      "name": "Avalonia.HarfBuzz",
+      "version": "12.1.3",
       "source": "nuget.org",
       "scope": "transitive",
-      "license": "NOASSERTION"
+      "license": "MIT and bundled native notices"
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.WindowsAppSDK.Widgets",
-      "version": "2.0.5",
+      "name": "Avalonia.Native",
+      "version": "12.1.3",
       "source": "nuget.org",
       "scope": "transitive",
-      "license": "NOASSERTION"
+      "license": "MIT and bundled native notices"
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.WindowsAppSDK.WinUI",
-      "version": "2.3.6",
+      "name": "Avalonia.Remote.Protocol",
+      "version": "12.1.3",
       "source": "nuget.org",
       "scope": "transitive",
-      "license": "NOASSERTION"
+      "license": "MIT and bundled native notices"
     },
     {
       "ecosystem": "nuget",
-      "name": "System.Numerics.Tensors",
-      "version": "9.0.0",
+      "name": "Avalonia.Skia",
+      "version": "12.1.3",
       "source": "nuget.org",
       "scope": "transitive",
-      "license": "NOASSERTION"
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Avalonia.Themes.Fluent",
+      "version": "12.1.3",
+      "source": "nuget.org",
+      "scope": "direct",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Avalonia.Win32",
+      "version": "12.1.3",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Avalonia.X11",
+      "version": "12.1.3",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "HarfBuzzSharp",
+      "version": "8.3.1.3",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "HarfBuzzSharp.NativeAssets.Linux",
+      "version": "8.3.1.3",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "HarfBuzzSharp.NativeAssets.macOS",
+      "version": "8.3.1.3",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "HarfBuzzSharp.NativeAssets.WebAssembly",
+      "version": "8.3.1.3",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "HarfBuzzSharp.NativeAssets.Win32",
+      "version": "8.3.1.3",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "MicroCom.Runtime",
+      "version": "0.11.6",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "SkiaSharp",
+      "version": "3.119.4",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "SkiaSharp.NativeAssets.Linux",
+      "version": "3.119.4",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "SkiaSharp.NativeAssets.macOS",
+      "version": "3.119.4",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "SkiaSharp.NativeAssets.WebAssembly",
+      "version": "3.119.4",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "SkiaSharp.NativeAssets.Win32",
+      "version": "3.119.4",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Tmds.DBus.Protocol",
+      "version": "0.94.1",
+      "source": "nuget.org",
+      "scope": "transitive",
+      "license": "MIT and bundled native notices"
+    },
+    {
+      "ecosystem": "swiftpm",
+      "name": "Sparkle",
+      "version": "2.9.6",
+      "revision": "ac2def288cbff5cfc7df3ffef6abdf45b72bcb0a",
+      "source": "https://github.com/sparkle-project/Sparkle",
+      "license": "MIT (see bundled Sparkle LICENSE)"
     }
   ]
 }

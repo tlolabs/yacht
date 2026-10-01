@@ -1,0 +1,38 @@
+name: Published update authentication
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing stable release tag to verify
+        required: true
+      older_version:
+        description: Version of the older client used for discovery (installation is separate)
+        default: '2.1.1'
+        required: true
+permissions:
+  contents: read
+jobs:
+  authenticate:
+    if: github.event_name == 'workflow_dispatch' || (!github.event.release.draft && !github.event.release.prerelease)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.98.1'
+      - name: Verify committed contract and security tests
+        run: |
+          python3 script/check_update_contract.py --production
+          cargo test -p tlo-updater --locked
+      - name: Discover and authenticate all published production artifacts
+        env:
+          EXPECTED_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+          OLDER_VERSION: ${{ inputs.older_version || '2.1.1' }}
+        run: cargo run --locked -p tlo-updater --bin tlo-release -- qualify "$EXPECTED_TAG" target/published-update config/update-trust.json "$OLDER_VERSION"
+      - name: Explain qualification boundary
+        run: echo 'Discovery, signatures and digests passed. Native installation qualification must be recorded separately on all six targets.'

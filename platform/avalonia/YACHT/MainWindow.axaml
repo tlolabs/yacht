@@ -1,0 +1,61 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:YACHT"
+        x:Class="YACHT.MainWindow" x:DataType="local:MainViewModel" Title="{Binding Title}" Width="1180" Height="800" MinWidth="840" MinHeight="560" DragDrop.AllowDrop="True">
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenCommand}"/><KeyBinding Gesture="Ctrl+S" Command="{Binding ExportCommand}"/>
+    <KeyBinding Gesture="Ctrl+Shift+C" Command="{Binding CopyCommand}"/><KeyBinding Gesture="Ctrl+Shift+B" Command="{Binding BatchCommand}"/>
+    <KeyBinding Gesture="Ctrl+R" Command="{Binding RefreshCommand}"/><KeyBinding Gesture="F5" Command="{Binding RefreshCommand}"/>
+    <KeyBinding Gesture="Ctrl+D1" Command="{Binding PreviewCommand}"/><KeyBinding Gesture="Ctrl+D2" Command="{Binding SourceCommand}"/>
+  </Window.KeyBindings>
+  <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <Menu>
+      <MenuItem Header="_File"><MenuItem Header="_Open…" Command="{Binding OpenCommand}" InputGesture="Ctrl+O"/><MenuItem Header="_Batch Convert…" Command="{Binding BatchCommand}" InputGesture="Ctrl+Shift+B"/><MenuItem Header="_Export HTML…" Command="{Binding ExportCommand}" InputGesture="Ctrl+S"/><MenuItem Header="_Copy HTML" Command="{Binding CopyCommand}" InputGesture="Ctrl+Shift+C"/></MenuItem>
+      <MenuItem Header="_View"><MenuItem Header="Table _Preview" Command="{Binding PreviewCommand}"/><MenuItem Header="HTML _Source" Command="{Binding SourceCommand}"/><MenuItem Header="_Refresh" Command="{Binding RefreshCommand}"/><MenuItem Header="_Settings…" Command="{Binding SettingsCommand}"/></MenuItem>
+      <MenuItem Header="_Help"><MenuItem Header="Check for Updates…" Command="{Binding UpdatesCommand}"/><MenuItem Header="Enable Automatic Update Checks" Command="{Binding EnableUpdatesCommand}"/><MenuItem Header="Disable Automatic Update Checks" Command="{Binding DisableUpdatesCommand}"/><MenuItem Header="Download Releases" Command="{Binding ReleasesCommand}"/><MenuItem Header="User Guide" Command="{Binding GuideCommand}"/></MenuItem>
+    </Menu>
+    <WrapPanel Grid.Row="1" Margin="12,6" Orientation="Horizontal">
+      <Button Content="Open…" Command="{Binding OpenCommand}" Margin="0,0,8,6"/><Button Content="Batch…" Command="{Binding BatchCommand}" Margin="0,0,8,6"/>
+      <Button Content="Sample" Command="{Binding SampleCommand}" Margin="0,0,8,6"/><Button Content="Refresh" Command="{Binding RefreshCommand}" Margin="0,0,8,6"/>
+      <Button Content="Copy HTML" Command="{Binding CopyCommand}" Margin="0,0,8,6"/><Button Content="Export…" Command="{Binding ExportCommand}" Margin="0,0,8,6"/>
+      <Button Content="Cancel" Command="{Binding CancelCommand}" IsEnabled="{Binding Busy}" Margin="0,0,8,6"/><Button Content="Settings…" Command="{Binding SettingsCommand}" Margin="0,0,8,6"/>
+    </WrapPanel>
+    <Grid Grid.Row="2" ColumnDefinitions="310,5,*" Margin="12,0">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="8" Margin="0,0,12,12" IsEnabled="{Binding Idle}">
+          <TextBlock Text="Preset"/><ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}" HorizontalAlignment="Stretch" AutomationProperties.Name="Preset"/>
+          <WrapPanel><Button Content="Load" Command="{Binding LoadPresetCommand}" Margin="0,0,8,0"/><Button Content="Delete" Command="{Binding DeletePresetCommand}"/></WrapPanel>
+          <TextBox Text="{Binding PresetName}" PlaceholderText="Save preset as" AutomationProperties.Name="Save preset as"/><Button Content="Save Current" Command="{Binding SavePresetCommand}"/>
+          <WrapPanel><Button Content="Reset Styled" Command="{Binding StyledCommand}" Margin="0,0,8,0"/><Button Content="Reset Unstyled" Command="{Binding UnstyledCommand}"/></WrapPanel>
+          <ItemsControl ItemsSource="{Binding Fields}">
+            <ItemsControl.ItemTemplate><DataTemplate x:DataType="local:StyleField">
+              <StackPanel Spacing="4" Margin="0,8,0,0">
+                <TextBlock Text="{Binding Label}"/>
+                <TextBox Text="{Binding Text}" IsVisible="{Binding IsText}" AutomationProperties.Name="{Binding Label}"/>
+                <CheckBox IsChecked="{Binding Flag}" IsVisible="{Binding IsFlag}" Content="Enabled" AutomationProperties.Name="{Binding Label}"/>
+                <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Text}" IsVisible="{Binding IsChoice}" HorizontalAlignment="Stretch" AutomationProperties.Name="{Binding Label}"/>
+                <Button Content="Choose color…" Command="{Binding ColorCommand}" IsVisible="{Binding IsColor}" AutomationProperties.Name="{Binding Label}"/>
+              </StackPanel>
+            </DataTemplate></ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+      <GridSplitter Grid.Column="1" ResizeDirection="Columns"/>
+      <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*,Auto" Margin="12,0,0,0">
+        <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+        <WrapPanel Grid.Row="1" IsEnabled="{Binding Idle}">
+          <StackPanel Margin="0,0,12,8"><TextBlock Text="Delimiter"/><ComboBox ItemsSource="{Binding Delimiters}" SelectedItem="{Binding Delimiter}" AutomationProperties.Name="Delimiter"/></StackPanel>
+          <StackPanel Margin="0,0,12,8"><TextBlock Text="Recent files"/><ComboBox ItemsSource="{Binding Recent}" SelectedItem="{Binding SelectedRecent}" Width="260" AutomationProperties.Name="Recent files"/></StackPanel>
+          <Button Content="Open Recent" Command="{Binding RecentCommand}" VerticalAlignment="Center"/>
+        </WrapPanel>
+        <TabControl Grid.Row="2" SelectedIndex="{Binding SelectedTab}">
+          <TabItem Header="Table Preview"><local:HtmlPreview x:Name="Preview" Html="{Binding Html}" AutomationProperties.Name="Generated table preview"/></TabItem>
+          <TabItem Header="HTML Source"><TextBox Text="{Binding Source}" IsReadOnly="True" AcceptsReturn="True" FontFamily="monospace" TextWrapping="NoWrap" AutomationProperties.Name="HTML Source"/></TabItem>
+        </TabControl>
+        <TextBlock Grid.Row="3" Text="{Binding Note}" TextWrapping="Wrap" Margin="0,8"/>
+      </Grid>
+    </Grid>
+    <StackPanel Grid.Row="3" Margin="12" Spacing="6">
+      <ProgressBar IsIndeterminate="True" IsVisible="{Binding Busy}" Height="3" AutomationProperties.Name="Conversion in progress"/>
+      <Grid ColumnDefinitions="*,Auto,Auto"><TextBlock Text="{Binding Status}" TextWrapping="Wrap" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite"/><Button Grid.Column="1" Content="Reveal file" Command="{Binding RevealCommand}" Margin="8,0"/><Button Grid.Column="2" Content="Open in Browser" Command="{Binding BrowserCommand}"/></Grid>
+    </StackPanel>
+  </Grid>
+</Window>
