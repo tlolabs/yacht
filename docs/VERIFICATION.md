@@ -1,23 +1,50 @@
 # Current Avalonia migration validation — 2026-10-01
 
-Local Apple Silicon validation of the migration candidate:
+Local Apple Silicon validation and native CI qualification of the migration candidate.
+Implementation commit: `c3f3b40dea0707a44d918a81457dfa35303363f0`.
+[Final native workflow](https://github.com/tlolabs/yacht/actions/runs/36881027512): **all eight applicable jobs passed**. The tag-only release-policy job was correctly inapplicable to this untagged branch run.
 
 | Check | Result and scope |
 |---|---|
 | Shared Rust workspace | **VERIFIED**: 35 tests passed, no failures/skips; rustfmt and Clippy with warnings denied passed |
 | CSV/CLI regression | **VERIFIED**: 60 seeded round trips plus safety/batch checks; independent ctypes binding suite passed |
 | Swift native bindings/update safety | **VERIFIED**: 29 tests passed, no failures |
-| Native macOS UI | **VERIFIED**: 10 tests passed, zero failed/skipped; `build/AvaloniaMigration-NativeUITests.xcresult` |
+| Native macOS UI | **VERIFIED**: 10 tests passed, zero failed/skipped on each final native CI runner (ARM64 macOS 26.6.2 and x64 macOS 15.7.9), independently confirmed from both downloaded xcresult bundles. Local ARM64 also passed all 10 tests; `build/AvaloniaMigration-NativeUITests.xcresult` |
 | Shared C# binding | **VERIFIED**: preserved conversion, overwrite, cancellation, preset, settings, batch and 20 concurrent-request assertions |
-| Shared presentation | **VERIFIED**: 30 assertions for state, commands, presets, migration, cancellation/recovery, active-work guards and preservation of unreadable preferences |
-| Internal Mac ARM64 | **VERIFIED**: clean self-contained Release package; ad-hoc strict signature verification; real native WebView/clipboard/open/export/preset/settings/batch smoke passed |
-| Shared UI inspection | **VERIFIED within scope**: rendered semantic table and accessible form names inspected; Ctrl+2 source switching, settings/cancel and normal closure exercised |
-| Production Mac packaging | **VERIFIED development packaging**: native ARM64 and cross-built x64 app/CLI ZIPs; architecture and nested ad-hoc signature checks passed. Intel runtime was not exercised locally |
-| Production Windows/Linux | **NOT VERIFIED natively locally**: all four self-contained managed targets cross-published; Rust native libraries, installed packages and UI must pass their native CI jobs |
+| Shared presentation | **VERIFIED**: 30 assertions on Mac (29 on Windows/Linux; the extra assertion checks internal-only update isolation) for state, commands, presets, migration, cancellation/recovery, active-work guards and preservation of unreadable preferences |
+| Preview navigation security | **VERIFIED**: 13 assertions, including exact WebView2 document acceptance and rejection of altered, stale, external, local-file and script navigation |
+| Internal Mac ARM64 | **VERIFIED**: clean self-contained Release package; ad-hoc strict signature verification; real native WebView DOM/tab-reattachment/clipboard/open/export/preset/settings/batch/source-tab shutdown smoke passed |
+| Shared UI inspection | **VERIFIED within scope**: rendered semantic table and accessible form names inspected; Ctrl+1/2 switching and preview restoration, settings Save/Cancel, preference persistence across restart (50 rows, then restored to 200), and two normal closures exercised |
+| Production Mac packaging | **VERIFIED development packaging**: both final native ARM64 and x64 CI jobs built app/CLI packages and passed architecture/nested ad-hoc signature checks. Local ARM64 and cross-built x64 packaging also passed; Intel runtime was exercised on native CI, not locally |
+| Windows x64 and ARM64 | **VERIFIED automated scope**: both native CI jobs passed Rust/CLI/ctypes/C# tests, actual WebView2 DOM and clipboard/application/shutdown smoke, and Inno Setup/ZIP packaging. Independently downloaded installer/ZIP checksums verified; all 223 PE images per target passed the native architecture and normal/delay-import audit, including absence of separately installed VC runtime dependencies. Interactive installer acceptance remains manual |
+| Linux ARM64 | **VERIFIED automated scope**: native CI tests, actual WebKit DOM/clipboard/application/shutdown smoke and DEB/tar packaging passed. Independently downloaded checksums, four ARM64 ELF payloads, executable permissions and package contents verified |
+| Linux x64 | **VERIFIED automated scope**: native CI tests, actual WebKit DOM/tab-reattachment/clipboard/application/source-tab shutdown smoke and DEB/tar packaging passed. Independently downloaded checksums, four x64 ELF payloads, executable permissions and DEB version/architecture/desktop-dependency metadata verified |
 | Release safety | **VERIFIED policy tests**: 7 tests passed normally and under Python optimization; internal marker/assembly rejection included; real Sparkle signed-feed fixture roundtrip/tamper rejection passed |
 | Repository quality | **VERIFIED**: actionlint, shellcheck, Python compilation, generated project/version checks, license/platform/update/shared-target contracts and dependency inventory |
 | NuGet security data | **VERIFIED within scope**: vulnerability query returned no known vulnerable direct/transitive packages |
 | Performance | **VERIFIED execution**: existing conversion benchmark completed; no performance acceptance threshold changed |
+
+The exact uploaded [internal Mac artifact](https://github.com/tlolabs/yacht/actions/runs/36881027512/artifacts/11171960158) was independently downloaded, inspected for ARM64 app/core binaries and internal identity, verified with `codesign --verify --deep --strict`, and passed the full native application smoke again locally. It is ad-hoc signed, internal only, and has no production updater.
+
+Qualification found and corrected issues that compilation alone did not reveal:
+
+- WebView2 reports in-memory HTML as a data URL during navigation. An origin-only
+  policy blocked the preview; the replacement accepts only the exact current
+  CSP-protected document and rejects stale/modified payloads.
+- Duplicate initial navigation was removed. Smoke tests now inspect the actual DOM,
+  switch between Preview/Source, restore the preview and close from Source.
+- GTK browser disposal is asynchronous. Window shutdown now waits for native
+  teardown and drains callbacks while the UI dispatcher still runs, including a
+  browser already detached by a tab switch.
+- Windows test-profile cleanup now waits for the browser's own shutdown and
+  preserves the primary test failure if cleanup also fails.
+- The Linux package explicitly requires `xdg-utils` for browser/file-manager actions.
+- Independent inspection of the initially green Windows packages found an
+  unbundled `VCRUNTIME140.dll` dependency in all three Rust binaries. Windows
+  compiler-runtime linkage is now static; a hard packaging gate scans normal and
+  delay imports and native architectures. The gate detected both pre-fix artifacts,
+  and the final downloaded packages passed. Rust allocation/free ownership is
+  unchanged; compiler-runtime updates require a rebuild.
 
 The current Rust core, CLI, C ABI implementation and Swift binding source were not
 rewritten by the presentation migration. The accumulated updater work from the
@@ -26,13 +53,18 @@ preceding task is retained with its explicit qualification limits.
 Warnings: native Xcode builds report that already-signed Sparkle components are
 not stripped; development builds use ad-hoc signing. Xcode printed debugger-version
 diagnostics but its authoritative result bundle reports all 10 UI tests passed.
-The internal Mac artifact does not require Developer ID/notarization. These runs do
+Existing GitHub Actions also emitted a Node 20 deprecation notice; every applicable
+job completed successfully.
+One local internal-reference launch failed before application initialization with
+Avalonia.Native render-timer error `-6661`; an unchanged retry passed, and both
+the CI launch and the final downloaded-artifact launch passed. A working graphical
+session remains required for native Mac UI tests. The internal Mac artifact does
+not require Developer ID/notarization. These runs do
 not qualify production updater installation; trust configuration and OLD→NEW
 release evidence are still absent. No tag or production release is created.
 
-Windows/Linux native CI and manual screen-reader, scaling, file-manager,
-installation/uninstallation and update-installation acceptance remain distinct
-from these local results. See [architecture and complete parity audit](AVALONIA-MIGRATION.md).
+Manual Windows/Linux screen-reader, scaling, file-manager, installation/uninstallation
+and update-installation acceptance remain distinct from automated native CI results. See [architecture and complete parity audit](AVALONIA-MIGRATION.md).
 
 # Historical verification
 
