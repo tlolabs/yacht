@@ -9,6 +9,15 @@ the locked NuGet packages and matched .NET runtime pack. See
 [dependency review](docs/AVALONIA-MIGRATION.md). Historical package statements below
 continue to describe already-published releases, not the new shared UI binaries.
 
+The Windows Rust binaries also include statically linked Microsoft compiler C
+runtime code, which retains Microsoft's terms and copyright. It is treated as a
+compiler System Library under GPLv3, not relicensed as YACHT code. See
+[GPLv3's System Libraries definition](https://www.gnu.org/licenses/gpl-3.0.en.html),
+[Microsoft's CRT library documentation](https://learn.microsoft.com/en-us/cpp/c-runtime-library/crt-library-features),
+and [Microsoft deployment guidance](https://learn.microsoft.com/en-us/cpp/windows/deployment-in-visual-cpp).
+Build/distribution must use an appropriately licensed MSVC toolchain. Runtime
+security fixes require rebuilding these binaries with the updated toolchain.
+
 # Third-party notices
 
 YACHT source is declared under the repository [LICENSE](LICENSE). Third-party software retains its own copyright and license terms. This file identifies major third-party components; the machine-readable inventory and release SBOM provide exact versions.

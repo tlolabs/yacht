@@ -82,6 +82,9 @@ Windows 10 1809+, Visual Studio 2022 Build Tools with Windows SDK/C++ desktop to
 .NET 10 SDK (10.0.401), Rust MSVC toolchain and Inno Setup 6. Microsoft Edge WebView2 Runtime is
 needed for preview (normally present on current Windows; install on older hosts).
 The UI is shared Avalonia; WebView2 is only the document preview.
+The Windows Cargo targets statically link the compiler C runtime. Packaging rejects
+undeclared VC runtime DLL imports, including delay imports; Visual Studio is not a
+runtime prerequisite. Rebuild with an updated toolchain for compiler-runtime fixes.
 
 ```powershell
 rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc

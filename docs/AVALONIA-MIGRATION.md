@@ -34,6 +34,14 @@ licenses are compatible with the project's GPL-3.0-or-later distribution model;
 OS-provided WebKitGTK and WebView2 retain their separate system/runtime terms.
 Historical v2.1.1 Windows license evidence remains historical, not the new inventory.
 
+Windows Rust targets statically link the compiler C runtime so a clean Windows
+host does not need a separately installed VC++ runtime. The C ABI retains its
+existing ownership contract: Rust allocates and Rust releases its own handles and
+buffers; no CRT allocation or `FILE*` ownership crosses into .NET. Packaging scans
+all PE normal/delay imports and rejects undeclared VC runtime DLLs and wrong native
+architectures. Static compiler runtime servicing requires rebuilding with an updated
+MSVC toolchain. This is a build/link change, not a rewrite of the Rust core.
+
 Windows uses WebView2, Linux uses the supported system WebKitGTK 4.1 engine,
 and internal macOS uses WKWebView. HTML remains Rust-generated and escaped.
 The preview injects a restrictive CSP before any content, denies remote resources

@@ -16,6 +16,8 @@ Copy-Item "target/$triple/release/yacht-update.exe","target/$triple/release/yach
 Copy-Item LICENSE-NOTICE.md $publish
 python script/collect_avalonia_notices.py $publish --rid "win-$Architecture"
 if($LASTEXITCODE){throw 'Windows third-party notice collection failed'}
+python script/check_windows_runtime.py $publish --arch $Architecture
+if($LASTEXITCODE){throw 'Windows native runtime dependency audit failed'}
 # Signing is optional. Certificate is selected from an ephemeral CI/user store;
 # certificate material/passwords never appear in the repository or command line.
 function Sign([string]$path){

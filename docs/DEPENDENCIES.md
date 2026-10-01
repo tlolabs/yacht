@@ -15,6 +15,7 @@ No paid services or runtime network APIs are required for conversion.
 | thiserror | Structured core errors | Cargo.toml + Cargo.lock; Dependabot | Core only |
 | ctrlc | CLI cooperative cancellation | yacht-cli/Cargo.toml + Cargo.lock; Dependabot | SIGINT/Windows console events |
 | Swift / SwiftUI / AppKit / WebKit | macOS presentation, OS integration, HTML preview | Xcode 26.6 ARM64 / 26.3 Intel in CI; Swift tools 6.0; OS frameworks | macOS 14+, Intel/Apple Silicon |
+| MSVC compiler C runtime | Statically linked into Windows Rust binaries; no separate VC runtime installation | Hosted Windows MSVC toolchain; rebuild to service runtime fixes | Compiler System Library; Microsoft terms retained |
 | .NET 10 | Shared managed host | global.json, SDK 10.0.401; self-contained runtime | Windows/Linux production, internal Mac ARM64 |
 | Avalonia / Fluent / ColorPicker | Shared presentation | 12.1.3, platform/avalonia/YACHT/packages.lock.json | Same UI for all shared targets |
 | Avalonia.Controls.WebView | Native generated-table preview | 12.1.0, MIT | WebView2 / WebKitGTK 4.1 / WKWebView |
