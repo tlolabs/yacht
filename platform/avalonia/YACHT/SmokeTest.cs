@@ -10,6 +10,7 @@ internal static class SmokeTest
     {
         if (Environment.GetEnvironmentVariable("YACHT_TEST_DATA") is null) throw new InvalidOperationException("UI tests require isolated YACHT_TEST_DATA.");
         Directory.CreateDirectory(directory);
+        Exception? failure = null;
         try
         {
             var input = Path.Combine(directory, "Café.csv"); await File.WriteAllTextAsync(input, "A,B\n<script>,🛥\n1,2,3\n");
@@ -27,8 +28,11 @@ internal static class SmokeTest
             if (results[0]!["error"] is not null) throw new Exception("Native batch");
             var preferences = Preferences.Load(); preferences.PreviewRows = 50; preferences.Save();
             if (Preferences.Load().PreviewRows != 50 || model.Fields.Count != 16) throw new Exception("Settings/style controls");
-            await File.WriteAllTextAsync(Path.Combine(directory, "passed.txt"), "Avalonia native startup/open/preview/source/style/preset/clipboard/export/settings/batch passed");
         }
-        catch (Exception e) { await File.WriteAllTextAsync(Path.Combine(directory, "failed.txt"), e.ToString()); Environment.ExitCode = 1; }
+        catch (Exception e) { failure = e; }
+        try { await model.StopWork(); await preview.Shutdown(); }
+        catch (Exception e) { failure = failure is null ? e : new AggregateException(failure, e); }
+        if (failure is not null) { await File.WriteAllTextAsync(Path.Combine(directory, "failed.txt"), failure.ToString()); Environment.ExitCode = 1; }
+        else await File.WriteAllTextAsync(Path.Combine(directory, "passed.txt"), "Avalonia native startup/open/preview/source/style/preset/clipboard/export/settings/batch/shutdown passed");
     }
 }

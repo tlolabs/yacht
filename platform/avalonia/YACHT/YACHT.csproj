@@ -20,6 +20,7 @@
     <PackageReference Include="Avalonia.Controls.WebView" Version="12.1.0" />
   </ItemGroup>
   <ItemGroup><Content Include="../../../assets/icons/YACHT.ico" Link="YACHT.ico" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="NativeIntegration" /></ItemGroup>
   <Target Name="RejectUnsupportedMac" BeforeTargets="Publish" Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('osx-')) and '$(RuntimeIdentifier)' != 'osx-arm64'">
     <Error Text="Only the internal macOS ARM64 reference target is supported." />
   </Target>

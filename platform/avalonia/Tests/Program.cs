@@ -1,5 +1,21 @@
 using System.Text.Json.Nodes;
 using YACHT;
+var navigation = new PreviewNavigationPolicy();
+int navigationAssertions = 0;
+void NavigationCheck(bool condition, string message) { if (!condition) throw new Exception(message); navigationAssertions++; }
+NavigationCheck(!navigation.Allows(null, true), "Missing preview request rejected");
+NavigationCheck(!navigation.Allows(new Uri("data:text/html;charset=utf-8;base64,"), true), "Unprepared data URL rejected");
+var document = navigation.Prepare("<html><head></head><body>Café 🛥 &lt;script&gt;</body></html>");
+NavigationCheck(document.IndexOf("Content-Security-Policy", StringComparison.Ordinal) < document.IndexOf("<body>", StringComparison.Ordinal), "CSP precedes document content");
+var dataUrl = new Uri("data:text/html;charset=utf-8;base64," + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(document)));
+NavigationCheck(navigation.Allows(dataUrl, true), "Exact WebView2-generated request accepted");
+NavigationCheck(!navigation.Allows(dataUrl, false), "Data URL is Windows-only");
+NavigationCheck(navigation.Allows(new Uri("about:blank"), false), "Native in-memory origin accepted");
+foreach (var rejected in new[] { "https://example.com/", "file:///tmp/preview.html", "javascript:alert(1)", "about:srcdoc", "data:text/html,<script>alert(1)</script>", dataUrl.OriginalString + "AA" })
+    NavigationCheck(!navigation.Allows(new Uri(rejected), true), "Unexpected or altered preview navigation rejected");
+navigation.Prepare("<html><head></head><body>Replacement</body></html>");
+NavigationCheck(!navigation.Allows(dataUrl, true), "Stale document navigation rejected");
+Console.WriteLine($"Preview navigation policy: {navigationAssertions} assertions passed.");
 var directory = Path.Combine(Path.GetTempPath(), "yacht-csharp-" + Guid.NewGuid()); Directory.CreateDirectory(directory);
 try
 {

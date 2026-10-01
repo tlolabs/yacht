@@ -37,7 +37,8 @@ Historical v2.1.1 Windows license evidence remains historical, not the new inven
 Windows uses WebView2, Linux uses the supported system WebKitGTK 4.1 engine,
 and internal macOS uses WKWebView. HTML remains Rust-generated and escaped.
 The preview injects a restrictive CSP before any content, denies remote resources
-and page scripts through CSP, blocks navigation away from `about:blank`, handles
+and page scripts through CSP, allows only the in-memory `about:blank` origin and WebView2 navigation events
+whose data URL exactly matches the current generated document, handles
 new-window requests, and disables developer tools. There is no application web
 shell or remote UI. Unlike the retired WebView2-specific code, the common WebView
 API does not expose a separate JavaScript-enabled switch; CSP enforces document

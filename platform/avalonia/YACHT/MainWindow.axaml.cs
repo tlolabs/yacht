@@ -42,7 +42,7 @@ public sealed partial class MainWindow : Window
             updateTimer.Start(); await model.CheckUpdates(true);
         });
         updateTimer.Tick += async (_, _) => await model.CheckUpdates(true);
-        Closing += async (_, e) => { if (closeConfirmed) return; e.Cancel = true; if (askingToClose) return; askingToClose = true; try { if (await model.MayClose()) { await model.StopWork(); closeConfirmed = true; Close(); } } finally { askingToClose = false; } };
+        Closing += async (_, e) => { if (closeConfirmed) return; e.Cancel = true; if (askingToClose) return; askingToClose = true; try { if (await model.MayClose()) { await model.StopWork(); updateTimer.Stop(); await Preview.Shutdown(); closeConfirmed = true; Close(); } } finally { askingToClose = false; } };
         Closed += (_, _) => { updateTimer.Stop(); model.Dispose(); };
     }
 }
