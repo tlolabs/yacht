@@ -3,6 +3,35 @@
 Start with [architecture](ARCHITECTURE.md), [behavior](BEHAVIOR.md),
 [parity](FEATURE-PARITY.md) and [build instructions](BUILDING.md).
 
+## Commit signing and history
+
+Use unsigned commits. Disable automatic cryptographic commit signing in each
+clone (repository-local Git configuration is not copied by cloning):
+
+```sh
+git config --local commit.gpgsign false
+```
+
+Continue adding the DCO `Signed-off-by` trailer with `git commit -s` as described
+in [CONTRIBUTING.md](../CONTRIBUTING.md). Lowercase `-s` adds that trailer;
+uppercase `-S` requests a cryptographic signature and should not be used for commits.
+Release-tag signing and platform artifact signing remain governed by
+[CODE_SIGNING_POLICY.md](../CODE_SIGNING_POLICY.md).
+
+The September 30, 2026 history migration removed commit signatures while
+preserving every commit message, author, committer, timestamp, file tree, and merge
+relationship. Because the initial commit was signed, all descendant commit IDs
+changed. Existing annotated tags retain their annotations and now target the
+corresponding rewritten commits.
+
+The migration clone keeps the original signed history in
+`.git/unsigned-history-backups/`, alongside the original refs, an old-to-new object
+map, and copies of the pre-migration index, configuration, and staged/unstaged
+patches. These local recovery files are not included in a clone or push.
+The rewrite does not itself update GitHub. Publishing rewritten branches and tags
+requires a coordinated force push; after publication, use a fresh clone or migrate
+local work onto the rewritten history instead of merging the old history back in.
+
 ## Bindings
 
 C ABI entrypoints: `char *yacht_request(const char *, cancel_fn, void *)` and

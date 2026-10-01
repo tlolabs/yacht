@@ -44,14 +44,16 @@ contents and a later single-file open in the same window are asserted.
 ## Published 2.1.0 baseline
 
 [The tagged 2.1.0 run](https://github.com/tlolabs/yacht/actions/runs/35124765389)
-at commit `51c1c40` passed all six platform jobs and verified six manifests covering
-14 package/CLI checksums before publication. The release has separate macOS Intel
+at original commit `51c1c40` (rewritten as `bfcf06c14339`) passed all six
+platform jobs and verified six manifests covering 14 package/CLI checksums before publication. The release has separate macOS Intel
 and ARM64 downloads. These released binaries predate the repository cleanup and new
-icon described above; their immutable source is available under the release tag.
+icon described above; their source tree is unchanged by the unsigned-commit migration.
+The original release commit remains in the migration backup; see
+[commit signing and history](DEVELOPMENT.md#commit-signing-and-history).
 
 The [2.0.2 archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2)
-at `d8a64ff` preserves the former application and migration history. Removing archived
-data from the active tree does not remove existing users' preset migration support.
+at original commit `d8a64ff` (rewritten as `57f6b3038936`) preserves the former
+application and migration history. Removing archived data from the active tree does not remove existing users' preset migration support.
 
 ## Scope and distribution limits
 

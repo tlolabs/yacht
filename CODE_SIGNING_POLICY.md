@@ -1,5 +1,7 @@
 # Code signing policy
 
+Git commits are unsigned for both maintainers and contributors; see [CONTRIBUTING.md](CONTRIBUTING.md). This policy covers release tags and distributed artifacts.
+
 An **official stable release** is a GitHub Release for a SemVer tag `vMAJOR.MINOR.PATCH` created and cryptographically signed by Thomas Lothian, with artifacts built from that tagged commit and accompanied by checksums and release provenance. A passing CI run alone is a development build. Tags with a prerelease suffix are prereleases; `main`/nightly outputs are unsupported development builds. Prerelease and development builds do not receive production signing.
 
 Thomas Lothian is the sole release and signing approver. The release workflow must verify the stable tag before using production credentials. It must not use a redundant GitHub Environment human approval gate; a signing provider may independently require interactive approval. CI builds and tests artifacts, records their provenance, signs when the required provider and credentials are configured, and verifies the result before publication. A failed platform gate prevents that platform's artifact from being presented as validated.
