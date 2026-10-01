@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input.Platform;
+using Avalonia.Threading;
 namespace YACHT;
 
 // Runs only with explicit isolated storage. Uses the production window, commands,
@@ -19,6 +20,12 @@ internal static class SmokeTest
             for (int i = 0; i < 100 && !preview.NavigationComplete; i++) await Task.Delay(100);
             if (!preview.NavigationComplete) throw new Exception("Native HTML preview did not complete navigation: " + preview.NavigationDiagnostics);
             if (await preview.InspectSmokeDocument().WaitAsync(TimeSpan.FromSeconds(5)) != "1") throw new Exception("Native preview DOM does not contain the current escaped, unstyled table: " + preview.NavigationDiagnostics);
+            await model.SourceCommand.ExecuteAsync();
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await model.PreviewCommand.ExecuteAsync();
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+            for (int i = 0; i < 100 && !preview.NavigationComplete; i++) await Task.Delay(100);
+            if (!preview.NavigationComplete || await preview.InspectSmokeDocument().WaitAsync(TimeSpan.FromSeconds(5)) != "1") throw new Exception("Native preview did not recover after tab reattachment: " + preview.NavigationDiagnostics);
             model.PresetName = "CI-" + Guid.NewGuid(); await model.SavePresetCommand.ExecuteAsync(); await model.LoadPresetCommand.ExecuteAsync();
             await model.CopyCommand.ExecuteAsync();
             if (!(await window.Clipboard!.TryGetTextAsync())!.Contains("&lt;script&gt;")) throw new Exception("Native clipboard");
@@ -28,6 +35,8 @@ internal static class SmokeTest
             if (results[0]!["error"] is not null) throw new Exception("Native batch");
             var preferences = Preferences.Load(); preferences.PreviewRows = 50; preferences.Save();
             if (Preferences.Load().PreviewRows != 50 || model.Fields.Count != 16) throw new Exception("Settings/style controls");
+            await model.SourceCommand.ExecuteAsync();
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
         }
         catch (Exception e) { failure = e; }
         try { await model.StopWork(); await preview.Shutdown(); }

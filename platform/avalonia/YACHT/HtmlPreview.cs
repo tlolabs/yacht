@@ -11,6 +11,7 @@ public sealed class HtmlPreview : ContentControl
     private readonly NativeWebView web = new();
     private readonly Grid layout = new();
     private Task? shutdown;
+    private IPlatformHandle? lastNativeHandle;
     private readonly PreviewNavigationPolicy navigation = new();
     public bool NavigationComplete { get; private set; }
     private readonly Queue<string> navigationEvents = new();
@@ -39,14 +40,17 @@ public sealed class HtmlPreview : ContentControl
         web.NewWindowRequested += (_, e) => e.Handled = true;
         // NativeWebView replays its latest NavigateToString request when the adapter
         // becomes ready. Reissuing it here creates competing initial navigations.
-        web.AdapterCreated += (_, _) => Record("Adapter created");
+        web.AdapterCreated += (_, e) => { lastNativeHandle = e.TryGetPlatformHandle(); Record("Adapter created"); };
+        web.AdapterDestroyed += (_, _) => NavigationComplete = false;
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) { base.OnPropertyChanged(change); if (change.Property == HtmlProperty) Navigate(); }
     private void Navigate() { if (shutdown is not null) return; NavigationComplete = false; Record("HTML requested"); web.NavigateToString(navigation.Prepare(Html), new Uri("about:blank")); }
     internal Task Shutdown() => shutdown ??= ShutdownCore();
     private async Task ShutdownCore()
     {
-        var handle = web.TryGetPlatformHandle();
+        // A source-tab switch may already have detached the control while its
+        // native teardown is still pending. Retain that handle until shutdown.
+        var handle = web.TryGetPlatformHandle() ?? lastNativeHandle;
         web.Stop();
         // Detach while Avalonia's dispatcher is still alive. GTK disposes its
         // widget on the GLib thread; wait for its public handle to be released
