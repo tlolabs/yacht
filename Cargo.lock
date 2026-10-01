@@ -1410,7 +1410,7 @@ checksum = "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc"
 
 [[package]]
 name = "yacht-cli"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "ctrlc",
  "serde_json",
@@ -1419,7 +1419,7 @@ dependencies = [
 
 [[package]]
 name = "yacht-core"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "regex",
  "serde",
@@ -1430,7 +1430,7 @@ dependencies = [
 
 [[package]]
 name = "yacht-ffi"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "serde_json",
  "yacht-core",
@@ -1438,7 +1438,7 @@ dependencies = [
 
 [[package]]
 name = "yacht-update"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "serde_json",
  "tlo-updater",

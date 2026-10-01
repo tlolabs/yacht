@@ -1,32 +1,23 @@
 # Changelog
 
-## Unreleased — shared Avalonia presentation
+All notable changes are recorded here. Earlier releases remain in Git history.
 
-- Replace WinUI and GTK frontends with shared Avalonia AXAML, commands and state.
-- Preserve Rust conversion and native SwiftUI macOS, migrate preferences and tests.
-- Add an isolated internal Mac ARM64 reference artifact excluded from production updates.
-- Update Windows/Linux packaging, native CI coverage and dependency/license notices.
-
-
-All notable changes to YACHT from the next release onward will be recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
-
-## [Unreleased]
-
-- Qualification audit: bind accepted update versions/digests, enforce stable macOS
-  feed URLs, protect active work on termination, harden production verification,
-  pin the release maintainer key, and add failure/recovery tests. Production
-  release and real older-to-newer installation remain blocked and unqualified.
-
+## [2.1.2-rc.1] — 2026-10-01
 
 ### Added
 
-- Candidate authenticated GitHub stable-update library, signed metadata tooling,
-  native update controls and Sparkle integration. Production trust configuration,
-  Linux installation and fleet consolidation remain open; no platform upgrade is
-  end-to-end qualified. See `docs/updater/AUDIT-AND-QUALIFICATION.md`.
+- Add one shared Avalonia presentation for Windows x64/ARM64 and Linux x64/ARM64, with an isolated internal macOS ARM64 reference artifact.
+- Add candidate authenticated GitHub update discovery and native controls. Production update trust and installation remain unqualified.
 
 ### Changed
 
-- Standardize project documentation, contribution policy, privacy and release guidance.
+- Preserve the Rust conversion core and native SwiftUI/AppKit macOS application while migrating Windows/Linux preferences, packaging, tests and CI.
+- Include audited Avalonia/.NET dependency and license notices in the new packages.
+
+### Fixed
+
+- Reject altered or stale preview navigation, await native browser teardown, and restore preview content after switching tabs.
+- Include the Linux desktop launcher dependency and remove Windows native binaries' dependence on a separately installed VC runtime.
+- Tighten update offer binding, release verification and active-work protection without enabling the production updater.
 
 The [Git history](https://github.com/tlolabs/yacht/commits/main/) and [GitHub Releases](https://github.com/tlolabs/yacht/releases) remain the record for earlier versions.

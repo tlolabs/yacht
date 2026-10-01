@@ -61,7 +61,7 @@ the CI launch and the final downloaded-artifact launch passed. A working graphic
 session remains required for native Mac UI tests. The internal Mac artifact does
 not require Developer ID/notarization. These runs do
 not qualify production updater installation; trust configuration and OLD→NEW
-release evidence are still absent. No tag or production release is created.
+release evidence are still absent. No stable tag or production release is created.
 
 Manual Windows/Linux screen-reader, scaling, file-manager, installation/uninstallation
 and update-installation acceptance remain distinct from automated native CI results. See [architecture and complete parity audit](AVALONIA-MIGRATION.md).
