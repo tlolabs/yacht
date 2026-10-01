@@ -1,5 +1,32 @@
 # Current Avalonia migration validation — 2026-10-01
 
+The `v2.1.2-rc.1` annotated prerelease tag points to version commit
+`4cdfc333a254decc211b5f9743a46730c46014d3`. Its
+[tagged native workflow](https://github.com/tlolabs/yacht/actions/runs/36887972162)
+passed all nine jobs: both Windows, both Linux, both native macOS, the internal
+Avalonia macOS ARM64 reference, repository compliance and prerelease tag policy.
+The preceding [branch qualification run](https://github.com/tlolabs/yacht/actions/runs/36884956727)
+passed all eight applicable platform/compliance jobs on the same commit.
+
+Downloaded result bundles from the tagged workflow report **10 passed, zero failed
+or skipped** for each native macOS architecture. Both tagged macOS app/CLI ZIPs
+matched their uploaded SHA-256 manifests; extracted apps reported version `2.1.2`,
+bundle ID `com.local.yacht.csvhtmltranslator` and the expected single architecture.
+`codesign --verify --deep --strict` passed for both development signatures. The
+[ARM64](https://github.com/tlolabs/yacht/actions/runs/36887972162/artifacts/11175493289)
+and [Intel](https://github.com/tlolabs/yacht/actions/runs/36887972162/artifacts/11175628225)
+packages are workflow artifacts with the repository's normal retention period.
+The [internal Avalonia Mac artifact](https://github.com/tlolabs/yacht/actions/runs/36887972162/artifacts/11175049358)
+is separately named and remains outside the production release channel.
+
+This is an unsigned, development-signed release candidate: the prerelease tag is
+annotated but not cryptographically signed, the apps are not Developer ID signed
+or notarized, and the normal workflow did not publish a GitHub Release. Production
+trust roots, platform signing, publication and OLD→NEW updater installation remain
+blocked. The tag and these artifacts do not qualify the stable update channel.
+
+## Migration implementation qualification
+
 Local Apple Silicon validation and native CI qualification of the migration candidate.
 Implementation commit: `c3f3b40dea0707a44d918a81457dfa35303363f0`.
 [Final native workflow](https://github.com/tlolabs/yacht/actions/runs/36881027512): **all eight applicable jobs passed**. The tag-only release-policy job was correctly inapplicable to this untagged branch run.
