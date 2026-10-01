@@ -16,7 +16,8 @@ internal static class SmokeTest
             await model.Load(input); await model.SetStyle(Core.Style("unstyled"));
             if (!model.Source.Contains("&lt;script&gt;") || model.Source.Contains("<style>")) throw new Exception("Preview/source escaping and style");
             for (int i = 0; i < 100 && !preview.NavigationComplete; i++) await Task.Delay(100);
-            if (!preview.NavigationComplete) throw new Exception("Native HTML preview did not complete navigation");
+            if (!preview.NavigationComplete) throw new Exception("Native HTML preview did not complete navigation: " + preview.NavigationDiagnostics);
+            if (await preview.InspectSmokeDocument().WaitAsync(TimeSpan.FromSeconds(5)) != "1") throw new Exception("Native preview DOM does not contain the current escaped, unstyled table: " + preview.NavigationDiagnostics);
             model.PresetName = "CI-" + Guid.NewGuid(); await model.SavePresetCommand.ExecuteAsync(); await model.LoadPresetCommand.ExecuteAsync();
             await model.CopyCommand.ExecuteAsync();
             if (!(await window.Clipboard!.TryGetTextAsync())!.Contains("&lt;script&gt;")) throw new Exception("Native clipboard");
