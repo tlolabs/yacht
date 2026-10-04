@@ -132,7 +132,7 @@ jobs:
         with:
           toolchain: '1.98.1'
           targets: ${{ matrix.triple }}
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.401'
       - uses: actions/setup-python@v5
@@ -194,7 +194,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.98.1'
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.401'
       - name: Install native runtime and UI test dependencies
@@ -252,7 +252,7 @@ jobs:
         with:
           toolchain: '1.98.1'
           targets: aarch64-apple-darwin
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.401'
       - name: Build isolated internal reference application
