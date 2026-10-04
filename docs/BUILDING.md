@@ -59,8 +59,9 @@ Outputs per `<arch>` (`arm64` or `x64`): `dist/macos-<arch>/YACHT.app`,
 Choose the ZIP matching the Mac's processor. Each shipped executable is checked
 to contain exactly the requested architecture. CLI and checksum filenames remain
 unique when release artifacts are combined.
-Bundle ID remains `com.local.yacht.csvhtmltranslator`. Application Support/Y.A.C.H.T.
-and UserDefaults keys are intentionally retained. Window/app/HTML display names
+Bundle ID is `com.tlolabs.yacht`. Application Support/Y.A.C.H.T.
+and UserDefaults keys are retained. The new bundle ID uses a new UserDefaults
+domain; preferences from the previous bundle ID are not automatically migrated. Window/app/HTML display names
 use YACHT. Build/run modes: --build-only, --verify, --debug, --logs, --telemetry.
 
 Developer ID/notarization remains optional:

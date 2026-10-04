@@ -28,7 +28,7 @@ The authenticated payload has these fields:
 | Field | Meaning |
 |---|---|
 | `schema` | Integer `1` |
-| `application_id` | `com.local.yacht.csvhtmltranslator` |
+| `application_id` | `com.tlolabs.yacht` |
 | `repository` | `tlolabs/yacht` |
 | `channel` | `stable` |
 | `version`, `tag` | Strict stable SemVer and exactly `v` plus version |

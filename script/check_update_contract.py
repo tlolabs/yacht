@@ -21,7 +21,7 @@ for key in ["SURequireSignedFeed", "SUVerifyUpdateBeforeExtraction"]:
 require(info["SUSignedFeedFailureExpirationInterval"] == 0, 'Release requirement failed: info["SUSignedFeedFailureExpirationInterval"] == 0')
 require(info["SUEnableSystemProfiling"] is False, 'Release requirement failed: info["SUEnableSystemProfiling"] is False')
 trust = json.loads((r / "config/update-trust.json").read_text())
-require(trust["application_id"] == "com.local.yacht.csvhtmltranslator", 'Release requirement failed: trust["application_id"] == "com.local.yacht.csvhtmltranslator"')
+require(trust["application_id"] == "com.tlolabs.yacht", 'Release requirement failed: trust["application_id"] == "com.tlolabs.yacht"')
 require(trust["repository"] == "tlolabs/yacht", 'Release requirement failed: trust["repository"] == "tlolabs/yacht"')
 for key in trust["keys"].values():
     require(len(base64.b64decode(key, validate=True)) == 32, "Invalid Ed25519 key")

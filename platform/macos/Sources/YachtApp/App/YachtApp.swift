@@ -51,7 +51,7 @@ struct YachtApp: App {
 final class FileOpenDelegate: NSObject, NSApplicationDelegate {
     let workspace = Workspace()
     let updater = ApplicationUpdater()
-    private let logger = Logger(subsystem: "com.local.yacht.csvhtmltranslator", category: "FileOpen")
+    private let logger = Logger(subsystem: "com.tlolabs.yacht", category: "FileOpen")
     func applicationDidFinishLaunching(_ notification: Notification) {
         updater.isBusy = { [weak self] in (self?.workspace.working ?? true) || (self?.workspace.importing ?? true) || (self?.workspace.showExporter ?? true) || (self?.workspace.showImporter ?? true) || (self?.workspace.showBatch ?? true) }
         updater.start()

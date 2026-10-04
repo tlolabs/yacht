@@ -324,7 +324,7 @@
 				"PRODUCT_NAME" = "YACHT";
 				"EXECUTABLE_NAME" = "YachtApp";
 				"PRODUCT_MODULE_NAME" = "YachtNativeApp";
-				"PRODUCT_BUNDLE_IDENTIFIER" = "com.local.yacht.csvhtmltranslator";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.tlolabs.yacht";
 				"INFOPLIST_FILE" = "platform/macos/Support/Info.plist";
 				"ASSETCATALOG_COMPILER_APPICON_NAME" = "YACHT";
 				"LD_RUNPATH_SEARCH_PATHS" = ("$(inherited)", "@executable_path/../Frameworks");
@@ -341,7 +341,7 @@
 				"PRODUCT_NAME" = "YACHT";
 				"EXECUTABLE_NAME" = "YachtApp";
 				"PRODUCT_MODULE_NAME" = "YachtNativeApp";
-				"PRODUCT_BUNDLE_IDENTIFIER" = "com.local.yacht.csvhtmltranslator";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.tlolabs.yacht";
 				"INFOPLIST_FILE" = "platform/macos/Support/Info.plist";
 				"ASSETCATALOG_COMPILER_APPICON_NAME" = "YACHT";
 				"LD_RUNPATH_SEARCH_PATHS" = ("$(inherited)", "@executable_path/../Frameworks");

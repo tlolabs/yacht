@@ -41,7 +41,7 @@ class MacPackageTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.app = Path(self.temporary.name) / "YACHT.app"
         (self.app / "Contents/Frameworks/Sparkle.framework").mkdir(parents=True)
-        self.trust = dict(application_id="com.local.yacht.csvhtmltranslator", repository="tlolabs/yacht", sparkle_public_key="fixture-public-key", macos_team_id="VR64M92P2M")
+        self.trust = dict(application_id="com.tlolabs.yacht", repository="tlolabs/yacht", sparkle_public_key="fixture-public-key", macos_team_id="VR64M92P2M")
         self.info = dict(CFBundleIdentifier=self.trust["application_id"], CFBundleVersion="2.2.0", CFBundleShortVersionString="2.2.0", CFBundleExecutable="YachtApp", SUPublicEDKey=self.trust["sparkle_public_key"], SURequireSignedFeed=True, SUVerifyUpdateBeforeExtraction=True, SUSignedFeedFailureExpirationInterval=0, SUFeedURL="https://github.com/tlolabs/yacht/releases/latest/download/appcast-macos-arm64.xml")
         self.signature = "TeamIdentifier=VR64M92P2M\nCodeDirectory v=20500 flags=0x10000(runtime)\n"
         self.arch = "arm64"

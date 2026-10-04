@@ -132,7 +132,7 @@ import AppKit
         try startup.run()
         startup.waitUntilExit()
         XCTAssertEqual(startup.terminationStatus, 0)
-        app = XCUIApplication(bundleIdentifier: "com.local.yacht.csvhtmltranslator")
+        app = XCUIApplication(bundleIdentifier: "com.tlolabs.yacht")
         let running = NSPredicate { _, _ in self.app.state == .runningForeground || self.app.state == .runningBackground }
         expectation(for: running, evaluatedWith: nil)
         waitForExpectations(timeout: 15)
