@@ -1,13 +1,12 @@
 # Shared UI dependency update
 
-The Avalonia migration replaces the former Windows App SDK/WinUI and GTK application
-presentation dependencies. Avalonia 12.1.3 and WebView 12.1.0 use MIT licenses;
-SkiaSharp, HarfBuzzSharp and ANGLE retain their native third-party notices. Exact
-license provenance is in `licenses/avalonia/SOURCES.md`. Packages include
+The Qt 6 Widgets migration replaces the former Avalonia/.NET and earlier GTK/WinUI
+presentation dependencies. Qt 6 is licensed under GNU LGPLv3 and GNU GPLv3; exact
+license provenance is in `licenses/qt/SOURCES.md`. Packages include
 `ThirdPartyLicenses` (inside Resources for the internal Mac bundle), collected from
-the locked NuGet packages and matched .NET runtime pack. See
-[dependency review](docs/AVALONIA-MIGRATION.md). Historical package statements below
-continue to describe already-published releases, not the new shared UI binaries.
+Qt upstream license texts. See [dependency review](docs/QT-MIGRATION.md). Historical
+package statements below continue to describe already-published releases, not the
+new shared UI binaries.
 
 The Windows Rust binaries also include statically linked Microsoft compiler C
 runtime code, which retains Microsoft's terms and copyright. It is treated as a
@@ -25,13 +24,14 @@ YACHT source is declared under the repository [LICENSE](LICENSE). Third-party so
 | Component | Use and distribution | License/terms source |
 |---|---|---|
 | Rust registry crates in `Cargo.lock` | Compiled into the Rust core, CLI, and bindings | Each crate's published `Cargo.toml` and license files; primarily MIT or Apache-2.0 alternatives, with Unlicense, Zlib, and Unicode-3.0 components |
-| Microsoft Windows App SDK and WinUI | Current Windows portable ZIP bundles runtime files; future framework-dependent output is under evaluation | Microsoft Windows App SDK NuGet `license.txt` and `NOTICE.txt` (Microsoft Software License Terms); [exact file audit](docs/LICENSE_AUDIT.md) |
+| Qt 6 Widgets | Compiled into the shared Windows, Linux and internal macOS reference applications | GNU LGPLv3 / GNU GPLv3; upstream Qt Company notices in `licenses/qt/` |
+| Microsoft Windows App SDK and WinUI | Historical Windows portable ZIP runtime files | Microsoft Windows App SDK NuGet `license.txt` and `NOTICE.txt` (Microsoft Software License Terms); [exact file audit](docs/LICENSE_AUDIT.md) |
 | Microsoft Windows ML | Five unused files bundled transitively in each historical Windows ZIP | Separate Microsoft Windows ML Runtime `license.txt`; evaluate removal before the next Windows release |
 | Microsoft Windows SDK .NET projections | Two bundled DLLs in each historical Windows ZIP | Windows SDK license referenced by the exact NuGet package |
-| Microsoft .NET 8 runtime | Self-contained Windows application | Exact .NET runtime packs declare MIT and contain `LICENSE.TXT` and `THIRD-PARTY-NOTICES.TXT` |
+| Microsoft .NET 8 runtime | Historical self-contained Windows application | Exact .NET runtime packs declare MIT and contain `LICENSE.TXT` and `THIRD-PARTY-NOTICES.TXT` |
 | Microsoft WebView2 | BSD-3-Clause SDK/loader files bundled; Evergreen runtime installed separately | Exact WebView2 NuGet `LICENSE.txt`; Evergreen runtime terms remain Microsoft's |
 | Apple system frameworks | macOS native interface and preview | Apple platform terms; supplied by macOS |
-| GTK 4, libadwaita, WebKitGTK, PyGObject, Python | Linux native interface and preview | Distribution packages and their respective licenses; installed by the OS package manager |
+| GTK 4, libadwaita, WebKitGTK, PyGObject, Python | Historical Linux native interface and preview | Distribution packages and their respective licenses; installed by the OS package manager |
 
 No third-party source or artwork is vendored in the tracked repository. The icon artwork is documented as original in `assets/icons/README.md`. Do not remove upstream notices from published runtime files. Windows packaging must include the applicable Microsoft license and notice texts when those files are redistributed. The [audit](docs/LICENSE_AUDIT.md) distinguishes YACHT's GPL source license, the combined Windows package, and SignPath eligibility.
 

@@ -1,4 +1,16 @@
-# Current Avalonia migration validation — 2026-10-01
+# Current Qt migration validation — 2026-10-07
+
+The presentation layer migration from Avalonia/.NET to Qt 6 Widgets is complete.
+Avalonia and .NET have been completely removed from the active repository.
+
+- **Production macOS**: SwiftUI/AppKit (`platform/macos`) validated with native UI and binding tests.
+- **Shared Qt 6 Widgets**: Cleanly compiled with CMake and C++17 on Windows, Linux, and macOS ARM64 (`platform/qt`).
+- **Internal macOS ARM64 Qt Reference**: Packaged (`script/package_qt_internal.sh`), ad-hoc signed, and verified via `script/test_qt_ui.py` and `script/check_qt_contract.py`.
+- **C++ integration tests**: `build/qt/tests/test_integration` verified all Rust C ABI bindings and presentation workflows with 100% pass rate.
+- **Compliance and isolation**: Verified via `script/check_qt_contract.py`, `script/check_platforms.py`, `script/dependency_inventory.py --check`, `script/check_compliance.py`, and `script/test_update_release.py`.
+See [architecture and complete parity audit](QT-MIGRATION.md).
+
+# Historical Avalonia migration validation — 2026-10-01
 
 The `v2.1.2-rc.1` annotated prerelease tag points to version commit
 `4cdfc333a254decc211b5f9743a46730c46014d3`. Its
@@ -91,7 +103,7 @@ not qualify production updater installation; trust configuration and OLD→NEW
 release evidence are still absent. No stable tag or production release is created.
 
 Manual Windows/Linux screen-reader, scaling, file-manager, installation/uninstallation
-and update-installation acceptance remain distinct from automated native CI results. See [architecture and complete parity audit](AVALONIA-MIGRATION.md).
+and update-installation acceptance remain distinct from automated native CI results. See [architecture and complete parity audit](QT-MIGRATION.md).
 
 # Historical verification
 

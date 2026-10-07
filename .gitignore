@@ -16,6 +16,3 @@ xcuserdata/
 signpath-readiness.local.md
 platform/windows/**/bin/
 platform/windows/**/obj/
-
-platform/avalonia/**/bin/
-platform/avalonia/**/obj/

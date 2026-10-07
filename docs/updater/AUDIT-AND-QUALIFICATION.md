@@ -173,5 +173,5 @@ tests passed with zero failures/skips in `build/AvaloniaMigration-NativeUITests.
 The migration also passed 29 Swift tests and rebuilt both native Mac packages.
 These results supersede only the earlier UI-harness/build status; production trust,
 release signing/publication and OLD→NEW updater qualification remain blocked.
-The internal Avalonia Mac reference is explicitly ineligible as a production
+The internal Qt Mac reference is explicitly ineligible as a production
 bridge/update artifact. No production release or tag was created.

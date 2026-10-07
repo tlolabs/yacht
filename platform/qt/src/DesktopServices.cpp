@@ -1,0 +1,130 @@
+#include "DesktopServices.h"
+#include "BatchDialog.h"
+#include "SettingsDialog.h"
+
+#include <QApplication>
+#include <QClipboard>
+#include <QColorDialog>
+#include <QDesktopServices>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QMessageBox>
+#include <QProcess>
+#include <QPushButton>
+#include <QStyle>
+#include <QStyleFactory>
+#include <QUrl>
+
+namespace Yacht {
+
+QtDesktopServices::QtDesktopServices(QWidget *owner) : m_owner(owner) {}
+
+QStringList QtDesktopServices::openFiles() {
+    return QFileDialog::getOpenFileNames(
+        m_owner, QStringLiteral("Open CSV files"), QString(),
+        QStringLiteral("CSV / TSV / Text (*.csv *.tsv *.txt);;All Files (*.*)"));
+}
+
+QString QtDesktopServices::saveFile(const QString &suggestedName) {
+    return QFileDialog::getSaveFileName(
+        m_owner, QStringLiteral("Export HTML"), suggestedName, QStringLiteral("HTML (*.html)"));
+}
+
+bool QtDesktopServices::confirm(const QString &title, const QString &message,
+                                const QString &acceptText) {
+    QMessageBox box(m_owner);
+    box.setWindowTitle(title);
+    box.setText(message);
+    QAbstractButton *okBtn = box.addButton(acceptText, QMessageBox::AcceptRole);
+    box.addButton(QStringLiteral("Cancel"), QMessageBox::RejectRole);
+    box.setDefaultButton(qobject_cast<QPushButton *>(okBtn));
+    box.exec();
+    return box.clickedButton() == okBtn;
+}
+
+void QtDesktopServices::showMessage(const QString &title, const QString &message) {
+    QMessageBox::information(m_owner, title, message);
+}
+
+std::optional<bool> QtDesktopServices::reviewBatch(const QStringList &paths) {
+    BatchDialog dialog(paths, m_owner);
+    if (dialog.exec() == QDialog::Accepted) {
+        return dialog.overwrite();
+    }
+    return std::nullopt;
+}
+
+bool QtDesktopServices::settings(Preferences &preferences) {
+    SettingsDialog dialog(preferences, m_owner);
+    return dialog.exec() == QDialog::Accepted;
+}
+
+void QtDesktopServices::setClipboard(const QString &text) {
+    QApplication::clipboard()->setText(text);
+}
+
+QString QtDesktopServices::clipboard() const {
+    return QApplication::clipboard()->text();
+}
+
+void QtDesktopServices::reveal(const QString &path) {
+    if (path.isEmpty()) return;
+#if defined(Q_OS_WIN)
+    QProcess::startDetached(QStringLiteral("explorer.exe"), {QStringLiteral("/select,"), path});
+#elif defined(Q_OS_MACOS)
+    QProcess::startDetached(QStringLiteral("/usr/bin/open"), {QStringLiteral("-R"), path});
+#else
+    QProcess::startDetached(QStringLiteral("xdg-open"), {QFileInfo(path).path()});
+#endif
+}
+
+void QtDesktopServices::open(const QString &pathOrUrl) {
+    if (pathOrUrl.isEmpty()) return;
+    if (pathOrUrl.startsWith(QStringLiteral("http://")) || pathOrUrl.startsWith(QStringLiteral("https://"))) {
+        QDesktopServices::openUrl(QUrl(pathOrUrl));
+    } else {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(pathOrUrl));
+    }
+}
+
+QString QtDesktopServices::pickColor(const QString &label, const QString &initialValue) {
+    QColor initial = QColor::fromString(initialValue);
+    if (!initial.isValid()) {
+        initial = Qt::black;
+    }
+    QColor color = QColorDialog::getColor(initial, m_owner, label,
+                                          QColorDialog::ShowAlphaChannel | QColorDialog::DontUseNativeDialog);
+    if (!color.isValid()) {
+        return {};
+    }
+    return color.name(QColor::HexRgb);
+}
+
+void QtDesktopServices::applyAppearance(const QString &appearance) {
+    if (appearance == QStringLiteral("Dark")) {
+        QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
+        QPalette darkPalette;
+        darkPalette.setColor(QPalette::Window, QColor(45, 45, 45));
+        darkPalette.setColor(QPalette::WindowText, Qt::white);
+        darkPalette.setColor(QPalette::Base, QColor(30, 30, 30));
+        darkPalette.setColor(QPalette::AlternateBase, QColor(45, 45, 45));
+        darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+        darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+        darkPalette.setColor(QPalette::Text, Qt::white);
+        darkPalette.setColor(QPalette::Button, QColor(45, 45, 45));
+        darkPalette.setColor(QPalette::ButtonText, Qt::white);
+        darkPalette.setColor(QPalette::BrightText, Qt::red);
+        darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+        QApplication::setPalette(darkPalette);
+    } else if (appearance == QStringLiteral("Light")) {
+        QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
+        QApplication::setPalette(QApplication::style()->standardPalette());
+    } else {
+        // System
+        QApplication::setPalette(QApplication::style()->standardPalette());
+    }
+}
+
+} // namespace Yacht

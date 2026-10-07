@@ -4,7 +4,7 @@
 
 **A TLO Labs open-source project.** YACHT converts CSV and TSV files into styled,
 accessible HTML tables. One Rust core powers a command-line tool, the native
-macOS application, and a shared Avalonia interface for Windows and Linux. Thomas Lothian maintains the project.
+macOS application, and a shared Qt 6 Widgets interface for Windows and Linux. Thomas Lothian maintains the project.
 
 The Rust/native rewrite replaces the former Tk application. Legacy implementations,
 packaging and migration records are preserved on the [2.0.2 archive branch](https://github.com/tlolabs/yacht/tree/codex/archive-legacy-2.0.2).
@@ -71,7 +71,7 @@ Multiple opened/dropped files also enter batch review. Cancel stops remaining wo
 **Refresh** rereads the source with the current delimiter. Settings controls
 remembered valid style, maximum preview rows, recent-file clearing and appearance.
 Recent files retains ten successfully imported paths. The Mac uses native Settings
-and menus; Windows/Linux expose the equivalent controls in the shared Avalonia window.
+and menus; Windows/Linux expose the equivalent controls in the shared Qt window.
 
 ### Input and output details
 
@@ -155,12 +155,12 @@ feature. Linux tar archives require the listed native packages.
 On a Mac with Xcode and Rust, `./script/build_and_run.sh` builds and launches
 `dist/YACHT.app`; the Codex Run action uses the same entrypoint. All Rust business
 logic is under `crates/`. The native macOS frontend is under `platform/macos`; shared Windows/Linux presentation
-and tests are under `platform/avalonia`. Windows/Linux packaging metadata remains
+and tests are under `platform/qt`. Windows/Linux packaging metadata remains
 in their platform directories.
 Shared artwork is under `assets/icons`. Root `Package.swift` and `Yacht.xcodeproj`
-remain native macOS build entry points. The internal Mac Avalonia reference uses
+remain native macOS build entry points. The internal Mac Qt reference uses
 the same shared UI and is excluded from production releases and updates. See the
-[migration and qualification record](docs/AVALONIA-MIGRATION.md). Archived Python application data and generated HTML fixtures are absent
+[migration and qualification record](docs/QT-MIGRATION.md). Archived Python application data and generated HTML fixtures are absent
 from the active tree.
 
 ## Project, privacy and licensing

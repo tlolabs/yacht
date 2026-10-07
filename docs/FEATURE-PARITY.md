@@ -1,10 +1,8 @@
 # Current shared UI parity
 
-The pre-migration verification table below records the retired WinUI/GTK frontend;
-it does not qualify the Avalonia replacement. The complete current feature audit,
-including retained commands, dialogs, shortcuts, settings, updater behavior and
-remaining native acceptance, is in [AVALONIA-MIGRATION.md](AVALONIA-MIGRATION.md).
-Current test/build evidence is in [VERIFICATION.md](VERIFICATION.md).
+The complete current feature audit, including retained commands, controls, dialogs,
+shortcuts, settings, updater behavior, accessibility and validation, is in
+[QT-MIGRATION.md](QT-MIGRATION.md). Current test/build evidence is in [VERIFICATION.md](VERIFICATION.md).
 
 # Historical native frontend parity
 
@@ -25,10 +23,10 @@ necessary even for rows with automated verification.
 | Live actual HTML preview | V | V | V | V | Rust preview tests + native runtime smoke |
 | Bounded preview/source, unlimited export/copy | V | V | V | V | 100k rows/huge-cell tests, binding export checks |
 | Preset defaults, load/save/delete, confirmation | V | V | I | I | Rust preset tests; XCTest; runtime preset tests |
-| Legacy partial/null preset format and migration | V | V | V | V | Rust/Swift/ctypes/C# round trips |
+| Legacy partial/null preset format and migration | V | V | V | V | Rust/Swift/ctypes/C++ round trips |
 | Export and explicit overwrite | V | V | V | V | Rust atomic tests; native bindings; XCTest Save dialog |
 | Batch review, partial failures, TSV inference | V | V | V | V | Rust batch, CLI script, native runtime suites |
-| Cancellation and unchanged destination | V | V | V | V | Rust/Swift/ctypes/C# tests |
+| Cancellation and unchanged destination | V | V | V | V | Rust/Swift/ctypes/C++ tests |
 | Native open/save, multi-file drag/drop | — | V | I | I | XCTest Finder; native startup/open tests; manual drops |
 | Complete clipboard copy | V | V | V | V | XCTest and native runtime clipboard tests |
 | Recent ten files and clear | — | V | I | I | Runtime tests + manual native integration |
@@ -38,7 +36,7 @@ necessary even for rows with automated verification.
 | System/light/dark appearance | — | V | I | I | XCTest settings; manual scaling pass remains |
 | Screen reader, focus and native scaling | scoped HTML | I | I | I | Semantic assertions + human acceptance |
 | Shared Rust CLI, flags, batch/status | V | V | V | V | 60 seeded round trips + CLI safety checks |
-| Native bindings and concurrent access | V | V | V | V | Swift, C#, ctypes tests; native x64/ARM64 CI |
+| Native bindings and concurrent access | V | V | V | V | Swift, C++, ctypes tests; native x64/ARM64 CI |
 | Installers/packages and signing hooks | — | V | V | V | x64/ARM64 ZIP/DMG, Windows installer/ZIP, Linux deb/tar gates |
 
 Review this table after CI, updating I to V only with actual platform evidence.

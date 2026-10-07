@@ -6,7 +6,7 @@ Historical implementation and fixture comparisons remain available in Git histor
 
 All sixteen styling values and their defaults; built-in styled/unstyled resets; custom preset load/save/delete and compatible JSON; album sample; single and batch conversion; complete-document HTML copy; read-only source; numeric alignment intent; percent left-alignment; embedded CSS; original table/wrapper classes; GUI/CLI styling controls; default `.html` filenames; bundle identifier; GPLv3. The rewrite now includes a shared native app icon. Updates remain manual.
 
-The native CLI accepts all former style flags, multiple files and single-file `-o`/`--output`. The Rust CLI and shared Avalonia interfaces replace the platform-specific production cores; the active tree contains only the Rust/native rewrite. Legacy distribution CI is archived; native tags use `v2*` onward.
+The native CLI accepts all former style flags, multiple files and single-file `-o`/`--output`. The Rust CLI and shared Qt interfaces replace the platform-specific production cores; the active tree contains only the Rust/native rewrite. Legacy distribution CI is archived; native tags use `v2*` onward.
 
 ## Output changes
 

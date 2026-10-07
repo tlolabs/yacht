@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check platform and dependency metadata
         run: |
-          python3 script/check_avalonia_contract.py
+          python3 script/check_qt_contract.py
           python3 script/check_platforms.py
           python3 script/dependency_inventory.py --check
           python3 script/check_compliance.py
@@ -132,24 +132,31 @@ jobs:
         with:
           toolchain: '1.98.1'
           targets: ${{ matrix.triple }}
-      - uses: actions/setup-dotnet@v4
+      - uses: jurplel/install-qt-action@v4
         with:
-          dotnet-version: '10.0.401'
+          version: '6.8.0'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Rust and CLI compatibility
         shell: bash
         run: cargo test --workspace --locked && python script/verify_compatibility.py
-      - name: Build library and C# integration tests
+      - name: Build library and Qt integration tests
         shell: pwsh
         run: |
           cargo build --workspace --locked --release --target ${{ matrix.triple }}
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          dotnet build platform/avalonia/Tests/NativeIntegration.csproj -c Release
+          cmake -S platform/qt -B build/qt -DCMAKE_BUILD_TYPE=Release
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          Copy-Item target/${{ matrix.triple }}/release/yacht_ffi.dll platform/avalonia/Tests/bin/Release/net10.0/
-          dotnet platform/avalonia/Tests/bin/Release/net10.0/NativeIntegration.dll
+          cmake --build build/qt --config Release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Copy-Item target/${{ matrix.triple }}/release/yacht_ffi.dll build/qt/tests/Release/ -ErrorAction SilentlyContinue
+          Copy-Item target/${{ matrix.triple }}/release/yacht_ffi.dll build/qt/tests/ -ErrorAction SilentlyContinue
+          $testExe = if (Test-Path build/qt/tests/Release/test_integration.exe) { "build/qt/tests/Release/test_integration.exe" } else { "build/qt/tests/test_integration.exe" }
+          & $testExe
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python script/test_native_binding.py target/${{ matrix.triple }}/release/yacht_ffi.dll
       - name: Ensure Inno Setup
@@ -165,7 +172,7 @@ jobs:
         if: github.event_name == 'schedule'
         shell: pwsh
         run: ./script/package_windows.ps1 -Architecture ${{ matrix.arch }} -BuildOnly
-      - name: Avalonia runtime integration
+      - name: Qt runtime integration
         shell: pwsh
         run: ./platform/windows/test_ui.ps1 -Executable "$PWD/target/windows-${{ matrix.arch }}/YachtApp.exe"
       - uses: actions/upload-artifact@v4
@@ -194,37 +201,22 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.98.1'
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.401'
-      - name: Install native runtime and UI test dependencies
-        run: sudo apt-get update && sudo apt-get install -y libicu74 libfontconfig1 libx11-6 libice6 libsm6 libgtk-3-0t64 libwebkit2gtk-4.1-0 libssl3t64 xdg-utils xvfb dbus-x11 at-spi2-core desktop-file-utils apparmor
+      - name: Install native runtime, Qt and UI test dependencies
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-base-private-dev libqt6widgets6t64 libqt6gui6t64 libqt6core6t64 libqt6network6t64 xdg-utils xvfb dbus-x11 at-spi2-core desktop-file-utils apparmor
       - name: Rust, CLI and native binding tests
         run: |
           cargo test --workspace --locked
           python3 script/verify_compatibility.py
           cargo build --workspace --locked
           python3 script/test_native_binding.py target/debug/libyacht_ffi.so
-      - name: Permit WebKit sandbox helper on the isolated CI host
+      - name: Shared presentation and native Qt integration
         run: |
-          # Hosted images may lack the distro bubblewrap AppArmor profile.
-          # Permit its user namespace without disabling WebKit's sandbox.
-          sudo tee /etc/apparmor.d/yacht-ci-bwrap >/dev/null <<'PROFILE'
-          abi <abi/4.0>,
-          include <tunables/global>
-          profile yacht-ci-bwrap /usr/bin/bwrap flags=(unconfined) {
-            userns,
-          }
-          PROFILE
-          sudo apparmor_parser -r /etc/apparmor.d/yacht-ci-bwrap
-      - name: Shared presentation and native Avalonia integration
-        run: |
-          dotnet build platform/avalonia/Tests/NativeIntegration.csproj -c Release
-          cp target/debug/libyacht_ffi.so platform/avalonia/Tests/bin/Release/net10.0/
-          dotnet platform/avalonia/Tests/bin/Release/net10.0/NativeIntegration.dll
-          dotnet publish platform/avalonia/YACHT/YACHT.csproj -c Release -r linux-${{ matrix.arch }} --self-contained true -p:RestoreLockedMode=true -o target/avalonia-linux
-          cp target/debug/libyacht_ffi.so target/avalonia-linux/
-          xvfb-run -a dbus-run-session -- python3 script/test_avalonia_ui.py target/avalonia-linux/YachtApp
+          cmake -S platform/qt -B build/qt-linux -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/qt-linux --target test_integration YachtApp
+          cp target/debug/libyacht_ffi.so build/qt-linux/tests/
+          cp target/debug/libyacht_ffi.so build/qt-linux/
+          ./build/qt-linux/tests/test_integration
+          xvfb-run -a dbus-run-session -- python3 script/test_qt_ui.py build/qt-linux/YachtApp
       - name: Package and validate Linux artifacts
         if: github.event_name != 'schedule'
         run: |
@@ -240,8 +232,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  avalonia-macos-internal:
-    name: Avalonia INTERNAL reference (macOS ARM64)
+  qt-macos-internal:
+    name: Qt INTERNAL reference (macOS ARM64)
     runs-on: macos-26
     timeout-minutes: 20
     permissions:
@@ -252,24 +244,28 @@ jobs:
         with:
           toolchain: '1.98.1'
           targets: aarch64-apple-darwin
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.401'
+      - name: Install Qt 6
+        run: brew install qt@6
       - name: Build isolated internal reference application
-        run: ./script/package_avalonia_internal.sh
+        run: |
+          export PATH="/opt/homebrew/opt/qt@6/bin:$PATH"
+          export CMAKE_PREFIX_PATH="/opt/homebrew/opt/qt@6:$CMAKE_PREFIX_PATH"
+          ./script/package_qt_internal.sh
       - name: Shared presentation tests
         run: |
-          dotnet build platform/avalonia/Tests/NativeIntegration.csproj -c Release
-          cp target/aarch64-apple-darwin/release/libyacht_ffi.dylib platform/avalonia/Tests/bin/Release/net10.0/
-          dotnet platform/avalonia/Tests/bin/Release/net10.0/NativeIntegration.dll
+          export PATH="/opt/homebrew/opt/qt@6/bin:$PATH"
+          export CMAKE_PREFIX_PATH="/opt/homebrew/opt/qt@6:$CMAKE_PREFIX_PATH"
+          cmake -S platform/qt -B build/qt-test -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/qt-test --target test_integration
+          ./build/qt-test/tests/test_integration
       - name: Native preview and application smoke tests
-        run: python3 script/test_avalonia_ui.py 'dist/internal/YACHT Avalonia Internal.app/Contents/MacOS/YachtApp'
+        run: python3 script/test_qt_ui.py 'dist/internal/YACHT Qt Internal.app/Contents/MacOS/YachtApp'
       - name: Enforce production release isolation
-        run: python3 script/check_avalonia_contract.py --bundle 'dist/internal/YACHT Avalonia Internal.app'
+        run: python3 script/check_qt_contract.py --bundle 'dist/internal/YACHT Qt Internal.app'
       # Workflow artifacts only; never a GitHub Release asset or production feed.
       - uses: actions/upload-artifact@v4
         with:
-          name: YACHT-Avalonia-INTERNAL-macos-arm64-${{ github.sha }}
-          path: build/internal-artifacts/YACHT-Avalonia-INTERNAL-macos-arm64.zip
+          name: YACHT-Qt-INTERNAL-macos-arm64-${{ github.sha }}
+          path: build/internal-artifacts/YACHT-Qt-INTERNAL-macos-arm64.zip
           if-no-files-found: error
           retention-days: 14

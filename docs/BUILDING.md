@@ -80,9 +80,8 @@ CI intentionally produces development signatures until credentials are configure
 ## Windows
 
 Windows 10 1809+, Visual Studio 2022 Build Tools with Windows SDK/C++ desktop tools,
-.NET 10 SDK (10.0.401), Rust MSVC toolchain and Inno Setup 6. Microsoft Edge WebView2 Runtime is
-needed for preview (normally present on current Windows; install on older hosts).
-The UI is shared Avalonia; WebView2 is only the document preview.
+CMake 3.16+, Qt 6.4+ (Widgets, Gui, Core, Network), Rust MSVC toolchain and Inno Setup 6.
+The UI is shared Qt 6 Widgets; `QTextBrowser` powers the preview.
 The Windows Cargo targets statically link the compiler C runtime. Packaging rejects
 undeclared VC runtime DLL imports, including delay imports; Visual Studio is not a
 runtime prerequisite. Rebuild with an updated toolchain for compiler-runtime fixes.
@@ -91,23 +90,18 @@ runtime prerequisite. Rebuild with an updated toolchain for compiler-runtime fix
 rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
 ./script/package_windows.ps1 -Architecture x64
 # On an ARM64 host, use -Architecture arm64.
-dotnet build platform/avalonia/Tests/NativeIntegration.csproj -c Release
-Copy-Item target/x86_64-pc-windows-msvc/release/yacht_ffi.dll platform/avalonia/Tests/bin/Release/net10.0/
-dotnet platform/avalonia/Tests/bin/Release/net10.0/NativeIntegration.dll
+cmake -S platform/qt -B build/qt -DCMAKE_BUILD_TYPE=Release
+cmake --build build/qt --config Release
+./build/qt/tests/Release/test_integration.exe
 ./platform/windows/test_ui.ps1 -Executable "$PWD/target/windows-x64/YachtApp.exe"
 ```
 
-Packaging uses NuGet locked restore and publishes the self-contained .NET runtime
-with the app, Rust DLL and CLI. Outputs: per-user Inno installer, portable ZIP and
-SHA256SUMS-windows-<arch>. The GUI is YachtApp.exe; yacht.exe is the CLI (Windows
-filenames are case-insensitive). Inno registers Open With entries without taking
-over the user's default CSV application. Runtime smoke tests need an interactive
-Windows desktop and WebView2 runtime. They isolate preference writes.
+Packaging uses `windeployqt` to deploy Qt runtime libraries alongside the app, Rust DLL and CLI.
+Outputs: per-user Inno installer, portable ZIP and SHA256SUMS-windows-<arch>. The GUI is YachtApp.exe;
+yacht.exe is the CLI. Inno registers Open With entries without taking over the user's default CSV
+application. Runtime smoke tests isolate preference writes.
 
-The package script copies the exact NuGet package license and notice files into
-`ThirdPartyLicenses/` before making the ZIP or installer. The historical v2.1.1 ZIPs
-did not contain that folder. The new packages contain Avalonia and its open-source rendering dependencies;
-retired Windows App SDK binaries are not part of this packaging path.
+The package script copies Qt license notices into `ThirdPartyLicenses/` before making the ZIP or installer.
 
 Set YACHT_SIGNING_THUMBPRINT to a certificate in the signing user's certificate
 store and make signtool available to sign/verify app, core DLL, CLI and installer.
@@ -118,54 +112,45 @@ in the script.
 
 ## Linux
 
-Ubuntu 24.04 x64/ARM64 baseline (glibc 2.39), .NET SDK 10.0.401 for building,
-and system WebKitGTK 4.1, GTK3, ICU, Fontconfig and X11 libraries.
-`xdg-utils` supplies file-manager and browser integration. GTK3 is only the
-native WebView dependency, not an alternative application UI. The .deb declares
+Ubuntu 24.04 x64/ARM64 baseline (glibc 2.39), CMake 3.16+, Qt 6 development libraries
+(`qt6-base-dev`), and standard ICU, Fontconfig, and X11 libraries.
+`xdg-utils` supplies file-manager and browser integration. The .deb declares
 runtime dependencies; Python is only needed for build/test tooling.
 
 ```sh
-sudo apt install libicu74 libfontconfig1 libx11-6 libice6 libsm6 libgtk-3-0t64 \
-  libwebkit2gtk-4.1-0 libssl3t64 xdg-utils xvfb dbus-x11 at-spi2-core desktop-file-utils
+sudo apt install qt6-base-dev qt6-base-private-dev libqt6widgets6t64 libqt6gui6t64 \
+  libqt6core6t64 libqt6network6t64 xdg-utils xvfb dbus-x11 at-spi2-core desktop-file-utils
 cargo build --workspace --locked
 python3 script/test_native_binding.py target/debug/libyacht_ffi.so
-dotnet build platform/avalonia/Tests/NativeIntegration.csproj -c Release
-cp target/debug/libyacht_ffi.so platform/avalonia/Tests/bin/Release/net10.0/
-dotnet platform/avalonia/Tests/bin/Release/net10.0/NativeIntegration.dll
+cmake -S platform/qt -B build/qt -DCMAKE_BUILD_TYPE=Release
+cmake --build build/qt
+./build/qt/tests/test_integration
 ./script/package_linux.sh
 ```
 
-CI runs `script/test_avalonia_ui.py` against the published application in an
-Xvfb/DBus session. This verifies the native WebView rather than a simulated browser.
-
-WebKit keeps its process sandbox enabled. Ubuntu hosts must permit the distro
-`/usr/bin/bwrap` helper to create user namespaces. If startup reports a denied UID
-map, check the installed AppArmor/bubblewrap policy; the workflow installs a narrow
-helper profile on its ephemeral test hosts. Follow [Ubuntu's application profile
-guidance](https://ubuntu.com/blog/ubuntu-23-10-restricted-unprivileged-user-namespaces)
-when configuring a restricted workstation; do not disable WebKit's sandbox.
+CI runs `script/test_qt_ui.py` against the application in an Xvfb/DBus session.
 
 Outputs: `.deb`, tar.gz and SHA256SUMS-linux-<arch>. Tar packages use the same
 native dependencies; they are not universal static binaries. The desktop entry
-registers CSV/TSV handling and the native launcher. The shared YACHT icon is installed into the hicolor theme and referenced by the desktop entry. Optional YACHT_GPG_KEY signs
+registers CSV/TSV handling and the native launcher. The shared YACHT icon is installed
+into the hicolor theme and referenced by the desktop entry. Optional YACHT_GPG_KEY signs
 the checksum manifest with an already-provisioned GnuPG key; unsigned development
 packages remain buildable. Architecture-specific Linux CI runs the code natively.
 
-## Internal macOS ARM64 Avalonia reference
+## Internal macOS ARM64 Qt reference
 
-On macOS 15 or newer, install the SDK pinned in `global.json`, then run:
+On macOS 14 or newer with Qt 6 installed (`brew install qt@6`), run:
 
 ```sh
-./script/package_avalonia_internal.sh
-python3 script/test_avalonia_ui.py 'dist/internal/YACHT Avalonia Internal.app/Contents/MacOS/YachtApp'
-open 'dist/internal/YACHT Avalonia Internal.app'
+./script/package_qt_internal.sh
+python3 script/test_qt_ui.py 'dist/internal/YACHT Qt Internal.app/Contents/MacOS/YachtApp'
+open 'dist/internal/YACHT Qt Internal.app'
 ```
 
-`DOTNET` may point to a repository-local SDK executable. The bundle is ad-hoc signed
-for local execution, with no Developer ID or notarization requirement. It has a
-separate identity and data store, no production updater, and no Intel target.
-Download it from the `YACHT-Avalonia-INTERNAL-macos-arm64-*` workflow artifact.
-It is never the production Mac download. See [isolation safeguards](AVALONIA-MIGRATION.md).
+The bundle is ad-hoc signed for local execution, with no Developer ID or notarization
+requirement. It has a separate identity and data store, no production updater, and no
+Intel target. Download it from the `YACHT-Qt-INTERNAL-macos-arm64-*` workflow artifact.
+It is never the production Mac download. See [isolation safeguards](QT-MIGRATION.md).
 
 ## CI and releases
 

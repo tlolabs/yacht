@@ -56,7 +56,7 @@ def main():
     parser.add_argument("--arch", choices=["x64", "arm64"], required=True)
     args = parser.parse_args()
     expected = {"x64": 0x8664, "arm64": 0xaa64}[args.arch]
-    for name in ["YachtApp.exe", "yacht_ffi.dll", "yacht.exe", "yacht-update.exe", "coreclr.dll", "libSkiaSharp.dll"]:
+    for name in ["YachtApp.exe", "yacht_ffi.dll", "yacht.exe", "yacht-update.exe", "Qt6Core.dll", "Qt6Gui.dll", "Qt6Widgets.dll"]:
         if not (args.directory / name).is_file():
             raise SystemExit("Missing packaged binary: " + name)
     checked = 0

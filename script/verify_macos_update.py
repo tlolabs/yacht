@@ -24,7 +24,7 @@ def run(*args):
 
 def verify_bundle(app, trust, version, arch):
     info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
-    require(not info.get("YACHTInternalReference") and not list(app.rglob("Avalonia*.dll")), "Internal Avalonia builds cannot enter the production macOS update channel")
+    require(not info.get("YACHTInternalReference") and not list(app.rglob("*Qt*")), "Internal Qt builds cannot enter the production macOS update channel")
     require(info["CFBundleIdentifier"] == trust["application_id"], "Application identity mismatch")
     require(info["CFBundleShortVersionString"] == info["CFBundleVersion"] == version, "Packaged version mismatch")
     require(info["SUPublicEDKey"] == trust["sparkle_public_key"], "Sparkle key mismatch")

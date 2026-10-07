@@ -63,8 +63,7 @@ All operations include version=1 and op. Native errors expose a stable code
 
 Required style fields/defaults are defined in Rust; frontend properties are editable
 projections, never independent serialization defaults. Never persist a table handle.
-Swift uses an immutable Sendable storage owner; C# keeps a managed owner alive across
-P/Invoke; Python holds its Table during ctypes calls. Rust clones the Arc before
+Swift uses an immutable Sendable storage owner; C++ `YachtCore::Table` uses a `std::shared_ptr` RAII owner; Python holds its Table during ctypes calls. Rust clones the Arc before
 releasing the registry mutex, so independent UI work can run concurrently.
 
 Cancellation callbacks must be cheap, nonthrowing, and valid on the caller thread.
@@ -80,11 +79,12 @@ real Rust ABI, not an independent Swift algorithm. New app/UI files require proj
 regeneration; the bindings library files are discovered by SwiftPM.
 
 Windows, Linux and the internal Mac reference use the shared implementation in
-`platform/avalonia`. Keep presentation state and commands in `MainViewModel`,
+`platform/qt`. Keep presentation state and controls in `MainWindow`,
 platform operations behind `IDesktopServices`, and business behavior in Rust.
-P/Invoke loads the library from the application directory. C# integration tests
-exercise the same binding and view model without a graphical session; the common
-smoke harness runs the actual window/native preview. See [migration details](AVALONIA-MIGRATION.md).
+`YachtCore` loads and wraps the C ABI library. C++ integration tests
+(`platform/qt/tests/test_integration.cpp`) exercise the binding and presentation
+without a graphical session; the common smoke harness runs the actual window and preview.
+See [migration details](QT-MIGRATION.md).
 
 ## Feature changes
 

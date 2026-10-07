@@ -18,8 +18,8 @@ The compatibility script creates its own CSV data and compares decoded output. `
 ## Native targets
 
 - **macOS (ARM64/x64):** Build the Rust library, run `swift test`, then the Xcode `Yacht` scheme's UI tests on a logged-in desktop. The workflow runs each architecture on a native runner. See [building](BUILDING.md#macos) for commands.
-- **Windows (x64/ARM64):** Run `platform/avalonia/Tests/NativeIntegration.csproj`, the native binding test, and `platform/windows/test_ui.ps1` on a Windows host with WebView2. The workflow uses native runners for both targets.
-- **Linux (x64/ARM64):** Run the native binding test and `script/test_avalonia_ui.py` against the published executable in an Xvfb/DBus session with the documented native WebKitGTK/X11 dependencies installed. The workflow uses Ubuntu 24.04 native runners.
+- **Windows (x64/ARM64):** Run the Qt integration test executable, the native binding test, and `platform/windows/test_ui.ps1` on a Windows host. The workflow uses native runners for both targets.
+- **Linux (x64/ARM64):** Run the native binding test and `script/test_qt_ui.py` against the application in an Xvfb/DBus session with Qt 6 installed. The workflow uses Ubuntu 24.04 native runners.
 
 CI should verify generated project/version files, declared minimum OS versions, dependency inventory drift, package contents, and checksums. Dependency-license concerns are reported as warnings; structural errors in licensing files and project SPDX declarations are hard failures.
 
@@ -53,16 +53,14 @@ archive. `python3 script/test_sparkle_tools.py build/sparkle/2.9.6/bin` signs an
 verifies an offline appcast with a public fixture seed and rejects tampering,
 without accessing the login keychain or contacting a release feed.
 
-## Shared Avalonia presentation
+## Shared Qt presentation
+ 
+Configure and build `platform/qt` with CMake:
+```sh
+cmake -S platform/qt -B build/qt -DCMAKE_BUILD_TYPE=Release
+cmake --build build/qt
+./build/qt/tests/test_integration
+```
+This runs the C ABI binding and presentation integration tests (read, preview, export, presets, settings, batch, cancellation, and concurrent requests). No graphical session is needed.
 
-Build `platform/avalonia/Tests/NativeIntegration.csproj` with .NET 10.0.401,
-copy the host's `yacht_ffi` library beside the test output in `bin/Release/net10.0`,
-and run `dotnet .../NativeIntegration.dll`. This preserves the earlier C# ABI
-assertions and adds view-model, persistence/migration, validation, cancellation,
-batch and lifecycle tests. No graphical session is needed.
-
-`python3 script/test_avalonia_ui.py <published-YachtApp-executable>` isolates user
-data and runs the real shared window, native WebView, clipboard, preset, export,
-settings and batch smoke path. Windows can also use `platform/windows/test_ui.ps1`.
-`script/check_avalonia_contract.py` enforces the shared-target and internal-release
-boundary, optionally inspecting `--bundle` for the internal Mac app.
+`python3 script/test_qt_ui.py <published-YachtApp-executable>` isolates user data and runs the real shared window, preview, clipboard, preset, export, settings and batch smoke path. Windows can also use `platform/windows/test_ui.ps1`. `script/check_qt_contract.py` enforces the shared-target and internal-release boundary, optionally inspecting `--bundle` for the internal Mac app.

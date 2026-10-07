@@ -2,8 +2,8 @@
 
 ```
 SwiftUI → Swift typed adapter ─┐
-Avalonia → view model → C# ───┘→ yacht-ffi (C ABI / JSON v1) → yacht-core
-  Windows, Linux, internal Mac                               ↑
+Qt 6 Widgets → C++ wrapper ────┘→ yacht-ffi (C ABI / JSON v1) → yacht-core
+  Windows, Linux, internal Mac                                ↑
                                                       Rust yacht CLI
 ```
 
@@ -38,10 +38,10 @@ They do not provide crash isolation from an abort or out-of-memory condition.
 | crates/yacht-ffi, bindings/c | Stable ABI, allocation/cancellation contract |
 | platform/macos/Sources/YachtCore | Swift adapters and editable native projections only |
 | platform/macos/Sources/YachtApp | Preserved SwiftUI views, stores and macOS integrations |
-| platform/avalonia/YACHT | Shared AXAML, view model, services and P/Invoke |
+| platform/qt | Shared Qt 6 Widgets presentation, C++ YachtCore RAII wrapper and tests |
 | platform/windows, platform/linux | OS packaging and integration metadata |
 | platform/macos/Tests, platform/macos/UITests | Existing Swift binding and macOS UI coverage |
-| platform/avalonia/Tests, script/test_avalonia_ui.py | Shared presentation and native runtime integration |
+| platform/qt/tests, script/test_qt_ui.py | Shared presentation and native runtime integration |
 | script, .github | Version generation, tests, packaging and required CI gates |
 
 The macOS source, binding tests, UI tests and Info.plist live under platform/macos.
@@ -55,7 +55,7 @@ ctypes test adapter remains under script/ and is not shipped.
 ## Operation lifecycle
 
 Parsing incrementally consumes UTF-8 bytes and stores sparse rows. Native worker
-queues call the ABI off the UI thread. Swift Task cancellation and C# CancellationToken feed the same Rust checks. Preview edits debounce, cancel
+queues call the ABI off the UI thread. Swift Task cancellation and C++ cancellation tokens feed the same Rust checks. Preview edits debounce, cancel
 obsolete requests and discard stale completion. Metadata drives native row counts;
 full rows are materialized only for Swift compatibility/test consumers. Copy builds
 the complete string; file export streams and does not allocate full HTML.
@@ -69,11 +69,11 @@ replacement confirmation. Swift's staged FileDocument workflow is preserved.
 
 macOS: SwiftUI, AppKit clipboard/Finder/browser bridge, security-scoped file access,
 complete Finder open arrays, WKWebView, UserDefaults/SceneStorage and Settings.
-Windows/Linux/internal Mac: shared Avalonia AXAML, view models, commands and
-Fluent styles. Desktop services handle native pickers, clipboard, file-manager
-integration and native WebView engines. The GUI executable is YachtApp.exe on
-Windows to avoid colliding with yacht.exe. Linux desktop/MIME registration remains.
-See [migration architecture and storage contracts](AVALONIA-MIGRATION.md).
+Windows/Linux/internal Mac: shared Qt 6 Widgets (C++17, CMake) in `platform/qt`.
+Desktop services (`IDesktopServices`) handle native pickers, clipboard, settings,
+batch review and file-manager integration. The GUI executable is `YachtApp.exe` on
+Windows to avoid colliding with `yacht.exe`. Linux desktop/MIME registration remains.
+See [migration architecture and storage contracts](QT-MIGRATION.md).
 
 Controls use native accessible names and focus traversal; HTML uses scoped headers.
 Appearance is independent of export colors. The [candidate updater architecture](updater/ARCHITECTURE.md)

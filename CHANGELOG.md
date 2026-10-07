@@ -2,6 +2,24 @@
 
 All notable changes are recorded here. Earlier releases remain in Git history.
 
+## [Unreleased]
+
+### Added
+
+- Add shared Qt 6 Widgets presentation for Windows x64/ARM64 and Linux x64/ARM64.
+- Add internal macOS ARM64 Qt reference application for development, debugging, and parity verification.
+- Add Qt integration tests and automated UI smoke test harness (`--ui-smoke-test`).
+
+### Changed
+
+- Replace the shared Avalonia/.NET presentation layer with Qt 6 Widgets (C++17, CMake) across all shared targets.
+- Retain the authoritative Rust core, C ABI bindings, and native SwiftUI/AppKit macOS application.
+- Update packaging, compliance, and CI workflows for Qt 6 and CMake.
+
+### Removed
+
+- Completely removed Avalonia and .NET from the active codebase and repository.
+
 ## [2.1.2-rc.1] — 2026-10-01
 
 ### Added
