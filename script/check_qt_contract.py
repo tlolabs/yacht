@@ -60,6 +60,42 @@ if a.bundle:
     require(not any(k.startswith('SU') for k in info), 'Internal host must not carry Sparkle metadata')
     require(not list(a.bundle.rglob('yacht-update*')), 'Internal host must not bundle the production updater')
     require(not list(a.bundle.rglob('Sparkle.framework')), 'Internal host must not bundle Sparkle')
-    require((a.bundle / 'Contents/MacOS/YachtApp').is_file(), 'Shared presentation binary missing')
+    executable = a.bundle / 'Contents/MacOS/YachtApp'
+    require(executable.is_file(), 'Shared presentation binary missing')
+    require((a.bundle / 'Contents/MacOS/libyacht_ffi.dylib').is_file(), 'Bundled Rust FFI missing')
+    for framework in ('QtCore', 'QtGui', 'QtNetwork', 'QtWidgets'):
+        require((a.bundle / 'Contents/Frameworks' / f'{framework}.framework').exists(),
+                f'Bundled {framework} framework missing')
+    require((a.bundle / 'Contents/PlugIns/platforms/libqcocoa.dylib').is_file(),
+            'Bundled Cocoa platform plugin missing')
+    contents = a.bundle / 'Contents'
+    scanned = 0
+    for binary in contents.rglob('*'):
+        if not binary.is_file() or binary.is_symlink():
+            continue
+        linked = subprocess.run(['otool', '-L', str(binary)], capture_output=True, text=True)
+        if linked.returncode:
+            continue  # Resource, license, or metadata file.
+        scanned += 1
+        identity = subprocess.run(['otool', '-D', str(binary)], capture_output=True, text=True)
+        own_ids = identity.stdout.splitlines()[1:]
+        for line in linked.stdout.splitlines()[1:]:
+            dependency = line.strip().split(' (', 1)[0]
+            if dependency in own_ids:
+                continue  # A dylib's install name is not a dependency it loads.
+            if dependency.startswith('@rpath/'):
+                resolved = contents / 'Frameworks' / dependency[len('@rpath/'):]
+            elif dependency.startswith('@executable_path/'):
+                resolved = contents / 'MacOS' / dependency[len('@executable_path/'):]
+            elif dependency.startswith('@loader_path/'):
+                resolved = binary.parent / dependency[len('@loader_path/'):]
+            elif dependency.startswith('/'):
+                require(dependency.startswith(('/System/Library/', '/usr/lib/')),
+                        f'{binary} links a build-machine dependency: {dependency}')
+                continue
+            else:
+                raise SystemExit(f'{binary} has an unexpected dependency: {dependency}')
+            require(resolved.exists(), f'{binary} is missing bundled dependency: {dependency}')
+    require(scanned > 0, 'No Mach-O binaries inspected in internal bundle')
 
 print('Shared Qt target and release-isolation contracts verified')

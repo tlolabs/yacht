@@ -6,16 +6,19 @@ cd "$(dirname "$0")/.."
 version="$(python3 script/sync_version.py)"
 cargo build --release --locked -p yacht-ffi --target aarch64-apple-darwin
 
-app="$PWD/dist/internal/YACHT Qt Internal.app"
+app="${YACHT_INTERNAL_APP_PATH:-$PWD/dist/internal/YACHT Qt Internal.app}"
+archive="${YACHT_INTERNAL_ARCHIVE_PATH:-$PWD/build/internal-artifacts/YACHT-Qt-INTERNAL-macos-arm64.zip}"
+[[ "$app" == *.app ]] || { echo 'Internal output must be an .app bundle' >&2; exit 1; }
 if pgrep -f "^$app/Contents/MacOS/YachtApp" >/dev/null; then echo 'Close the internal reference application before packaging' >&2; exit 1; fi
 rm -rf "$app"
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" build/internal-artifacts
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$(dirname "$archive")"
 
-cmake -S platform/qt -B build/qt-internal -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
+ffi="$PWD/target/aarch64-apple-darwin/release/libyacht_ffi.dylib"
+cmake -S platform/qt -B build/qt-internal -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64 -DYACHT_FFI_LIB="$ffi"
 cmake --build build/qt-internal --target YachtApp --config Release
 
 cp build/qt-internal/YachtApp "$app/Contents/MacOS/"
-cp target/aarch64-apple-darwin/release/libyacht_ffi.dylib "$app/Contents/MacOS/"
+cp "$ffi" "$app/Contents/MacOS/"
 cp assets/icons/YACHT.icns LICENSE LICENSE-NOTICE.md THIRD_PARTY_NOTICES.md PRIVACY.md "$app/Contents/Resources/"
 
 python3 - "$app" "$version" <<'PY'
@@ -38,11 +41,20 @@ p=Path(sys.argv[1])
 if (p/'Contents/MacOS/yacht-update').exists(): raise SystemExit('Internal application must not contain the production updater')
 PY
 
+macdeployqt "$app" -always-overwrite -no-codesign
+# This UI loads its icon from a bundled PNG. Homebrew's optional SVG/PDF plugins
+# require QtSvg/QtPdf, which macdeployqt does not bundle with this Qt base install.
+rm -f "$app/Contents/PlugIns/iconengines/libqsvgicon.dylib" \
+      "$app/Contents/PlugIns/imageformats/libqpdf.dylib"
+ffi_link="$(otool -L "$app/Contents/MacOS/YachtApp" | awk '/libyacht_ffi[.]dylib/ { print $1; exit }')"
+[[ -n "$ffi_link" ]] || { echo 'Internal binary is missing the Rust FFI dependency' >&2; exit 1; }
+install_name_tool -change "$ffi_link" '@executable_path/libyacht_ffi.dylib' "$app/Contents/MacOS/YachtApp"
+
 python3 script/collect_qt_notices.py "$app/Contents/MacOS" --rid osx-arm64
 mv "$app/Contents/MacOS/ThirdPartyLicenses" "$app/Contents/Resources/"
 python3 script/check_qt_contract.py --bundle "$app"
 # Ad-hoc signing is only for locally loading ARM64 executable code, never distribution trust.
 codesign --force --deep --sign - "$app"
 codesign --verify --deep --strict "$app"
-ditto -c -k --keepParent "$app" build/internal-artifacts/YACHT-Qt-INTERNAL-macos-arm64.zip
+ditto -c -k --keepParent "$app" "$archive"
 printf '%s\n' "$app"
