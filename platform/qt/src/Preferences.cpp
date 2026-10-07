@@ -7,7 +7,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QRegularExpression>
-#include <QUuid>
+#include <QSaveFile>
 
 namespace Yacht {
 
@@ -183,7 +183,9 @@ bool Preferences::save() const {
         return false;
     }
 
-    QDir().mkpath(AppIdentity::dataDirectory());
+    if (!QDir().mkpath(AppIdentity::dataDirectory())) {
+        return false;
+    }
 
     QJsonObject obj;
     obj[QStringLiteral("RememberStyle")] = rememberStyle;
@@ -202,26 +204,15 @@ bool Preferences::save() const {
 
     QByteArray data = QJsonDocument(obj).toJson(QJsonDocument::Indented);
 
-    QString tempPath = AppIdentity::dataDirectory() + QStringLiteral("/ui-") +
-                       QUuid::createUuid().toString(QUuid::WithoutBraces) + QStringLiteral(".tmp");
-    QFile tempFile(tempPath);
-    if (!tempFile.open(QIODevice::WriteOnly)) {
+    QSaveFile file(AppIdentity::dataDirectory() + QStringLiteral("/ui.json"));
+    if (!file.open(QIODevice::WriteOnly)) {
         return false;
     }
-    if (tempFile.write(data) != data.size()) {
-        tempFile.close();
-        tempFile.remove();
+    if (file.write(data) != data.size()) {
+        file.cancelWriting();
         return false;
     }
-    tempFile.close();
-
-    QString targetPath = AppIdentity::dataDirectory() + QStringLiteral("/ui.json");
-    QFile::remove(targetPath);
-    if (!QFile::rename(tempPath, targetPath)) {
-        tempFile.remove();
-        return false;
-    }
-    return true;
+    return file.commit();
 }
 
 } // namespace Yacht
