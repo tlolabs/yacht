@@ -27,6 +27,9 @@ jobs:
           python3 script/check_update_contract.py
           python3 script/test_update_release.py
           python3 -O script/test_update_release.py
+      - name: Automated accessibility and platform support checks (nonblocking)
+        continue-on-error: true
+        run: python3 script/test_accessibility.py
   tag-policy:
     name: Release tag policy
     if: startsWith(github.ref, 'refs/tags/')

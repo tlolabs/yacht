@@ -73,14 +73,45 @@ void MainWindow::setupUi() {
     topBarLayout->setSpacing(8);
 
     auto *openBtn = new QPushButton(QStringLiteral("Open…"), this);
+    openBtn->setAccessibleName(QStringLiteral("Open CSV…"));
+    openBtn->setAccessibleDescription(QStringLiteral("Open a CSV or TSV file (Ctrl+O)"));
+    openBtn->setToolTip(QStringLiteral("Open a CSV or TSV file (Ctrl+O)"));
+
     auto *batchBtn = new QPushButton(QStringLiteral("Batch…"), this);
+    batchBtn->setAccessibleName(QStringLiteral("Batch Convert…"));
+    batchBtn->setAccessibleDescription(QStringLiteral("Batch convert multiple CSV files to HTML (Ctrl+Shift+B)"));
+    batchBtn->setToolTip(QStringLiteral("Batch convert multiple CSV files to HTML (Ctrl+Shift+B)"));
+
     auto *sampleBtn = new QPushButton(QStringLiteral("Sample"), this);
+    sampleBtn->setAccessibleName(QStringLiteral("Load Sample Table"));
+    sampleBtn->setAccessibleDescription(QStringLiteral("Load the built-in sample table"));
+    sampleBtn->setToolTip(QStringLiteral("Load the built-in sample table"));
+
     auto *refreshBtn = new QPushButton(QStringLiteral("Refresh"), this);
+    refreshBtn->setAccessibleName(QStringLiteral("Refresh Preview"));
+    refreshBtn->setAccessibleDescription(QStringLiteral("Refresh preview with current delimiter (Ctrl+R or F5)"));
+    refreshBtn->setToolTip(QStringLiteral("Refresh preview with current delimiter (Ctrl+R or F5)"));
+
     auto *copyBtn = new QPushButton(QStringLiteral("Copy HTML"), this);
+    copyBtn->setAccessibleName(QStringLiteral("Copy HTML Code"));
+    copyBtn->setAccessibleDescription(QStringLiteral("Copy complete HTML document to clipboard (Ctrl+Shift+C)"));
+    copyBtn->setToolTip(QStringLiteral("Copy complete HTML document to clipboard (Ctrl+Shift+C)"));
+
     auto *exportBtn = new QPushButton(QStringLiteral("Export…"), this);
+    exportBtn->setAccessibleName(QStringLiteral("Export HTML…"));
+    exportBtn->setAccessibleDescription(QStringLiteral("Export complete HTML document to file (Ctrl+S)"));
+    exportBtn->setToolTip(QStringLiteral("Export complete HTML document to file (Ctrl+S)"));
+
     m_cancelButton = new QPushButton(QStringLiteral("Cancel"), this);
     m_cancelButton->setEnabled(false);
+    m_cancelButton->setAccessibleName(QStringLiteral("Cancel Operation"));
+    m_cancelButton->setAccessibleDescription(QStringLiteral("Cancel current background operation (Escape)"));
+    m_cancelButton->setToolTip(QStringLiteral("Cancel current background operation (Escape)"));
+
     auto *settingsBtn = new QPushButton(QStringLiteral("Settings…"), this);
+    settingsBtn->setAccessibleName(QStringLiteral("Settings…"));
+    settingsBtn->setAccessibleDescription(QStringLiteral("Open application settings and appearance preferences"));
+    settingsBtn->setToolTip(QStringLiteral("Open application settings and appearance preferences (Ctrl+,)"));
 
     connect(openBtn, &QPushButton::clicked, this, &MainWindow::onOpen);
     connect(batchBtn, &QPushButton::clicked, this, &MainWindow::onBatch);
@@ -122,11 +153,22 @@ void MainWindow::setupUi() {
 
     m_presetsCombo = new QComboBox(m_sidebarWidget);
     m_presetsCombo->setAccessibleName(QStringLiteral("Preset"));
+    m_presetsCombo->setAccessibleDescription(QStringLiteral("Select a style preset"));
+    m_presetsCombo->setToolTip(QStringLiteral("Select a table style preset"));
+    presetLabel->setBuddy(m_presetsCombo);
     sidebarLayout->addWidget(m_presetsCombo);
 
     auto *presetButtonsLayout = new QHBoxLayout();
     auto *loadPresetBtn = new QPushButton(QStringLiteral("Load"), m_sidebarWidget);
+    loadPresetBtn->setAccessibleName(QStringLiteral("Load Preset"));
+    loadPresetBtn->setAccessibleDescription(QStringLiteral("Apply the selected preset"));
+    loadPresetBtn->setToolTip(QStringLiteral("Apply the selected preset"));
+
     auto *deletePresetBtn = new QPushButton(QStringLiteral("Delete"), m_sidebarWidget);
+    deletePresetBtn->setAccessibleName(QStringLiteral("Delete Preset"));
+    deletePresetBtn->setAccessibleDescription(QStringLiteral("Delete the selected custom preset"));
+    deletePresetBtn->setToolTip(QStringLiteral("Delete the selected custom preset"));
+
     connect(loadPresetBtn, &QPushButton::clicked, this, &MainWindow::onLoadPreset);
     connect(deletePresetBtn, &QPushButton::clicked, this, &MainWindow::onDeletePreset);
     presetButtonsLayout->addWidget(loadPresetBtn);
@@ -136,15 +178,28 @@ void MainWindow::setupUi() {
     m_savePresetEdit = new QLineEdit(m_sidebarWidget);
     m_savePresetEdit->setPlaceholderText(QStringLiteral("Save preset as"));
     m_savePresetEdit->setAccessibleName(QStringLiteral("Save preset as"));
+    m_savePresetEdit->setAccessibleDescription(QStringLiteral("Enter a name to save the current style preset"));
+    m_savePresetEdit->setToolTip(QStringLiteral("Enter a name to save current style settings as a preset"));
     sidebarLayout->addWidget(m_savePresetEdit);
 
     auto *savePresetBtn = new QPushButton(QStringLiteral("Save Current"), m_sidebarWidget);
+    savePresetBtn->setAccessibleName(QStringLiteral("Save Current Preset"));
+    savePresetBtn->setAccessibleDescription(QStringLiteral("Save current style settings under the entered preset name"));
+    savePresetBtn->setToolTip(QStringLiteral("Save current style settings under the entered preset name"));
     connect(savePresetBtn, &QPushButton::clicked, this, &MainWindow::onSavePreset);
     sidebarLayout->addWidget(savePresetBtn);
 
     auto *resetButtonsLayout = new QHBoxLayout();
     auto *styledBtn = new QPushButton(QStringLiteral("Reset Styled"), m_sidebarWidget);
+    styledBtn->setAccessibleName(QStringLiteral("Reset Styled"));
+    styledBtn->setAccessibleDescription(QStringLiteral("Reset style to built-in default styled settings"));
+    styledBtn->setToolTip(QStringLiteral("Reset style to built-in default styled settings"));
+
     auto *unstyledBtn = new QPushButton(QStringLiteral("Reset Unstyled"), m_sidebarWidget);
+    unstyledBtn->setAccessibleName(QStringLiteral("Reset Unstyled"));
+    unstyledBtn->setAccessibleDescription(QStringLiteral("Reset style to plain unstyled table"));
+    unstyledBtn->setToolTip(QStringLiteral("Reset style to plain unstyled table"));
+
     connect(styledBtn, &QPushButton::clicked, this, &MainWindow::onResetStyled);
     connect(unstyledBtn, &QPushButton::clicked, this, &MainWindow::onResetUnstyled);
     resetButtonsLayout->addWidget(styledBtn);
@@ -198,6 +253,8 @@ void MainWindow::setupUi() {
 
     m_summaryLabel = new QLabel(QStringLiteral("Built-in sample"), rightWidget);
     m_summaryLabel->setWordWrap(true);
+    m_summaryLabel->setAccessibleName(QStringLiteral("Table summary"));
+    m_summaryLabel->setAccessibleDescription(QStringLiteral("Information about the current table"));
     rightLayout->addWidget(m_summaryLabel);
 
     auto *controlsRowLayout = new QHBoxLayout();
@@ -207,6 +264,9 @@ void MainWindow::setupUi() {
     auto *delimLabel = new QLabel(QStringLiteral("Delimiter"), rightWidget);
     m_delimiterCombo = new QComboBox(rightWidget);
     m_delimiterCombo->setAccessibleName(QStringLiteral("Delimiter"));
+    m_delimiterCombo->setAccessibleDescription(QStringLiteral("Choose CSV delimiter character"));
+    m_delimiterCombo->setToolTip(QStringLiteral("Delimiter character used to parse fields"));
+    delimLabel->setBuddy(m_delimiterCombo);
     m_delimiterCombo->addItems({QStringLiteral("comma"), QStringLiteral("tab"),
                                 QStringLiteral("semicolon"), QStringLiteral("pipe")});
     connect(m_delimiterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
@@ -219,12 +279,18 @@ void MainWindow::setupUi() {
     auto *recentLabel = new QLabel(QStringLiteral("Recent files"), rightWidget);
     m_recentCombo = new QComboBox(rightWidget);
     m_recentCombo->setAccessibleName(QStringLiteral("Recent files"));
+    m_recentCombo->setAccessibleDescription(QStringLiteral("Select a recently opened file"));
+    m_recentCombo->setToolTip(QStringLiteral("List of recently opened CSV or TSV files"));
+    recentLabel->setBuddy(m_recentCombo);
     m_recentCombo->setMinimumWidth(260);
     recentLayout->addWidget(recentLabel);
     recentLayout->addWidget(m_recentCombo);
     controlsRowLayout->addLayout(recentLayout);
 
     auto *openRecentBtn = new QPushButton(QStringLiteral("Open Recent"), rightWidget);
+    openRecentBtn->setAccessibleName(QStringLiteral("Open Recent"));
+    openRecentBtn->setAccessibleDescription(QStringLiteral("Open the selected recent file"));
+    openRecentBtn->setToolTip(QStringLiteral("Open the selected recent file"));
     connect(openRecentBtn, &QPushButton::clicked, this, &MainWindow::onOpenRecent);
     controlsRowLayout->addWidget(openRecentBtn, 0, Qt::AlignBottom);
     controlsRowLayout->addStretch();
@@ -232,10 +298,12 @@ void MainWindow::setupUi() {
 
     // Tab Widget
     m_tabWidget = new QTabWidget(rightWidget);
+    m_tabWidget->setAccessibleName(QStringLiteral("Table display mode"));
     m_previewWidget = new HtmlPreviewWidget(m_tabWidget);
     m_sourceEdit = new QPlainTextEdit(m_tabWidget);
     m_sourceEdit->setReadOnly(true);
     m_sourceEdit->setAccessibleName(QStringLiteral("HTML Source"));
+    m_sourceEdit->setAccessibleDescription(QStringLiteral("Read-only HTML table source code"));
     QFont monoFont(QStringLiteral("monospace"));
     monoFont.setStyleHint(QFont::Monospace);
     m_sourceEdit->setFont(monoFont);
@@ -246,6 +314,7 @@ void MainWindow::setupUi() {
 
     m_noteLabel = new QLabel(rightWidget);
     m_noteLabel->setWordWrap(true);
+    m_noteLabel->setAccessibleName(QStringLiteral("Table notice"));
     rightLayout->addWidget(m_noteLabel);
 
     splitter->addWidget(rightWidget);
@@ -269,15 +338,44 @@ void MainWindow::setupUi() {
     auto *statusRowLayout = new QHBoxLayout();
     m_statusLabel = new QLabel(QStringLiteral("Ready"), this);
     m_statusLabel->setWordWrap(true);
+    m_statusLabel->setAccessibleName(QStringLiteral("Status message"));
     statusRowLayout->addWidget(m_statusLabel, 1);
 
     m_revealButton = new QPushButton(QStringLiteral("Reveal file"), this);
+    m_revealButton->setAccessibleName(QStringLiteral("Reveal file in file manager"));
+    m_revealButton->setAccessibleDescription(QStringLiteral("Locate the exported file in your file manager"));
+    m_revealButton->setToolTip(QStringLiteral("Locate the exported file in your file manager"));
+
     m_browserButton = new QPushButton(QStringLiteral("Open in Browser"), this);
+    m_browserButton->setAccessibleName(QStringLiteral("Open exported file in browser"));
+    m_browserButton->setAccessibleDescription(QStringLiteral("Open the exported file in your default web browser"));
+    m_browserButton->setToolTip(QStringLiteral("Open the exported file in your default web browser"));
+
     connect(m_revealButton, &QPushButton::clicked, this, &MainWindow::onRevealLastExport);
     connect(m_browserButton, &QPushButton::clicked, this, &MainWindow::onOpenLastExportInBrowser);
     statusRowLayout->addWidget(m_revealButton);
     statusRowLayout->addWidget(m_browserButton);
     bottomLayout->addLayout(statusRowLayout);
+
+    // Tab order for accessible keyboard navigation
+    QWidget::setTabOrder(openBtn, batchBtn);
+    QWidget::setTabOrder(batchBtn, sampleBtn);
+    QWidget::setTabOrder(sampleBtn, refreshBtn);
+    QWidget::setTabOrder(refreshBtn, copyBtn);
+    QWidget::setTabOrder(copyBtn, exportBtn);
+    QWidget::setTabOrder(exportBtn, m_cancelButton);
+    QWidget::setTabOrder(m_cancelButton, settingsBtn);
+    QWidget::setTabOrder(settingsBtn, m_presetsCombo);
+    QWidget::setTabOrder(m_presetsCombo, loadPresetBtn);
+    QWidget::setTabOrder(loadPresetBtn, deletePresetBtn);
+    QWidget::setTabOrder(deletePresetBtn, m_savePresetEdit);
+    QWidget::setTabOrder(m_savePresetEdit, savePresetBtn);
+    QWidget::setTabOrder(savePresetBtn, styledBtn);
+    QWidget::setTabOrder(styledBtn, unstyledBtn);
+    QWidget::setTabOrder(unstyledBtn, m_delimiterCombo);
+    QWidget::setTabOrder(m_delimiterCombo, m_recentCombo);
+    QWidget::setTabOrder(m_recentCombo, openRecentBtn);
+    QWidget::setTabOrder(openRecentBtn, m_tabWidget);
 
     // Main Central Layout
     auto *central = new QWidget(this);
@@ -294,28 +392,59 @@ void MainWindow::setupActions() {
     auto *fileMenu = menuBar()->addMenu(QStringLiteral("&File"));
     m_openAction = fileMenu->addAction(QStringLiteral("&Open…"), QKeySequence::Open, this,
                                       &MainWindow::onOpen);
+    m_openAction->setToolTip(QStringLiteral("Open CSV or TSV file (Ctrl+O)"));
+    m_openAction->setStatusTip(QStringLiteral("Open a CSV or TSV file"));
+
     m_batchAction = fileMenu->addAction(QStringLiteral("&Batch Convert…"),
                                         QKeySequence(QStringLiteral("Ctrl+Shift+B")), this,
                                         &MainWindow::onBatch);
+    m_batchAction->setToolTip(QStringLiteral("Batch convert CSV files (Ctrl+Shift+B)"));
+    m_batchAction->setStatusTip(QStringLiteral("Batch convert multiple CSV files to HTML"));
+
     m_exportAction = fileMenu->addAction(QStringLiteral("&Export HTML…"), QKeySequence::Save, this,
                                          &MainWindow::onExport);
+    m_exportAction->setToolTip(QStringLiteral("Export HTML (Ctrl+S)"));
+    m_exportAction->setStatusTip(QStringLiteral("Export complete HTML table to file"));
+
     m_copyAction = fileMenu->addAction(QStringLiteral("&Copy HTML"),
                                        QKeySequence(QStringLiteral("Ctrl+Shift+C")), this,
                                        &MainWindow::onCopy);
+    m_copyAction->setToolTip(QStringLiteral("Copy HTML Code (Ctrl+Shift+C)"));
+    m_copyAction->setStatusTip(QStringLiteral("Copy complete HTML document to clipboard"));
+
     fileMenu->addSeparator();
-    fileMenu->addAction(QStringLiteral("E&xit"), QKeySequence::Quit, this, &QWidget::close);
+    auto *exitAction = fileMenu->addAction(QStringLiteral("E&xit"), QKeySequence::Quit, this, &QWidget::close);
+    exitAction->setToolTip(QStringLiteral("Exit YACHT"));
 
     auto *viewMenu = menuBar()->addMenu(QStringLiteral("&View"));
     m_previewTabAction = viewMenu->addAction(QStringLiteral("Table &Preview"),
                                              QKeySequence(QStringLiteral("Ctrl+1")), this,
                                              [this] { switchTab(0); });
+    m_previewTabAction->setToolTip(QStringLiteral("Switch to Table Preview tab (Ctrl+1)"));
+
     m_sourceTabAction = viewMenu->addAction(QStringLiteral("HTML &Source"),
                                             QKeySequence(QStringLiteral("Ctrl+2")), this,
                                             [this] { switchTab(1); });
-    m_refreshAction = viewMenu->addAction(QStringLiteral("&Refresh"), QKeySequence::Refresh, this,
-                                          &MainWindow::onRefresh);
+    m_sourceTabAction->setToolTip(QStringLiteral("Switch to HTML Source tab (Ctrl+2)"));
+
+    m_refreshAction = viewMenu->addAction(QStringLiteral("&Refresh"), this, &MainWindow::onRefresh);
+    m_refreshAction->setShortcuts({QKeySequence::Refresh, QKeySequence(QStringLiteral("Ctrl+R"))});
+    m_refreshAction->setToolTip(QStringLiteral("Refresh preview (F5 or Ctrl+R)"));
+    m_refreshAction->setStatusTip(QStringLiteral("Refresh preview with current delimiter"));
+
     viewMenu->addSeparator();
     m_settingsAction = viewMenu->addAction(QStringLiteral("&Settings…"), this, &MainWindow::onSettings);
+    m_settingsAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+,")));
+    m_settingsAction->setToolTip(QStringLiteral("Application settings (Ctrl+,)"));
+    m_settingsAction->setStatusTip(QStringLiteral("Open settings and appearance preferences"));
+
+    // Cancel action shortcut (Escape)
+    auto *cancelAction = new QAction(this);
+    cancelAction->setShortcut(QKeySequence(Qt::Key_Escape));
+    connect(cancelAction, &QAction::triggered, this, [this] {
+        if (m_busy) onCancel();
+    });
+    addAction(cancelAction);
 
     auto *helpMenu = menuBar()->addMenu(QStringLiteral("&Help"));
     helpMenu->addAction(QStringLiteral("Check for Updates…"), this, [this] { checkUpdates(false); });
@@ -344,12 +473,16 @@ void MainWindow::setupActions() {
         }
     });
     helpMenu->addSeparator();
-    helpMenu->addAction(QStringLiteral("Download Releases"), this, [] {
-        QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/tlolabs/yacht/releases")));
-    });
-    helpMenu->addAction(QStringLiteral("User Guide"), this, [] {
+    auto *userGuideAction = helpMenu->addAction(QStringLiteral("&User Guide"), this, [] {
         QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/tlolabs/yacht#using-yacht")));
     });
+    userGuideAction->setShortcut(QKeySequence::HelpContents);
+    userGuideAction->setToolTip(QStringLiteral("Open online User Guide (F1)"));
+
+    auto *releasesAction = helpMenu->addAction(QStringLiteral("Download &Releases"), this, [] {
+        QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/tlolabs/yacht/releases")));
+    });
+    releasesAction->setToolTip(QStringLiteral("Open official releases page"));
 }
 
 void MainWindow::initialize() {
@@ -416,22 +549,29 @@ void MainWindow::applyAppearance(const QString &appearance) {
         darkPalette.setColor(QPalette::WindowText, Qt::white);
         darkPalette.setColor(QPalette::Base, QColor(30, 30, 30));
         darkPalette.setColor(QPalette::AlternateBase, QColor(45, 45, 45));
-        darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
-        darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+        darkPalette.setColor(QPalette::ToolTipBase, QColor(40, 40, 40));
+        darkPalette.setColor(QPalette::ToolTipText, QColor(240, 240, 240));
         darkPalette.setColor(QPalette::Text, Qt::white);
         darkPalette.setColor(QPalette::Button, QColor(45, 45, 45));
         darkPalette.setColor(QPalette::ButtonText, Qt::white);
         darkPalette.setColor(QPalette::BrightText, Qt::red);
-        darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::Link, QColor(64, 158, 255));
         darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
-        darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+        darkPalette.setColor(QPalette::HighlightedText, Qt::white);
+
+        darkPalette.setColor(QPalette::Disabled, QPalette::Text, QColor(128, 128, 128));
+        darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(128, 128, 128));
+        darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, QColor(128, 128, 128));
+        darkPalette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(80, 80, 80));
+        darkPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(140, 140, 140));
+
         QApplication::setPalette(darkPalette);
     } else if (appearance == QStringLiteral("Light")) {
         QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
         QApplication::setPalette(QApplication::style()->standardPalette());
     } else {
-        // System
-        QApplication::setPalette(QApplication::style()->standardPalette());
+        // System: restore default palette
+        QApplication::setPalette(QPalette());
     }
 }
 

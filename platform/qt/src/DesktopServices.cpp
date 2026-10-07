@@ -108,22 +108,29 @@ void QtDesktopServices::applyAppearance(const QString &appearance) {
         darkPalette.setColor(QPalette::WindowText, Qt::white);
         darkPalette.setColor(QPalette::Base, QColor(30, 30, 30));
         darkPalette.setColor(QPalette::AlternateBase, QColor(45, 45, 45));
-        darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
-        darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+        darkPalette.setColor(QPalette::ToolTipBase, QColor(40, 40, 40));
+        darkPalette.setColor(QPalette::ToolTipText, QColor(240, 240, 240));
         darkPalette.setColor(QPalette::Text, Qt::white);
         darkPalette.setColor(QPalette::Button, QColor(45, 45, 45));
         darkPalette.setColor(QPalette::ButtonText, Qt::white);
         darkPalette.setColor(QPalette::BrightText, Qt::red);
-        darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::Link, QColor(64, 158, 255));
         darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
-        darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+        darkPalette.setColor(QPalette::HighlightedText, Qt::white);
+
+        darkPalette.setColor(QPalette::Disabled, QPalette::Text, QColor(128, 128, 128));
+        darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(128, 128, 128));
+        darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, QColor(128, 128, 128));
+        darkPalette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(80, 80, 80));
+        darkPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(140, 140, 140));
+
         QApplication::setPalette(darkPalette);
     } else if (appearance == QStringLiteral("Light")) {
         QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
         QApplication::setPalette(QApplication::style()->standardPalette());
     } else {
         // System
-        QApplication::setPalette(QApplication::style()->standardPalette());
+        QApplication::setPalette(QPalette());
     }
 }
 

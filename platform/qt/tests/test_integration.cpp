@@ -1,11 +1,17 @@
 #include "../src/AppIdentity.h"
+#include "../src/BatchDialog.h"
 #include "../src/DesktopServices.h"
 #include "../src/MainWindow.h"
 #include "../src/Preferences.h"
 #include "../src/Presets.h"
+#include "../src/SettingsDialog.h"
 #include "../src/YachtCore.h"
 
+#include <QAction>
 #include <QApplication>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QPushButton>
 #include <QDir>
 #include <QFile>
 #include <QJsonArray>
@@ -349,11 +355,92 @@ void testViewModelAndPresentation() {
     std::cout << "Shared Qt presentation: all assertions passed." << std::endl;
 }
 
+void testAccessibilityAndPlatformSupport() {
+    auto desktop = std::make_shared<TestDesktopServices>();
+    MainWindow window(desktop);
+    window.initialize();
+
+    // 1. Verify push buttons have accessible name/text and non-empty tooltips
+    QList<QPushButton *> buttons = window.findChildren<QPushButton *>();
+    check(!buttons.isEmpty(), "Found buttons in MainWindow");
+    for (auto *btn : buttons) {
+        QString name = btn->accessibleName().isEmpty() ? btn->text() : btn->accessibleName();
+        check(!name.trimmed().isEmpty(), "Button has accessible name or text: " + btn->objectName().toStdString());
+        check(!btn->toolTip().trimmed().isEmpty(), "Button has tooltip: " + name.toStdString());
+    }
+
+    // 2. Verify combo boxes have accessible name and non-empty tooltips
+    QList<QComboBox *> combos = window.findChildren<QComboBox *>();
+    check(!combos.isEmpty(), "Found combo boxes in MainWindow");
+    for (auto *combo : combos) {
+        check(!combo->accessibleName().trimmed().isEmpty(), "Combo box has accessible name");
+        check(!combo->toolTip().trimmed().isEmpty(), "Combo box has tooltip");
+    }
+
+    // 3. Verify shortcuts on standard actions
+    QList<QAction *> actions = window.findChildren<QAction *>();
+    bool foundRefresh = false;
+    bool foundSettings = false;
+    bool foundHelp = false;
+    for (auto *act : actions) {
+        if (act->text().contains(QStringLiteral("Refresh"), Qt::CaseInsensitive)) {
+            check(act->shortcuts().contains(QKeySequence::Refresh) || act->shortcuts().contains(QKeySequence(QStringLiteral("Ctrl+R"))),
+                  "Refresh shortcuts contain standard refresh sequence");
+            foundRefresh = true;
+        } else if (act->text().contains(QStringLiteral("Settings"), Qt::CaseInsensitive)) {
+            check(act->shortcut() == QKeySequence(Qt::CTRL | Qt::Key_Comma), "Settings shortcut Ctrl+,");
+            foundSettings = true;
+        } else if (act->text().contains(QStringLiteral("User Guide"), Qt::CaseInsensitive)) {
+            check(act->shortcut() == QKeySequence::HelpContents || act->shortcut() == QKeySequence(Qt::Key_F1),
+                  "User Guide standard help shortcut");
+            foundHelp = true;
+        }
+    }
+    check(foundRefresh, "Refresh action found");
+    check(foundSettings, "Settings action found");
+    check(foundHelp, "Help action found");
+
+    // 4. Verify dark appearance palette contrast
+    QtDesktopServices realServices(nullptr);
+    realServices.applyAppearance(QStringLiteral("Dark"));
+    QPalette darkPal = qApp->palette();
+    check(darkPal.color(QPalette::ToolTipBase) != darkPal.color(QPalette::ToolTipText),
+          "Dark palette tooltip base and text must have contrast");
+    check(darkPal.color(QPalette::HighlightedText) == Qt::white,
+          "Dark palette highlighted text is white");
+    check(darkPal.color(QPalette::Disabled, QPalette::Text) == QColor(128, 128, 128),
+          "Dark palette disabled text color");
+
+    // Reset to System
+    realServices.applyAppearance(QStringLiteral("System"));
+
+    // 5. Verify BatchDialog accessibility
+    BatchDialog batchDialog({QStringLiteral("/tmp/sample.csv")});
+    auto batchCheckboxes = batchDialog.findChildren<QCheckBox *>();
+    check(!batchCheckboxes.isEmpty(), "BatchDialog has checkbox");
+    check(!batchCheckboxes.first()->accessibleName().isEmpty(), "BatchDialog checkbox accessible name");
+    check(!batchCheckboxes.first()->toolTip().isEmpty(), "BatchDialog checkbox tooltip");
+
+    // 6. Verify SettingsDialog accessibility
+    Preferences testPrefs;
+    testPrefs.recent.append(QStringLiteral("/tmp/sample.csv"));
+    SettingsDialog settingsDialog(testPrefs);
+    auto settingsCombos = settingsDialog.findChildren<QComboBox *>();
+    check(settingsCombos.size() >= 2, "SettingsDialog has combo boxes");
+    for (auto *c : settingsCombos) {
+        check(!c->accessibleName().isEmpty(), "Settings combo accessible name");
+        check(!c->toolTip().isEmpty(), "Settings combo tooltip");
+    }
+
+    std::cout << "Accessibility and platform support: all assertions passed." << std::endl;
+}
+
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     std::cout << "Running Qt Rust binding and integration tests..." << std::endl;
     testRustBinding();
     testViewModelAndPresentation();
+    testAccessibilityAndPlatformSupport();
     std::cout << "All integration tests passed successfully!" << std::endl;
     return 0;
 }
