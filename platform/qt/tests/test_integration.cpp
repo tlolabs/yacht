@@ -12,12 +12,14 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QPushButton>
+#include <QStyle>
 #include <QDir>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <future>
 #include <iostream>
 #include <thread>
@@ -309,9 +311,9 @@ void testViewModelAndPresentation() {
     QFile hugeFile(hugePath);
     check(hugeFile.open(QIODevice::WriteOnly | QIODevice::Text), "Write huge CSV file");
     QByteArray bigData;
-    bigData.reserve(100000);
+    bigData.reserve(5000000);
     bigData.append("A,B\n");
-    for (int i = 0; i < 20000; ++i) {
+    for (int i = 0; i < 1000000; ++i) {
         bigData.append("1,2\n");
     }
     hugeFile.write(bigData);
@@ -320,6 +322,18 @@ void testViewModelAndPresentation() {
     window.cancelActiveWork();
     window.loadFile(hugePath);
     check(!window.isBusy(), "Cancellation releases busy state");
+
+    // Cancel after a worker has started. This catches a GUI-thread read that
+    // prevents the Cancel button and keyboard shortcut from receiving events.
+    bool cancelledWhileBusy = false;
+    QTimer::singleShot(5, &window, [&] {
+        cancelledWhileBusy = window.isBusy();
+        window.cancelActiveWork();
+    });
+    window.loadFile(hugePath);
+    check(cancelledWhileBusy, "GUI event loop remains responsive during read");
+    check(window.statusText() == QStringLiteral("Cancelled"), "In-flight read was cancelled");
+    check(window.summaryText().contains(QStringLiteral("tabs.tsv")), "Cancelled read preserves the previous table");
 
     window.loadFile(tsvPath);
     check(window.sourceEdit()->toPlainText().contains(QStringLiteral("<table")), "Retry after cancellation");
@@ -400,19 +414,21 @@ void testAccessibilityAndPlatformSupport() {
     check(foundSettings, "Settings action found");
     check(foundHelp, "Help action found");
 
-    // 4. Verify dark appearance palette contrast
+    // 4. Exercise all three appearance settings and restoration of the OS style.
     QtDesktopServices realServices(nullptr);
+    QString systemStyle = qApp->style()->objectName();
     realServices.applyAppearance(QStringLiteral("Dark"));
     QPalette darkPal = qApp->palette();
+    check(darkPal.color(QPalette::Window).lightness() < 128, "Dark appearance uses a dark window");
     check(darkPal.color(QPalette::ToolTipBase) != darkPal.color(QPalette::ToolTipText),
           "Dark palette tooltip base and text must have contrast");
-    check(darkPal.color(QPalette::HighlightedText) == Qt::white,
-          "Dark palette highlighted text is white");
-    check(darkPal.color(QPalette::Disabled, QPalette::Text) == QColor(128, 128, 128),
-          "Dark palette disabled text color");
-
-    // Reset to System
+    realServices.applyAppearance(QStringLiteral("Light"));
+    QPalette lightPal = qApp->palette();
+    check(lightPal.color(QPalette::Window).lightness() >= 128, "Light appearance uses a light window");
+    check(lightPal.color(QPalette::Text) != lightPal.color(QPalette::Base),
+          "Light palette text and base must have contrast");
     realServices.applyAppearance(QStringLiteral("System"));
+    check(qApp->style()->objectName() == systemStyle, "System appearance restores the OS style");
 
     // 5. Verify BatchDialog accessibility
     BatchDialog batchDialog({QStringLiteral("/tmp/sample.csv")});

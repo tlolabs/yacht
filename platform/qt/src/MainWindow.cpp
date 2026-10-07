@@ -10,6 +10,7 @@
 #include <QDesktopServices>
 #include <QDragEnterEvent>
 #include <QDropEvent>
+#include <QEventLoop>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -27,12 +28,35 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSplitter>
-#include <QStyleFactory>
 #include <QTabWidget>
 #include <QUrl>
 #include <QVBoxLayout>
+#include <chrono>
+#include <future>
 
 namespace Yacht {
+
+namespace {
+
+// Keep the event loop servicing Cancel while the Rust core works on a worker thread.
+// The result is still delivered synchronously to existing callers on the GUI thread.
+template <typename Work>
+auto runCoreResponsive(Work work) -> decltype(work()) {
+    auto result = std::async(std::launch::async, std::move(work));
+    QEventLoop loop;
+    QTimer poll;
+    poll.setInterval(16);
+    QObject::connect(&poll, &QTimer::timeout, &loop, [&] {
+        if (result.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+            loop.quit();
+        }
+    });
+    poll.start();
+    loop.exec();
+    return result.get();
+}
+
+} // namespace
 
 MainWindow::MainWindow(std::shared_ptr<IDesktopServices> desktop, QWidget *parent)
     : QMainWindow(parent), m_desktop(std::move(desktop)) {
@@ -539,40 +563,13 @@ void MainWindow::setBusy(bool busy) {
     m_exportAction->setEnabled(!busy);
     m_copyAction->setEnabled(!busy);
     m_refreshAction->setEnabled(!busy);
+    if (!busy && m_closeConfirmed) {
+        QTimer::singleShot(0, this, &QWidget::close);
+    }
 }
 
 void MainWindow::applyAppearance(const QString &appearance) {
-    if (appearance == QStringLiteral("Dark")) {
-        QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
-        QPalette darkPalette;
-        darkPalette.setColor(QPalette::Window, QColor(45, 45, 45));
-        darkPalette.setColor(QPalette::WindowText, Qt::white);
-        darkPalette.setColor(QPalette::Base, QColor(30, 30, 30));
-        darkPalette.setColor(QPalette::AlternateBase, QColor(45, 45, 45));
-        darkPalette.setColor(QPalette::ToolTipBase, QColor(40, 40, 40));
-        darkPalette.setColor(QPalette::ToolTipText, QColor(240, 240, 240));
-        darkPalette.setColor(QPalette::Text, Qt::white);
-        darkPalette.setColor(QPalette::Button, QColor(45, 45, 45));
-        darkPalette.setColor(QPalette::ButtonText, Qt::white);
-        darkPalette.setColor(QPalette::BrightText, Qt::red);
-        darkPalette.setColor(QPalette::Link, QColor(64, 158, 255));
-        darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
-        darkPalette.setColor(QPalette::HighlightedText, Qt::white);
-
-        darkPalette.setColor(QPalette::Disabled, QPalette::Text, QColor(128, 128, 128));
-        darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(128, 128, 128));
-        darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, QColor(128, 128, 128));
-        darkPalette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(80, 80, 80));
-        darkPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(140, 140, 140));
-
-        QApplication::setPalette(darkPalette);
-    } else if (appearance == QStringLiteral("Light")) {
-        QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
-        QApplication::setPalette(QApplication::style()->standardPalette());
-    } else {
-        // System: restore default palette
-        QApplication::setPalette(QPalette());
-    }
+    m_desktop->applyAppearance(appearance);
 }
 
 void MainWindow::syncPresets() {
@@ -688,7 +685,8 @@ void MainWindow::onStyleFieldChanged() {
 }
 
 void MainWindow::onPerformRender() {
-    if (!m_table) return;
+    if (!m_table || m_busy) return;
+    m_previewDebounceTimer.stop();
 
     try {
         QJsonObject styleObj = currentStyle();
@@ -698,8 +696,14 @@ void MainWindow::onPerformRender() {
         args[QStringLiteral("style")] = styleObj;
         args[QStringLiteral("limit")] = limit;
 
-        QJsonObject result = m_table->call(QStringLiteral("preview"), args,
-                                           [this] { return m_cancelled.load(); }).toObject();
+        m_cancelled = false;
+        setBusy(true);
+        TablePtr table = m_table;
+        QJsonObject result = runCoreResponsive([this, table, args] {
+            return table->call(QStringLiteral("preview"), args,
+                               [this] { return m_cancelled.load(); }).toObject();
+        });
+        setBusy(false);
 
         QString html = result.value(QStringLiteral("html")).toString();
         QString source = result.value(QStringLiteral("source")).toString();
@@ -722,8 +726,11 @@ void MainWindow::onPerformRender() {
         m_preferences.lastStyle = m_preferences.rememberStyle ? styleObj : QJsonObject();
         savePreferences();
     } catch (const YachtCancelledException &) {
+        m_cancelled = false;
+        setBusy(false);
         m_statusLabel->setText(QStringLiteral("Cancelled"));
     } catch (const std::exception &e) {
+        setBusy(false);
         m_statusLabel->setText(QString::fromUtf8(e.what()));
         m_previewWidget->clear();
         m_sourceEdit->clear();
@@ -752,7 +759,10 @@ void MainWindow::loadFile(const QString &path, bool infer) {
     QApplication::processEvents();
 
     try {
-        TablePtr nextTable = YachtCore::read(path, m_delimiter, [this] { return m_cancelled.load(); });
+        const QString delimiter = m_delimiter;
+        TablePtr nextTable = runCoreResponsive([this, path, delimiter] {
+            return YachtCore::read(path, delimiter, [this] { return m_cancelled.load(); });
+        });
         if (m_cancelled.load()) {
             nextTable->release();
             throw YachtCancelledException();
@@ -789,6 +799,7 @@ void MainWindow::loadFile(const QString &path, bool infer) {
         setBusy(false);
         onPerformRender();
     } catch (const YachtCancelledException &) {
+        m_cancelled = false;
         setBusy(false);
         m_statusLabel->setText(QStringLiteral("Cancelled"));
     } catch (const std::exception &e) {
@@ -836,7 +847,11 @@ void MainWindow::copyHtmlToClipboard() {
     try {
         QJsonObject args;
         args[QStringLiteral("style")] = currentStyle();
-        QJsonValue htmlVal = m_table->call(QStringLiteral("html"), args, [this] { return m_cancelled.load(); });
+        TablePtr table = m_table;
+        QJsonValue htmlVal = runCoreResponsive([this, table, args] {
+            return table->call(QStringLiteral("html"), args,
+                               [this] { return m_cancelled.load(); });
+        });
         QString html = htmlVal.toString();
         m_desktop->setClipboard(html);
         m_statusLabel->setText(QStringLiteral("Copied complete HTML document"));
@@ -869,7 +884,11 @@ void MainWindow::exportTo(const QString &path, bool overwrite) {
         args[QStringLiteral("style")] = currentStyle();
         args[QStringLiteral("path")] = path;
         args[QStringLiteral("overwrite")] = overwrite;
-        m_table->call(QStringLiteral("export"), args, [this] { return m_cancelled.load(); });
+        TablePtr table = m_table;
+        runCoreResponsive([this, table, args] {
+            return table->call(QStringLiteral("export"), args,
+                               [this] { return m_cancelled.load(); });
+        });
         m_lastExport = path;
         m_statusLabel->setText(QStringLiteral("Exported ") + QFileInfo(path).fileName());
     } catch (const YachtCancelledException &) {
@@ -899,7 +918,9 @@ void MainWindow::onSettings() {
         syncRecent();
         applyAppearance(m_preferences.appearance);
         savePreferences();
+        setBusy(false);
         onPerformRender();
+        return;
     }
     setBusy(false);
 }
@@ -1075,8 +1096,10 @@ void MainWindow::batchConvert(const QStringList &paths) {
             args[QStringLiteral("delimiter")] = separator;
             args[QStringLiteral("overwrite")] = overwrite;
 
-            QJsonArray batchRes = YachtCore::call(QStringLiteral("batch"), args,
-                                                  [this] { return m_cancelled.load(); }).toArray();
+            QJsonArray batchRes = runCoreResponsive([this, args] {
+                return YachtCore::call(QStringLiteral("batch"), args,
+                                       [this] { return m_cancelled.load(); }).toArray();
+            });
             QJsonObject r = batchRes.first().toObject();
             if (r.contains(QStringLiteral("error")) && !r.value(QStringLiteral("error")).isNull()) {
                 results.append(p + QStringLiteral(": ") + r.value(QStringLiteral("error")).toString());
@@ -1171,6 +1194,14 @@ bool MainWindow::mayClose() {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
+    if (m_busy) {
+        if (m_closeConfirmed || mayClose()) {
+            m_closeConfirmed = true;
+            cancelActiveWork();
+        }
+        event->ignore();
+        return;
+    }
     if (m_closeConfirmed) {
         event->accept();
         return;

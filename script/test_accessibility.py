@@ -101,23 +101,19 @@ def audit_qt():
     main_window = (ROOT / "platform/qt/src/MainWindow.cpp").read_text(
         encoding="utf-8"
     )
-    for code, name in [
-        (desktop_services, "DesktopServices.cpp"),
-        (main_window, "MainWindow.cpp"),
-    ]:
-        # Ensure ToolTipBase and ToolTipText are not both white
-        has_white_tooltip_bug = (
-            "ToolTipBase, Qt::white" in code
-            and "ToolTipText, Qt::white" in code
-        )
-        check(
-            not has_white_tooltip_bug,
-            f"{name} dark theme avoids illegible white-on-white tooltip bug",
-        )
-        check(
-            "HighlightedText, Qt::white" in code,
-            f"{name} dark theme uses high-contrast white text on highlight",
-        )
+    check(
+        "m_desktop->applyAppearance(appearance)" in main_window,
+        "MainWindow delegates appearance changes to the shared desktop service",
+    )
+    check(
+        "setColorScheme(" in desktop_services,
+        "Qt 6.8+ follows the OS color-scheme API",
+    )
+    check(
+        "ToolTipBase, Qt::white" not in desktop_services
+        and "ToolTipText, Qt::white" not in desktop_services,
+        "Dark fallback avoids white-on-white tooltips",
+    )
 
 
 def audit_linux_desktop():
@@ -152,7 +148,7 @@ def main():
     audit_qt()
     audit_linux_desktop()
     audit_windows_hidpi()
-    print("\nAll accessibility and platform support checks passed successfully!")
+    print("\nStructural accessibility checks passed. Manual assistive-technology testing remains separate.")
 
 
 if __name__ == "__main__":

@@ -8,11 +8,13 @@
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QGuiApplication>
 #include <QMessageBox>
 #include <QProcess>
 #include <QPushButton>
 #include <QStyle>
 #include <QStyleFactory>
+#include <QStyleHints>
 #include <QUrl>
 
 namespace Yacht {
@@ -101,6 +103,33 @@ QString QtDesktopServices::pickColor(const QString &label, const QString &initia
 }
 
 void QtDesktopServices::applyAppearance(const QString &appearance) {
+    // Restore the platform style before changing schemes. Otherwise switching
+    // back from a Fusion fallback leaves System looking like a forced theme.
+    static const QString systemStyle = QApplication::style()->objectName();
+    if (!systemStyle.isEmpty() && QApplication::style()->objectName() != systemStyle) {
+        if (QStyle *native = QStyleFactory::create(systemStyle)) {
+            QApplication::setStyle(native);
+        }
+    }
+    QApplication::setPalette(QPalette());
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+    Qt::ColorScheme scheme = Qt::ColorScheme::Unknown;
+    if (appearance == QStringLiteral("Dark")) scheme = Qt::ColorScheme::Dark;
+    if (appearance == QStringLiteral("Light")) scheme = Qt::ColorScheme::Light;
+    QGuiApplication::styleHints()->setColorScheme(scheme);
+    if (scheme == Qt::ColorScheme::Unknown) return;
+    const int windowLightness = QApplication::palette().color(QPalette::Window).lightness();
+    if ((scheme == Qt::ColorScheme::Dark && windowLightness < 128) ||
+        (scheme == Qt::ColorScheme::Light && windowLightness >= 128)) {
+        return;
+    }
+#else
+    if (appearance == QStringLiteral("System")) return;
+#endif
+
+    // Qt 6.4 and platforms that cannot override their native color scheme use
+    // Fusion for explicit Light/Dark. System always restores the native style.
     if (appearance == QStringLiteral("Dark")) {
         QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
         QPalette darkPalette;
@@ -128,9 +157,6 @@ void QtDesktopServices::applyAppearance(const QString &appearance) {
     } else if (appearance == QStringLiteral("Light")) {
         QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
         QApplication::setPalette(QApplication::style()->standardPalette());
-    } else {
-        // System
-        QApplication::setPalette(QPalette());
     }
 }
 

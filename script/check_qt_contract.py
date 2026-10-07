@@ -2,6 +2,7 @@
 """Enforce the shared Qt host's target and production-update isolation contracts."""
 import argparse
 import plistlib
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +29,21 @@ for retired in [
     'platform/avalonia',
 ]:
     require(not (ROOT / retired).exists(), f'Retired UI path remains: {retired}')
+
+# Check tracked sources and build inputs, not ignored local build caches or
+# historical migration records. A clean checkout must never resolve .NET UI code.
+tracked = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode().split('\0')
+active_roots = ('platform/', 'crates/', 'bindings/', 'config/', '.github/', 'updater/', 'script/')
+retired_suffixes = ('.axaml', '.csproj', '.sln', '.slnx', '.dll', '.deps.json')
+text_suffixes = ('.swift', '.cpp', '.h', '.py', '.sh', '.ps1', '.yml', '.yaml', '.toml', '.json', '.props', '.targets', '.txt')
+for relative in filter(None, tracked):
+    lower = relative.lower()
+    require('avalonia' not in lower, f'Tracked Avalonia artifact remains: {relative}')
+    require(not lower.endswith(retired_suffixes), f'Tracked .NET UI artifact remains: {relative}')
+    if (relative.startswith(active_roots) or relative in ('Cargo.toml', 'Cargo.lock', 'Package.swift', 'Package.resolved')) and lower.endswith(text_suffixes):
+        if relative not in ('script/check_qt_contract.py', 'script/check_windows_runtime.py'):
+            require('avalonia' not in (ROOT / relative).read_text(errors='ignore').lower(),
+                    f'Active Avalonia reference remains: {relative}')
 
 internal = (ROOT / 'script/package_qt_internal.sh').read_text()
 require('dist/internal/' in internal and 'build/internal-artifacts/' in internal, 'Internal artifacts must have isolated output paths')

@@ -15,7 +15,7 @@ if($LASTEXITCODE){throw 'Qt build failed'}
 $qtExe="build/qt-$Architecture/Release/YachtApp.exe"
 if(!(Test-Path $qtExe)){$qtExe="build/qt-$Architecture/YachtApp.exe"}
 Copy-Item $qtExe (Join-Path $publish 'YachtApp.exe')
-windeployqt --release --no-translations --no-compiler-runtime (Join-Path $publish 'YachtApp.exe')
+windeployqt --release --no-translations --compiler-runtime (Join-Path $publish 'YachtApp.exe')
 Copy-Item "target/$triple/release/yacht_ffi.dll" $publish
 Copy-Item "target/$triple/release/yacht-update.exe","target/$triple/release/yacht.exe",LICENSE,README.md,THIRD_PARTY_NOTICES.md,PRIVACY.md,'docs/DEPENDENCIES.md' $publish
 Copy-Item LICENSE-NOTICE.md $publish

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject wrong native architectures and undeclared VC runtime DLL imports."""
+"""Reject wrong native architectures and missing packaged VC runtime DLLs."""
 import argparse
 from pathlib import Path
 import struct
@@ -56,6 +56,7 @@ def main():
     parser.add_argument("--arch", choices=["x64", "arm64"], required=True)
     args = parser.parse_args()
     expected = {"x64": 0x8664, "arm64": 0xaa64}[args.arch]
+    bundled = {path.name.lower() for path in args.directory.iterdir() if path.is_file()}
     for name in ["YachtApp.exe", "yacht_ffi.dll", "yacht.exe", "yacht-update.exe", "Qt6Core.dll", "Qt6Gui.dll", "Qt6Widgets.dll"]:
         if not (args.directory / name).is_file():
             raise SystemExit("Missing packaged binary: " + name)
@@ -63,14 +64,18 @@ def main():
     for path in sorted(args.directory.rglob("*")):
         if path.suffix.lower() not in (".dll", ".exe"):
             continue
+        if "avalonia" in path.name.lower():
+            raise SystemExit(f"Retired UI binary remains in package: {path.name}")
         machine, managed, imports = inspect(path.read_bytes())
-        if not managed and machine != expected:
+        if managed:
+            raise SystemExit(f"Managed .NET binary remains in native package: {path.name}")
+        if machine != expected:
             raise SystemExit(f"Wrong native architecture: {path.name}")
-        external = [name for name in imports if name != "msvcrt.dll" and name.startswith(("vcruntime", "msvcp", "msvcr", "concrt"))]
+        external = [name for name in imports if name != "msvcrt.dll" and name.startswith(("vcruntime", "msvcp", "msvcr", "concrt")) and name not in bundled]
         if external:
-            raise SystemExit(f"Undeclared VC runtime dependency in {path.name}: {', '.join(external)}")
+            raise SystemExit(f"Missing packaged VC runtime dependency for {path.name}: {', '.join(external)}")
         checked += 1
-    print(f"Windows {args.arch}: {checked} PE images checked; native architecture and VC runtime independence verified")
+    print(f"Windows {args.arch}: {checked} PE images checked; native architecture and bundled VC runtime dependencies verified")
 
 
 if __name__ == "__main__":

@@ -82,9 +82,10 @@ CI intentionally produces development signatures until credentials are configure
 Windows 10 1809+, Visual Studio 2022 Build Tools with Windows SDK/C++ desktop tools,
 CMake 3.16+, Qt 6.4+ (Widgets, Gui, Core, Network), Rust MSVC toolchain and Inno Setup 6.
 The UI is shared Qt 6 Widgets; `QTextBrowser` powers the preview.
-The Windows Cargo targets statically link the compiler C runtime. Packaging rejects
-undeclared VC runtime DLL imports, including delay imports; Visual Studio is not a
-runtime prerequisite. Rebuild with an updated toolchain for compiler-runtime fixes.
+The Windows Cargo targets statically link the compiler C runtime. Qt plugins may
+import MSVC runtime DLLs, so packaging includes those DLLs and rejects any missing
+normal or delay import. Visual Studio is not a runtime prerequisite. Rebuild with
+an updated toolchain for compiler-runtime fixes.
 
 ```powershell
 rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
@@ -96,7 +97,8 @@ cmake --build build/qt --config Release
 ./platform/windows/test_ui.ps1 -Executable "$PWD/target/windows-x64/YachtApp.exe"
 ```
 
-Packaging uses `windeployqt` to deploy Qt runtime libraries alongside the app, Rust DLL and CLI.
+Packaging uses `windeployqt` to deploy Qt libraries, plugins and compiler runtime
+DLLs alongside the app, Rust DLL and CLI.
 Outputs: per-user Inno installer, portable ZIP and SHA256SUMS-windows-<arch>. The GUI is YachtApp.exe;
 yacht.exe is the CLI. Inno registers Open With entries without taking over the user's default CSV
 application. Runtime smoke tests isolate preference writes.

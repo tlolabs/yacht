@@ -123,10 +123,14 @@ jobs:
             arch: x64
             triple: x86_64-pc-windows-msvc
             platform: x64
+            qt_host: windows
+            qt_arch: win64_msvc2022_64
           - runner: windows-11-arm
             arch: arm64
             triple: aarch64-pc-windows-msvc
             platform: ARM64
+            qt_host: windows_arm64
+            qt_arch: win64_msvc2022_arm64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 40
     steps:
@@ -138,9 +142,9 @@ jobs:
       - uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.0'
-          host: 'windows'
+          host: ${{ matrix.qt_host }}
           target: 'desktop'
-          arch: 'win64_msvc2022_64'
+          arch: ${{ matrix.qt_arch }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -218,7 +222,7 @@ jobs:
           cmake --build build/qt-linux --target test_integration YachtApp
           cp target/debug/libyacht_ffi.so build/qt-linux/tests/
           cp target/debug/libyacht_ffi.so build/qt-linux/
-          ./build/qt-linux/tests/test_integration
+          xvfb-run -a dbus-run-session -- ./build/qt-linux/tests/test_integration
           xvfb-run -a dbus-run-session -- python3 script/test_qt_ui.py build/qt-linux/YachtApp
       - name: Package and validate Linux artifacts
         if: github.event_name != 'schedule'
