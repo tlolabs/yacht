@@ -145,7 +145,7 @@ jobs:
           host: ${{ matrix.qt_host }}
           target: 'desktop'
           arch: ${{ matrix.qt_arch }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Rust and CLI compatibility
