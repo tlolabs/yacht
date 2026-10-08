@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Reject wrong native architectures and missing packaged VC runtime DLLs."""
+"""Stage matching VC runtime DLLs and reject invalid native packages."""
 import argparse
 from pathlib import Path
+import shutil
 import struct
 
 
@@ -54,8 +55,19 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", type=Path)
     parser.add_argument("--arch", choices=["x64", "arm64"], required=True)
+    parser.add_argument("--compiler-runtime-source", type=Path)
     args = parser.parse_args()
     expected = {"x64": 0x8664, "arm64": 0xaa64}[args.arch]
+    if args.compiler_runtime_source:
+        copied = 0
+        for source in sorted(args.compiler_runtime_source.glob("*.dll")):
+            machine, managed, _ = inspect(source.read_bytes())
+            if machine == expected and not managed:
+                shutil.copy2(source, args.directory / source.name)
+                copied += 1
+        if not copied:
+            raise SystemExit(f"No {args.arch} VC runtime DLLs found in {args.compiler_runtime_source}")
+        print(f"Staged {copied} {args.arch} VC runtime DLLs")
     bundled = {path.name.lower() for path in args.directory.iterdir() if path.is_file()}
     for name in ["YachtApp.exe", "yacht_ffi.dll", "yacht.exe", "yacht-update.exe", "Qt6Core.dll", "Qt6Gui.dll", "Qt6Widgets.dll"]:
         if not (args.directory / name).is_file():

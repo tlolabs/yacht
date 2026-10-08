@@ -31,13 +31,12 @@ $crtDir=Get-ChildItem $redistRoot -Recurse -Directory -Filter 'Microsoft.VC*.CRT
   Where-Object { $_.Parent.Name -ieq $Architecture } |
   Sort-Object FullName -Descending | Select-Object -First 1
 if(!$crtDir){throw "MSVC $Architecture redistributable directory not found under $redistRoot"}
-Copy-Item (Join-Path $crtDir.FullName '*.dll') $publish -Force
 Copy-Item "target/$triple/release/yacht_ffi.dll" $publish
 Copy-Item "target/$triple/release/yacht-update.exe","target/$triple/release/yacht.exe",LICENSE,README.md,THIRD_PARTY_NOTICES.md,PRIVACY.md,'docs/DEPENDENCIES.md' $publish
 Copy-Item LICENSE-NOTICE.md $publish
 python script/collect_qt_notices.py $publish --rid "win-$Architecture"
 if($LASTEXITCODE){throw 'Windows third-party notice collection failed'}
-python script/check_windows_runtime.py $publish --arch $Architecture
+python script/check_windows_runtime.py $publish --arch $Architecture --compiler-runtime-source $crtDir.FullName
 if($LASTEXITCODE){throw 'Windows native runtime dependency audit failed'}
 # Signing is optional. Certificate is selected from an ephemeral CI/user store;
 # certificate material/passwords never appear in the repository or command line.
