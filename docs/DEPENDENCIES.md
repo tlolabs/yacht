@@ -15,7 +15,7 @@ No paid services or runtime network APIs are required for conversion.
 | thiserror | Structured core errors | Cargo.toml + Cargo.lock; Dependabot | Core only |
 | ctrlc | CLI cooperative cancellation | yacht-cli/Cargo.toml + Cargo.lock; Dependabot | SIGINT/Windows console events |
 | Swift / SwiftUI / AppKit / WebKit | macOS presentation, OS integration, HTML preview | Xcode 26.6 ARM64 / 26.3 Intel in CI; Swift tools 6.0; OS frameworks | macOS 14+, Intel/Apple Silicon |
-| MSVC compiler C runtime | Statically linked into Windows Rust binaries; Qt plugin runtime DLLs bundled with Windows packages; no separate VC runtime installation | Hosted Windows MSVC toolchain and `windeployqt`; rebuild to service runtime fixes | Microsoft redistribution terms retained |
+| MSVC compiler C runtime | Statically linked into Windows Rust binaries; Qt plugin runtime DLLs bundled with Windows packages; no separate VC runtime installation | Hosted Windows MSVC redistributable directory; rebuild to service runtime fixes | Microsoft redistribution terms retained |
 | Qt 6 Widgets | Shared presentation and HTML preview | Qt 6.4+, LGPL-3.0 / GPL-3.0 | Windows, Linux, and internal Mac ARM64 |
 | CMake | Build configuration for shared Qt layer | CMake 3.16+ | Windows, Linux, and internal Mac ARM64 |
 | Python 3 | Build/test tooling only | Standard library | Not a shipped GUI dependency |

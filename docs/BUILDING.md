@@ -97,8 +97,10 @@ cmake --build build/qt --config Release
 ./platform/windows/test_ui.ps1 -Executable "$PWD/target/windows-x64/YachtApp.exe"
 ```
 
-Packaging uses `windeployqt` to deploy Qt libraries, plugins and compiler runtime
-DLLs alongside the app, Rust DLL and CLI.
+Packaging uses `windeployqt` for Qt libraries and plugins, then copies the matching
+MSVC redistributable DLLs from the installed Visual Studio toolchain alongside the
+app, Rust DLL and CLI. The package audit checks every binary's architecture and
+compiler runtime imports.
 Outputs: per-user Inno installer, portable ZIP and SHA256SUMS-windows-<arch>. The GUI is YachtApp.exe;
 yacht.exe is the CLI. Inno registers Open With entries without taking over the user's default CSV
 application. Runtime smoke tests isolate preference writes.
