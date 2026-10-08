@@ -42,10 +42,12 @@ if (p/'Contents/MacOS/yacht-update').exists(): raise SystemExit('Internal applic
 PY
 
 macdeployqt "$app" -always-overwrite -no-codesign
-# This UI loads its icon from a bundled PNG. Homebrew's optional SVG/PDF plugins
-# require QtSvg/QtPdf, which macdeployqt does not bundle with this Qt base install.
+# This desktop UI loads its icon from a bundled PNG and uses the Cocoa input
+# method. Homebrew's optional SVG/PDF/virtual-keyboard plugins require Qt
+# frameworks that macdeployqt does not bundle with the Qt base installation.
 rm -f "$app/Contents/PlugIns/iconengines/libqsvgicon.dylib" \
-      "$app/Contents/PlugIns/imageformats/libqpdf.dylib"
+      "$app/Contents/PlugIns/imageformats/libqpdf.dylib" \
+      "$app/Contents/PlugIns/platforminputcontexts/libqtvirtualkeyboardplugin.dylib"
 ffi_link="$(otool -L "$app/Contents/MacOS/YachtApp" | awk '/libyacht_ffi[.]dylib/ { print $1; exit }')"
 [[ -n "$ffi_link" ]] || { echo 'Internal binary is missing the Rust FFI dependency' >&2; exit 1; }
 install_name_tool -change "$ffi_link" '@executable_path/libyacht_ffi.dylib' "$app/Contents/MacOS/YachtApp"
