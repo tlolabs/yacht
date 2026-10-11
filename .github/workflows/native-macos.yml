@@ -90,7 +90,7 @@ jobs:
           components: rustfmt,clippy
       - name: Verify native runner architecture
         run: test "$(uname -m)" = '${{ matrix.apple_arch }}'
-      - name: Rust quality gates
+      - name: Rust tests and static checks
         run: cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings && cargo test --workspace --locked
       - name: Verify generated files
         run: python3 script/sync_version.py && python3 script/generate_project.py && git diff --exit-code -- Yacht.xcodeproj platform/macos/Support/Info.plist platform/windows/Version.props platform/windows/app.manifest
