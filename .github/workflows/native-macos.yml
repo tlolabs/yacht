@@ -25,6 +25,7 @@ jobs:
           python3 script/dependency_inventory.py --check
           python3 script/check_compliance.py
           python3 script/check_update_contract.py
+          python3 script/test_ci_report.py
           python3 script/test_update_release.py
           python3 -O script/test_update_release.py
       - name: Automated accessibility and platform support checks (nonblocking)
@@ -46,6 +47,17 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: python3 script/check_release_tag.py
+  dependency-security:
+    name: Rust dependency security audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - name: Audit Rust dependencies against RustSec advisories
+        run: cargo install cargo-audit --locked && cargo audit
   macos:
     name: macOS (${{ matrix.display }})
     strategy:
@@ -276,3 +288,19 @@ jobs:
           path: build/internal-artifacts/YACHT-Qt-INTERNAL-macos-arm64.zip
           if-no-files-found: error
           retention-days: 14
+  report-failures:
+    name: Consolidated CI failure report
+    if: ${{ always() && github.ref == 'refs/heads/main' }}
+    needs: [compliance, dependency-security, macos, windows, linux, qt-macos-internal]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update the unresolved CI issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 script/report_ci_failures.py
