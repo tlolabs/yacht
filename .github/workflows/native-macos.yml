@@ -17,7 +17,7 @@ jobs:
     name: Repository compliance
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check platform and dependency metadata
         run: |
           python3 script/check_qt_contract.py
@@ -25,8 +25,12 @@ jobs:
           python3 script/dependency_inventory.py --check
           python3 script/check_compliance.py
           python3 script/check_update_contract.py
+          python3 script/test_ci_report.py
           python3 script/test_update_release.py
           python3 -O script/test_update_release.py
+      - name: Automated accessibility and platform support checks (nonblocking)
+        continue-on-error: true
+        run: python3 script/test_accessibility.py
   tag-policy:
     name: Release tag policy
     if: startsWith(github.ref, 'refs/tags/')
@@ -34,7 +38,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Check version and stable tag signature
@@ -43,6 +47,17 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: python3 script/check_release_tag.py
+  dependency-security:
+    name: Rust dependency security audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - name: Audit Rust dependencies against RustSec advisories
+        run: cargo install cargo-audit --locked && cargo audit
   macos:
     name: macOS (${{ matrix.display }})
     strategy:
@@ -67,7 +82,7 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.98.1'
@@ -120,14 +135,18 @@ jobs:
             arch: x64
             triple: x86_64-pc-windows-msvc
             platform: x64
+            qt_host: windows
+            qt_arch: win64_msvc2022_64
           - runner: windows-11-arm
             arch: arm64
             triple: aarch64-pc-windows-msvc
             platform: ARM64
+            qt_host: windows_arm64
+            qt_arch: win64_msvc2022_arm64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.98.1'
@@ -135,10 +154,10 @@ jobs:
       - uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.0'
-          host: 'windows'
+          host: ${{ matrix.qt_host }}
           target: 'desktop'
-          arch: 'win64_msvc2022_64'
-      - uses: actions/setup-python@v5
+          arch: ${{ matrix.qt_arch }}
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Rust and CLI compatibility
@@ -197,7 +216,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.98.1'
@@ -215,7 +234,7 @@ jobs:
           cmake --build build/qt-linux --target test_integration YachtApp
           cp target/debug/libyacht_ffi.so build/qt-linux/tests/
           cp target/debug/libyacht_ffi.so build/qt-linux/
-          ./build/qt-linux/tests/test_integration
+          xvfb-run -a dbus-run-session -- ./build/qt-linux/tests/test_integration
           xvfb-run -a dbus-run-session -- python3 script/test_qt_ui.py build/qt-linux/YachtApp
       - name: Package and validate Linux artifacts
         if: github.event_name != 'schedule'
@@ -239,7 +258,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.98.1'
@@ -269,3 +288,19 @@ jobs:
           path: build/internal-artifacts/YACHT-Qt-INTERNAL-macos-arm64.zip
           if-no-files-found: error
           retention-days: 14
+  report-failures:
+    name: Consolidated CI failure report
+    if: ${{ always() && github.ref == 'refs/heads/main' }}
+    needs: [compliance, dependency-security, macos, windows, linux, qt-macos-internal]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update the unresolved CI issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 script/report_ci_failures.py

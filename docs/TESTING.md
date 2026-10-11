@@ -1,6 +1,6 @@
 # Testing
 
-Run commands from the repository root. A configured CI job is evidence of a test gate, not evidence that it passed on a particular commit. The [verification record](VERIFICATION.md) and [feature parity matrix](FEATURE-PARITY.md) contain the last recorded runs and their limits.
+Run commands from the repository root. A configured CI job is evidence of a check, not evidence that it passed on a particular commit. Checks report failures without blocking unrelated development. The [verification record](VERIFICATION.md) and [feature parity matrix](FEATURE-PARITY.md) contain the last recorded runs and their limits.
 
 ## Shared core
 

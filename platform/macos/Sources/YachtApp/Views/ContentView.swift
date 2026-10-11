@@ -4,11 +4,13 @@ import YachtCore
 
 struct ContentView: View {
     @Bindable var workspace: Workspace
-    @SceneStorage("showStyles") private var showStyles = true
     @State private var dropTargeted = false
+    private var colorScheme: ColorScheme? {
+        workspace.preferences.appearance == "Dark" ? .dark : workspace.preferences.appearance == "Light" ? .light : nil
+    }
     var body: some View {
         HSplitView {
-            if showStyles {
+            if workspace.showStyles {
                 StyleInspector(workspace: workspace).frame(minWidth: 290, idealWidth: 320, maxWidth: 390)
                     .accessibilityLabel("Table style controls")
             }
@@ -21,6 +23,7 @@ struct ContentView: View {
             }.frame(minWidth: 450, maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 820, minHeight: 600)
+        .preferredColorScheme(colorScheme)
         .navigationTitle("YACHT")
         .navigationSubtitle(workspace.title)
         .toolbar { toolbar }
@@ -50,18 +53,32 @@ struct ContentView: View {
                 Picker("View", selection: $workspace.section) {
                     Text("Table Preview").tag("preview")
                     Text("HTML Source").tag("source")
-                }.pickerStyle(.segmented).labelsHidden().frame(width: 235).accessibilityIdentifier("viewSelector")
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 235)
+                .accessibilityIdentifier("viewSelector")
+                .accessibilityLabel("View mode")
             }
             HStack {
                 Picker("Delimiter", selection: $workspace.delimiter) {
                     ForEach(CSVDelimiter.allCases, id: \.self) { Text($0.label).tag($0) }
-                }.frame(width: 230)
+                }
+                .frame(width: 230)
+                .accessibilityLabel("CSV Delimiter")
                 .onChange(of: workspace.delimiter) { if let url = workspace.sourceURL { workspace.load(url, inferDelimiter: false) } }
                 Spacer()
                 if let table = workspace.table { Text("\(table.rowCount.formatted()) rows · \(table.header.count.formatted()) columns").font(.caption).foregroundStyle(.secondary) }
             }
             if let warning = workspace.table?.warnings.joined(separator: " "), !warning.isEmpty {
-                Label(warning, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange).textSelection(.enabled)
+                Label {
+                    Text(warning).foregroundStyle(.primary)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                }
+                .font(.caption)
+                .textSelection(.enabled)
+                .accessibilityLabel("Warning: \(warning)")
             }
         }.padding(16)
     }
@@ -69,8 +86,12 @@ struct ContentView: View {
         if let message = workspace.validationMessage {
             ContentUnavailableView("Check Table Settings", systemImage: "exclamationmark.triangle", description: Text(message))
         } else if workspace.importing {
-            VStack(spacing: 12) { ProgressView(); Text("Reading CSV…"); Button("Cancel") { workspace.cancel() } }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack(spacing: 12) {
+                ProgressView().accessibilityLabel("Reading CSV…")
+                Text("Reading CSV…")
+                Button("Cancel") { workspace.cancel() }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let preview = workspace.preview {
             VStack(spacing: 0) {
                 if workspace.section == "source" {
@@ -93,26 +114,66 @@ struct ContentView: View {
     private func note(_ text: String) -> some View { Text(text).font(.caption).foregroundStyle(.secondary).padding(8).frame(maxWidth: .infinity) }
     private var footer: some View {
         HStack {
-            if workspace.working { ProgressView().controlSize(.small) }
+            if workspace.working { ProgressView().controlSize(.small).accessibilityLabel("Operation in progress") }
             Text(workspace.status).font(.caption).foregroundStyle(.secondary).lineLimit(2).accessibilityIdentifier("status")
             Spacer()
-            if workspace.working { Button("Cancel") { workspace.cancel() } }
+            if workspace.working {
+                Button("Cancel") { workspace.cancel() }
+                    .help("Cancel current operation")
+                    .accessibilityLabel("Cancel current operation")
+            }
             if let url = workspace.lastExport {
                 Button("Reveal in Finder") { DesktopActions.reveal(url) }
+                    .help("Reveal exported file in Finder")
+                    .accessibilityLabel("Reveal exported file in Finder")
                 Button("Open in Browser") { DesktopActions.open(url) }
+                    .help("Open exported file in default web browser")
+                    .accessibilityLabel("Open exported file in default web browser")
             }
         }.padding(12)
     }
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .navigation) {
-            Button { showStyles.toggle() } label: { Label("Toggle Style Controls", systemImage: "sidebar.left") }
+            Button { workspace.showStyles.toggle() } label: {
+                Label("Toggle Style Controls", systemImage: "sidebar.left")
+            }
+            .help("Show or hide style controls (⌘0)")
+            .accessibilityLabel("Toggle style controls")
         }
         ToolbarItemGroup {
-            Button { workspace.chooseFile() } label: { Label("Open CSV", systemImage: "folder") }.accessibilityIdentifier("openCSV")
-            Button { workspace.chooseFile(batch: true) } label: { Label("Batch Convert CSVs", systemImage: "square.stack.3d.up") }.disabled(workspace.working).accessibilityIdentifier("batchConvert")
-            Button { workspace.refresh() } label: { Label("Refresh Preview", systemImage: "arrow.clockwise") }.disabled(workspace.importing)
-            Button { workspace.copyHTML() } label: { Label("Copy HTML Code", systemImage: "doc.on.doc") }.disabled(!workspace.canExport).accessibilityIdentifier("copyHTML")
-            Button { workspace.prepareExport() } label: { Label("Export HTML", systemImage: "square.and.arrow.up") }.disabled(!workspace.canExport).accessibilityIdentifier("exportHTML")
+            Button { workspace.chooseFile() } label: {
+                Label("Open CSV", systemImage: "folder")
+            }
+            .help("Open CSV or TSV file (⌘O)")
+            .accessibilityIdentifier("openCSV")
+            .accessibilityLabel("Open CSV")
+            Button { workspace.chooseFile(batch: true) } label: {
+                Label("Batch Convert CSVs", systemImage: "square.stack.3d.up")
+            }
+            .help("Batch convert multiple CSV files to HTML (⇧⌘B)")
+            .disabled(workspace.working)
+            .accessibilityIdentifier("batchConvert")
+            .accessibilityLabel("Batch Convert CSVs")
+            Button { workspace.refresh() } label: {
+                Label("Refresh Preview", systemImage: "arrow.clockwise")
+            }
+            .help("Refresh preview with current delimiter (⌘R)")
+            .disabled(workspace.importing)
+            .accessibilityLabel("Refresh Preview")
+            Button { workspace.copyHTML() } label: {
+                Label("Copy HTML Code", systemImage: "doc.on.doc")
+            }
+            .help("Copy complete HTML document to clipboard (⇧⌘C)")
+            .disabled(!workspace.canExport)
+            .accessibilityIdentifier("copyHTML")
+            .accessibilityLabel("Copy HTML Code")
+            Button { workspace.prepareExport() } label: {
+                Label("Export HTML", systemImage: "square.and.arrow.up")
+            }
+            .help("Export complete HTML document (⌘S)")
+            .disabled(!workspace.canExport)
+            .accessibilityIdentifier("exportHTML")
+            .accessibilityLabel("Export HTML")
         }
     }
 }

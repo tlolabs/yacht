@@ -19,6 +19,17 @@ pub const MAX_METADATA: u64 = 1024 * 1024;
 pub const CHECK_INTERVAL: u64 = 86400;
 pub const RETRY_INTERVAL: u64 = 3600;
 
+/// Encode a digest without relying on the hash crate's formatting traits.
+pub fn hex_digest(bytes: &[u8]) -> String {
+    const DIGITS: &[u8; 16] = b"0123456789abcdef";
+    let mut output = String::with_capacity(bytes.len() * 2);
+    for &byte in bytes {
+        output.push(DIGITS[(byte >> 4) as usize] as char);
+        output.push(DIGITS[(byte & 0x0f) as usize] as char);
+    }
+    output
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Asset {
@@ -231,7 +242,7 @@ pub fn verify_stream(mut input: impl Read, mut output: impl Write, asset: &Asset
         hash.update(&buffer[..n]);
         output.write_all(&buffer[..n])?;
     }
-    if total != asset.size || format!("{:x}", hash.finalize()) != asset.sha256 {
+    if total != asset.size || hex_digest(&hash.finalize()) != asset.sha256 {
         return Err("Artifact size or SHA-256 mismatch".into());
     }
     Ok(())

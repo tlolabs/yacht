@@ -16,6 +16,9 @@ compiler System Library under GPLv3, not relicensed as YACHT code. See
 and [Microsoft deployment guidance](https://learn.microsoft.com/en-us/cpp/windows/deployment-in-visual-cpp).
 Build/distribution must use an appropriately licensed MSVC toolchain. Runtime
 security fixes require rebuilding these binaries with the updated toolchain.
+Windows packages also bundle MSVC runtime DLLs used by Qt plugins. Those files
+retain Microsoft's redistribution terms and are checked for architecture and
+presence during packaging.
 
 # Third-party notices
 

@@ -8,11 +8,13 @@
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QGuiApplication>
 #include <QMessageBox>
 #include <QProcess>
 #include <QPushButton>
 #include <QStyle>
 #include <QStyleFactory>
+#include <QStyleHints>
 #include <QUrl>
 
 namespace Yacht {
@@ -101,6 +103,33 @@ QString QtDesktopServices::pickColor(const QString &label, const QString &initia
 }
 
 void QtDesktopServices::applyAppearance(const QString &appearance) {
+    // Restore the platform style before changing schemes. Otherwise switching
+    // back from a Fusion fallback leaves System looking like a forced theme.
+    static const QString systemStyle = QApplication::style()->objectName();
+    if (!systemStyle.isEmpty() && QApplication::style()->objectName() != systemStyle) {
+        if (QStyle *native = QStyleFactory::create(systemStyle)) {
+            QApplication::setStyle(native);
+        }
+    }
+    QApplication::setPalette(QPalette());
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+    Qt::ColorScheme scheme = Qt::ColorScheme::Unknown;
+    if (appearance == QStringLiteral("Dark")) scheme = Qt::ColorScheme::Dark;
+    if (appearance == QStringLiteral("Light")) scheme = Qt::ColorScheme::Light;
+    QGuiApplication::styleHints()->setColorScheme(scheme);
+    if (scheme == Qt::ColorScheme::Unknown) return;
+    const int windowLightness = QApplication::palette().color(QPalette::Window).lightness();
+    if ((scheme == Qt::ColorScheme::Dark && windowLightness < 128) ||
+        (scheme == Qt::ColorScheme::Light && windowLightness >= 128)) {
+        return;
+    }
+#else
+    if (appearance == QStringLiteral("System")) return;
+#endif
+
+    // Qt 6.4 and platforms that cannot override their native color scheme use
+    // Fusion for explicit Light/Dark. System always restores the native style.
     if (appearance == QStringLiteral("Dark")) {
         QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
         QPalette darkPalette;
@@ -108,21 +137,25 @@ void QtDesktopServices::applyAppearance(const QString &appearance) {
         darkPalette.setColor(QPalette::WindowText, Qt::white);
         darkPalette.setColor(QPalette::Base, QColor(30, 30, 30));
         darkPalette.setColor(QPalette::AlternateBase, QColor(45, 45, 45));
-        darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
-        darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+        darkPalette.setColor(QPalette::ToolTipBase, QColor(40, 40, 40));
+        darkPalette.setColor(QPalette::ToolTipText, QColor(240, 240, 240));
         darkPalette.setColor(QPalette::Text, Qt::white);
         darkPalette.setColor(QPalette::Button, QColor(45, 45, 45));
         darkPalette.setColor(QPalette::ButtonText, Qt::white);
         darkPalette.setColor(QPalette::BrightText, Qt::red);
-        darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::Link, QColor(64, 158, 255));
         darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
-        darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+        darkPalette.setColor(QPalette::HighlightedText, Qt::white);
+
+        darkPalette.setColor(QPalette::Disabled, QPalette::Text, QColor(128, 128, 128));
+        darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(128, 128, 128));
+        darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, QColor(128, 128, 128));
+        darkPalette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(80, 80, 80));
+        darkPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(140, 140, 140));
+
         QApplication::setPalette(darkPalette);
     } else if (appearance == QStringLiteral("Light")) {
         QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
-        QApplication::setPalette(QApplication::style()->standardPalette());
-    } else {
-        // System
         QApplication::setPalette(QApplication::style()->standardPalette());
     }
 }

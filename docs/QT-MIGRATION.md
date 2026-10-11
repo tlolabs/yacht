@@ -3,8 +3,8 @@
 ## Architecture and scope
 
 The shared cross-platform presentation layer has been migrated from Avalonia/.NET to
-Qt 6 Widgets (C++17, CMake) in `platform/qt`. Avalonia and .NET have been completely
-removed from the active repository (rip-and-replace migration).
+Qt 6 Widgets (C++17, CMake) in `platform/qt`. The tracked active source and build
+inputs contain no Avalonia or .NET UI implementation.
 
 - **Production macOS**: Continues to use native SwiftUI/AppKit (`platform/macos`).
 - **Windows (x64 / ARM64)**: Shares one Qt 6 Widgets presentation implementation (`platform/qt`).
@@ -32,7 +32,10 @@ The shared host uses:
 
 Qt 6 is licensed under GNU LGPLv3 and GNU GPLv3; upstream license provenance is recorded in `licenses/qt/SOURCES.md` and `licenses/qt/Qt-LGPL-3.0.txt`. Packaged distributions bundle `ThirdPartyLicenses` collected via `script/collect_qt_notices.py`.
 
-Windows packages bundle `windeployqt`-deployed Qt libraries and statically link the Microsoft compiler C runtime, ensuring clean execution without separate runtime dependencies. Linux packages use standard distribution dependencies (`qt6-base-dev` / `libqt6widgets6t64`).
+Windows packages bundle `windeployqt`-deployed Qt libraries and the MSVC runtime
+DLLs required by Qt plugins; Rust binaries link the compiler runtime statically.
+The package does not require a separate VC runtime installation. Linux packages
+use standard distribution dependencies (`qt6-base-dev` / `libqt6widgets6t64`).
 
 ## Storage, single instance and updates
 
@@ -46,14 +49,15 @@ Windows packages bundle `windeployqt`-deployed Qt libraries and statically link 
   - Linux guides the user to distribution package updates.
   - The internal macOS Qt reference build explicitly isolates updates: bundle ID `com.tlolabs.yacht.qt.internal`, `YACHTInternalReference=true`, no Sparkle framework, and production update checks are disabled. `script/check_qt_contract.py` enforces this isolation.
 
-## Complete feature parity
+## Feature parity status
 
-Every capability from the Avalonia presentation layer has been reproduced in Qt 6 Widgets:
+The shared UI exposes the following workflows. The preview and platform behavior
+still require the acceptance work described below.
 
 | Avalonia feature | Qt 6 Widgets implementation | Status |
 |---|---|---|
 | 16 Style fields | `StyleField.h/.cpp` with text, integer, flag, choice and color dialogs | Complete |
-| HTML table preview | `HtmlPreviewWidget.h/.cpp` (`QTextBrowser` with CSS styling) | Complete |
+| HTML table preview | `HtmlPreviewWidget.h/.cpp` uses `QTextBrowser` for a static table | Partial: browser CSS interactions such as hover are not reproduced |
 | HTML source viewer | `QPlainTextEdit` read-only source tab | Complete |
 | Bounded preview | Debounced (180ms) Rust preview call with 200/50/1000 row limits | Complete |
 | Presets management | Save, load, select, and delete presets with overwrite confirmation | Complete |
@@ -63,13 +67,13 @@ Every capability from the Avalonia presentation layer has been reproduced in Qt 
 | Copy complete HTML | Copies full un-truncated HTML document to clipboard | Complete |
 | Export HTML | Native save dialog with overwrite protection | Complete |
 | Batch conversion | Review dialog showing inputs, overwrite option, and error reporting | Complete |
-| Responsive cancel | Cancellation token passed via C ABI trampoline, Escape key / Cancel button | Complete |
+| Responsive cancel | Core calls run on a worker while the Qt event loop services Escape and Cancel; an in-flight read test verifies cancellation and retry | Automated test passed locally; native Windows/Linux UI acceptance pending |
 | Settings dialog | `SettingsDialog.h/.cpp` for remember style, preview rows, appearance, clear recent | Complete |
 | Recent files | Up to 10 recent files, stored in `ui.json`, synced to menu and toolbar combo | Complete |
-| Appearance themes | System, Light, and Dark appearance via Qt palette and Fusion style | Complete |
+| Appearance themes | System, Light, and Dark via Qt color-scheme hints where available, with a Fusion fallback | Automated palette transitions passed locally; native contrast and display acceptance pending |
 | Single instance IPC | `SingleInstance.h/.cpp` via `QLocalServer` / `QLocalSocket` | Complete |
 | Update client | `UpdateClient.h/.cpp` with Authenticode validation on Windows | Complete |
-| Headless smoke test | `--ui-smoke-test <dir>` headless execution verifying all workflows | Complete |
+| Headless smoke test | `--ui-smoke-test <dir>` verifies startup, conversion and shutdown workflows | Automated scope only |
 
 ## Accessibility
 

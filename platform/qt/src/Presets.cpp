@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <stdexcept>
 
 namespace Yacht {
 
@@ -25,8 +26,10 @@ QJsonObject Presets::load() {
                     saveArgs[QStringLiteral("presets")] = legacy;
                     YachtCore::call(QStringLiteral("save_presets"), saveArgs);
                 }
-            } catch (...) {
-                // Ignore legacy migration errors
+            } catch (const std::exception &error) {
+                throw std::runtime_error(
+                    "Could not migrate legacy presets; the original file was preserved: " +
+                    std::string(error.what()));
             }
         }
     }
