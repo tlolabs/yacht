@@ -5,17 +5,11 @@ Start with [architecture](ARCHITECTURE.md), [behavior](BEHAVIOR.md),
 
 ## Commit signing and history
 
-Use unsigned commits. Disable automatic cryptographic commit signing in each
-clone (repository-local Git configuration is not copied by cloning):
-
-```sh
-git config --local commit.gpgsign false
-```
-
-Continue adding the DCO `Signed-off-by` trailer with `git commit -s` as described
-in [CONTRIBUTING.md](../CONTRIBUTING.md). Lowercase `-s` adds that trailer;
-uppercase `-S` requests a cryptographic signature and should not be used for commits.
-Release-tag signing and platform artifact signing remain governed by
+Cryptographic commit signatures and DCO `Signed-off-by` trailers are optional.
+Maintainers normally add the trailer with `git commit -s` as described in
+[CONTRIBUTING.md](../CONTRIBUTING.md). Lowercase `-s` adds that trailer;
+uppercase `-S` requests a cryptographic signature. Neither is a development
+or CI requirement. Release-tag signing and platform artifact signing remain governed by
 [CODE_SIGNING_POLICY.md](../CODE_SIGNING_POLICY.md).
 
 The September 30, 2026 history migration removed commit signatures while
