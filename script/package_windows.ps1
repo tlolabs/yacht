@@ -7,16 +7,36 @@ cargo build --workspace --locked --release --target $triple
 if($LASTEXITCODE){throw 'Rust build failed'}
 $publish=Join-Path $PWD "target/windows-$Architecture"
 if(Test-Path $publish){Remove-Item $publish -Recurse -Force}
-dotnet restore platform/avalonia/YACHT/YACHT.csproj -p:RestoreLockedMode=true
-if($LASTEXITCODE){throw 'Locked NuGet restore failed'}
-dotnet publish platform/avalonia/YACHT/YACHT.csproj --no-restore -c Release -r "win-$Architecture" --self-contained true -o $publish
-if($LASTEXITCODE){throw 'Avalonia publish failed'}
+New-Item -ItemType Directory -Force $publish | Out-Null
+cmake -S platform/qt -B "build/qt-$Architecture" -DCMAKE_BUILD_TYPE=Release
+if($LASTEXITCODE){throw 'CMake configure failed'}
+cmake --build "build/qt-$Architecture" --config Release --target YachtApp
+if($LASTEXITCODE){throw 'Qt build failed'}
+$qtExe="build/qt-$Architecture/Release/YachtApp.exe"
+if(!(Test-Path $qtExe)){$qtExe="build/qt-$Architecture/YachtApp.exe"}
+Copy-Item $qtExe (Join-Path $publish 'YachtApp.exe')
+windeployqt --release --no-translations --no-compiler-runtime (Join-Path $publish 'YachtApp.exe')
+if($LASTEXITCODE){throw 'Qt runtime deployment failed'}
+# windeployqt cannot locate the compiler runtime on hosted runners when
+# VCINSTALLDIR is unset. Copy the redistributable for this package's CPU.
+$redistRoot=$env:VCToolsRedistDir
+if(!$redistRoot -or !(Test-Path $redistRoot)){
+  $vswhere=Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+  if(!(Test-Path $vswhere)){throw 'Visual Studio redistributable locator missing'}
+  $vsInstall=& $vswhere -latest -products * -property installationPath | Select-Object -First 1
+  if(!$vsInstall){throw 'Visual Studio installation not found'}
+  $redistRoot=Join-Path $vsInstall 'VC\Redist\MSVC'
+}
+$crtDir=Get-ChildItem $redistRoot -Recurse -Directory -Filter 'Microsoft.VC*.CRT' |
+  Where-Object { $_.Parent.Name -ieq $Architecture } |
+  Sort-Object FullName -Descending | Select-Object -First 1
+if(!$crtDir){throw "MSVC $Architecture redistributable directory not found under $redistRoot"}
 Copy-Item "target/$triple/release/yacht_ffi.dll" $publish
 Copy-Item "target/$triple/release/yacht-update.exe","target/$triple/release/yacht.exe",LICENSE,README.md,THIRD_PARTY_NOTICES.md,PRIVACY.md,'docs/DEPENDENCIES.md' $publish
 Copy-Item LICENSE-NOTICE.md $publish
-python script/collect_avalonia_notices.py $publish --rid "win-$Architecture"
+python script/collect_qt_notices.py $publish --rid "win-$Architecture"
 if($LASTEXITCODE){throw 'Windows third-party notice collection failed'}
-python script/check_windows_runtime.py $publish --arch $Architecture
+python script/check_windows_runtime.py $publish --arch $Architecture --compiler-runtime-source $crtDir.FullName
 if($LASTEXITCODE){throw 'Windows native runtime dependency audit failed'}
 # Signing is optional. Certificate is selected from an ephemeral CI/user store;
 # certificate material/passwords never appear in the repository or command line.

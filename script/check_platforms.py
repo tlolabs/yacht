@@ -24,5 +24,4 @@ windows = minimum["windows_minimum_build"]
 require("platform/windows/installer/YACHT.iss", r"^MinVersion=([^\n]+)", windows)
 linux = minimum["linux_glibc_minimum"]
 require("script/package_linux.sh", r"libc6 \(>= ([^)]+)\)", linux)
-require("script/package_linux.sh", r"libwebkit2gtk-([0-9.]+)-0", minimum["linux_webkitgtk_api"])
 print("Platform minimum metadata matches config/platforms.json")

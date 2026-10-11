@@ -25,23 +25,6 @@ def cargo_packages():
         }
 
 
-def nuget_packages():
-    lock = json.loads((ROOT / "platform/avalonia/YACHT/packages.lock.json").read_text())
-    seen = set()
-    for framework in lock["dependencies"].values():
-        for name, package in framework.items():
-            identity = (name, package["resolved"])
-            if identity in seen:
-                continue
-            seen.add(identity)
-            yield {
-                "ecosystem": "nuget", "name": name, "version": package["resolved"],
-                "source": "nuget.org", "scope": package["type"].lower(),
-                "license": "BSD-3-Clause and bundled notices" if name == "Avalonia.Angle.Windows.Natives" else "MIT and bundled native notices",
-            }
-
-
-
 SWIFT_LOCK = "Yacht.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
 
 
@@ -62,10 +45,10 @@ def swift_packages():
 
 
 def build_inventory():
-    packages = sorted([*cargo_packages(), *nuget_packages(), *swift_packages()], key=lambda p: (p["ecosystem"], p["name"].lower()))
+    packages = sorted([*cargo_packages(), *swift_packages()], key=lambda p: (p["ecosystem"], p["name"].lower()))
     return {
         "schema": "tlo-labs-dependency-inventory/v1",
-        "source_locks": ["Cargo.lock", "platform/avalonia/YACHT/packages.lock.json", "Package.resolved", SWIFT_LOCK],
+        "source_locks": ["Cargo.lock", "Package.resolved", SWIFT_LOCK],
         "license_note": "NOASSERTION means the lockfile does not record a license. Review upstream package licenses and release SBOM; see docs/DEPENDENCIES.md and docs/LICENSE_AUDIT.md.",
         "packages": packages,
     }

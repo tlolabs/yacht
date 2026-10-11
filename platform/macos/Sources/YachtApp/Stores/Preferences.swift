@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import Observation
 import YachtCore
 
@@ -11,7 +12,10 @@ final class Preferences {
     var recentFiles: [URL] = []
     var problem: String?
     var appearance: String {
-        didSet { defaults.set(appearance, forKey: "appearance") }
+        didSet {
+            defaults.set(appearance, forKey: "appearance")
+            applyAppearance()
+        }
     }
     var rememberStyle: Bool {
         didSet { defaults.set(rememberStyle, forKey: "rememberStyle") }
@@ -39,6 +43,17 @@ final class Preferences {
             }
         } catch { problem = "Could not load presets: \(error.localizedDescription). The original file is unchanged." }
         recentFiles = (defaults.stringArray(forKey: "recentFiles") ?? []).map { URL(fileURLWithPath: $0) }
+        applyAppearance()
+    }
+    func applyAppearance() {
+        switch appearance {
+        case "Dark":
+            NSApp?.appearance = NSAppearance(named: .darkAqua)
+        case "Light":
+            NSApp?.appearance = NSAppearance(named: .aqua)
+        default:
+            NSApp?.appearance = nil
+        }
     }
     var initialStyle: StyleOptions {
         var settings = BehaviorSettings.defaults

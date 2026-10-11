@@ -3,6 +3,5 @@
   "windows_minimum_build": "10.0.17763",
   "linux_baseline": "Ubuntu 24.04",
   "linux_glibc_minimum": "2.39",
-  "linux_webkitgtk_api": "4.1",
-  "avalonia_internal_macos": "arm64"
+  "qt_internal_macos": "arm64"
 }

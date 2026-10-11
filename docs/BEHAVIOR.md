@@ -87,7 +87,7 @@ shell commands. Ordinary current-user `~/` paths are expanded by the CLI.
 
 ## Native interaction and acceptance
 
-SwiftUI and shared Avalonia own controls, menus/commands, native dialogs,
+SwiftUI and shared Qt own controls, menus/commands, native dialogs,
 keyboard focus, accessibility, drag/drop, clipboard, recent files, file-manager
 reveal and browser launching. A web engine may render only the generated table;
 it is not the application interface. Preview JavaScript, outbound content and
