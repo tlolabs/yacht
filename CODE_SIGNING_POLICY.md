@@ -1,10 +1,10 @@
 # Code signing policy
 
-Git commits are unsigned for both maintainers and contributors; see [CONTRIBUTING.md](CONTRIBUTING.md). This policy covers release tags and distributed artifacts.
+Git commits need no cryptographic signature; see [CONTRIBUTING.md](CONTRIBUTING.md). This policy covers release tags and distributed artifacts. Package signing and notarization are optional until the corresponding credentials and verification are configured. Stable release tags retain their signature requirement before production signing.
 
-An **official stable release** is a GitHub Release for a SemVer tag `vMAJOR.MINOR.PATCH` created and cryptographically signed by Thomas Lothian, with artifacts built from that tagged commit and accompanied by checksums and release provenance. A passing CI run alone is a development build. Tags with a prerelease suffix are prereleases; `main`/nightly outputs are unsupported development builds. Prerelease and development builds do not receive production signing.
+An **official stable release** is a GitHub Release for a SemVer tag `vMAJOR.MINOR.PATCH` created and cryptographically signed by Thomas Lothian, with artifacts built from that tagged commit and accompanied by checksums and release provenance. A passing CI run alone is a development build. Tags with a prerelease suffix are prereleases; `main`/nightly outputs are development builds. Unsigned artifacts must be labeled as such and must never be described as signed or notarized.
 
-Thomas Lothian is the sole release and signing approver. The release workflow must verify the stable tag before using production credentials. It must not use a redundant GitHub Environment human approval gate; a signing provider may independently require interactive approval. CI builds and tests artifacts, records their provenance, signs when the required provider and credentials are configured, and verifies the result before publication. A failed platform gate prevents that platform's artifact from being presented as validated.
+Thomas Lothian retains release authority. Before using production credentials, verify the stable tag and configured signer. Do not use a redundant GitHub Environment human approval gate; a signing provider may independently require interactive approval. CI builds and tests artifacts, records their provenance, signs when the required provider and credentials are configured, and verifies the result before publication. Each platform is verified independently; a failure prevents only that platform's artifact from being presented as validated.
 
 | Platform | Intended production method | Required verification |
 |---|---|---|

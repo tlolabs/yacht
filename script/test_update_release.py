@@ -72,16 +72,16 @@ class MacPackageTests(unittest.TestCase):
                 with self.assertRaises(ValueError): self.verify()
                 self.info[field] = previous
 
-    def test_internal_avalonia_build_is_never_a_production_update(self):
+    def test_internal_qt_build_is_never_a_production_update(self):
         self.info["YACHTInternalReference"] = True
-        with self.assertRaisesRegex(ValueError, "Internal Avalonia"):
+        with self.assertRaisesRegex(ValueError, "Internal Qt"):
             self.verify()
         self.info.pop("YACHTInternalReference")
         # Even relabeling the bundle cannot promote shared Mac UI artifacts.
         runtime = self.app / "Contents/MacOS"
         runtime.mkdir(parents=True)
-        (runtime / "Avalonia.Controls.dll").write_bytes(b"fixture")
-        with self.assertRaisesRegex(ValueError, "Internal Avalonia"):
+        (runtime / "libQt6Core.dylib").write_bytes(b"fixture")
+        with self.assertRaisesRegex(ValueError, "Internal Qt"):
             self.verify()
 
     def test_disabled_security_flags(self):

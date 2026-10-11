@@ -9,10 +9,11 @@ mkdir -p release
 stage="$(mktemp -d "$PWD/target/linux-package.XXXXXX")"
 trap 'rm -rf "$stage"' EXIT
 mkdir -p "$stage/usr/lib/yacht" "$stage/usr/bin" "$stage/usr/share/applications" "$stage/usr/share/metainfo" "$stage/usr/share/doc/yacht" "$stage/DEBIAN"
-dotnet restore platform/avalonia/YACHT/YACHT.csproj --locked-mode
-dotnet publish platform/avalonia/YACHT/YACHT.csproj --no-restore -c Release -r "linux-$label" --self-contained true -o "$stage/usr/lib/yacht"
+cmake -S platform/qt -B build/qt-linux -DCMAKE_BUILD_TYPE=Release
+cmake --build build/qt-linux --target YachtApp
+cp build/qt-linux/YachtApp "$stage/usr/lib/yacht/"
 cp target/release/yacht-update target/release/libyacht_ffi.so "$stage/usr/lib/yacht/"
-python3 script/collect_avalonia_notices.py "$stage/usr/lib/yacht" --rid "linux-$label"
+python3 script/collect_qt_notices.py "$stage/usr/lib/yacht" --rid "linux-$label"
 cp target/release/yacht "$stage/usr/bin/"
 cat > "$stage/usr/bin/yacht-gui" <<'LAUNCH'
 #!/bin/sh
@@ -31,9 +32,9 @@ Architecture: $arch
 Maintainer: Thomas Lothian <TBD>
 Section: utils
 Priority: optional
-Depends: libc6 (>= 2.39), libicu74, libfontconfig1, libx11-6, libice6, libsm6, libgtk-3-0t64, libwebkit2gtk-4.1-0, libssl3t64, xdg-utils
+Depends: libc6 (>= 2.39), libqt6widgets6 (>= 6.4.0) | libqt6widgets6t64 (>= 6.4.0), libqt6gui6 (>= 6.4.0) | libqt6gui6t64 (>= 6.4.0), libqt6core6t64 (>= 6.4.0) | libqt6core6 (>= 6.4.0), libqt6network6 (>= 6.4.0) | libqt6network6t64 (>= 6.4.0), xdg-utils
 Description: Yet Another CSV HTML Translator
- Shared Avalonia interface and shared Rust CLI for styled HTML tables.
+ Shared Qt interface and shared Rust CLI for styled HTML tables.
 CONTROL
 dpkg-deb --build --root-owner-group "$stage" "release/YACHT-$version-linux-$label.deb"
 tar -czf "release/YACHT-$version-linux-$label.tar.gz" -C "$stage/usr" .

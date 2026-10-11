@@ -27,6 +27,7 @@ final class Workspace {
     var batchProgress = 0
     var batchResults: [String] = []
     var section = "preview"
+    var showStyles = true
     @ObservationIgnored private var importTask: Task<Void, Never>?
     @ObservationIgnored private var previewTask: Task<Void, Never>?
     @ObservationIgnored private var operationTask: Task<Void, Never>?
