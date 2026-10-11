@@ -5,11 +5,6 @@ updates:
     schedule: {interval: weekly}
     open-pull-requests-limit: 10
     labels: [dependencies]
-  - package-ecosystem: nuget
-    directory: /platform/avalonia/YACHT
-    schedule: {interval: weekly}
-    open-pull-requests-limit: 10
-    labels: [dependencies]
   - package-ecosystem: github-actions
     directory: /
     schedule: {interval: monthly}

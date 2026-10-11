@@ -3,6 +3,14 @@ use ring::signature::{Ed25519KeyPair, KeyPair};
 use sha2::{Digest, Sha256};
 use std::io::{self, Read};
 use tlo_updater::*;
+
+#[test]
+fn sha256_known_vector_after_dependency_upgrade() {
+    assert_eq!(
+        hex_digest(&Sha256::digest(b"abc")),
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    );
+}
 fn fixture() -> (Policy, Manifest) {
     let key = Ed25519KeyPair::from_seed_unchecked(&[7; 32]).unwrap();
     let policy = Policy {
@@ -40,7 +48,7 @@ fn fixture() -> (Policy, Manifest) {
             url: "https://github.com/tlolabs/fixture/releases/download/v1.10.0/Fixture.AppImage"
                 .into(),
             size: artifact.len() as u64,
-            sha256: format!("{:x}", Sha256::digest(artifact)),
+            sha256: hex_digest(&Sha256::digest(artifact)),
             native_identity: "fixture-gpg".into(),
         }],
     };

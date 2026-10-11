@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="yacht.svg">../../../assets/icons/YACHT.svg</file>
+        <file alias="yacht.png">../../../assets/icons/YACHT.png</file>
+    </qresource>
+</RCC>

@@ -93,7 +93,7 @@ import AppKit
         let exists = NSPredicate { _, _ in FileManager.default.fileExists(atPath: url.path) }
         expectation(for: exists, evaluatedWith: nil); waitForExpectations(timeout: 10)
         XCTAssertTrue(try String(contentsOf: url, encoding: .utf8).contains("Friction, Baby"))
-        XCTAssertTrue(app.buttons["Reveal in Finder"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Reveal exported file in Finder"].waitForExistence(timeout: 5))
     }
     func testBatchConversionPreservesExistingOutput() throws {
         try launch()

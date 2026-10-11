@@ -13,11 +13,15 @@ struct ColorSetting: View {
     var body: some View {
         LabeledContent(title) {
             HStack {
-            ColorPicker("", selection: selectedColor, supportsOpacity: false)
-                .labelsHidden().accessibilityLabel("\(title) picker")
-            TextField("", text: $value).accessibilityLabel(title)
-                .help("CSS hex color, color name, rgb(), hsl(), or transparent")
-        }
+                ColorPicker("", selection: selectedColor, supportsOpacity: false)
+                    .labelsHidden()
+                    .accessibilityLabel("\(title) picker")
+                    .help("Open color picker for \(title)")
+                TextField("e.g. #cccccc", text: $value, prompt: Text("e.g. #cccccc"))
+                    .accessibilityLabel("\(title) value")
+                    .accessibilityHint("Enter CSS hex color, rgb, hsl, or color name")
+                    .help("CSS hex color, color name, rgb(), hsl(), or transparent")
+            }
         }
         .accessibilityElement(children: .contain)
     }
