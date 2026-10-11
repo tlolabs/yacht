@@ -58,7 +58,7 @@ fn fixture() -> (Policy, Vec<u8>) {
             filename: "Test.AppImage".into(),
             url: "https://github.com/tlolabs/test/releases/download/v2.0.0/Test.AppImage".into(),
             size: 8,
-            sha256: format!("{:x}", Sha256::digest(b"artifact")),
+            sha256: hex_digest(&Sha256::digest(b"artifact")),
             native_identity: "test-gpg".into(),
         }],
     };

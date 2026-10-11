@@ -21,9 +21,13 @@ struct YachtApp: App {
             CommandGroup(replacing: .newItem) {
                 Button("Open CSV…") { workspace.chooseFile() }.keyboardShortcut("o")
                 Menu("Open Recent") {
-                    ForEach(workspace.preferences.recentFiles, id: \.self) { url in Button(url.lastPathComponent) { workspace.load(url) } }
-                    Divider()
-                    Button("Clear Menu") { workspace.preferences.clearRecent() }
+                    if workspace.preferences.recentFiles.isEmpty {
+                        Text("No Recent Files")
+                    } else {
+                        ForEach(workspace.preferences.recentFiles, id: \.self) { url in Button(url.lastPathComponent) { workspace.load(url) } }
+                        Divider()
+                        Button("Clear Menu") { workspace.preferences.clearRecent() }
+                    }
                 }
                 Button("Use Sample Table") { workspace.useSample() }
                 Divider()
@@ -33,13 +37,19 @@ struct YachtApp: App {
                 Button("Export HTML…") { workspace.prepareExport() }.keyboardShortcut("s").disabled(!workspace.canExport)
                 Button("Copy HTML Code") { workspace.copyHTML() }.keyboardShortcut("c", modifiers: [.command, .shift]).disabled(!workspace.canExport)
             }
+            CommandGroup(after: .pasteboard) {
+                Button("Copy HTML Code") { workspace.copyHTML() }.keyboardShortcut("c", modifiers: [.command, .shift]).disabled(!workspace.canExport)
+            }
             CommandGroup(after: .toolbar) {
+                Button(workspace.showStyles ? "Hide Style Controls" : "Show Style Controls") { workspace.showStyles.toggle() }.keyboardShortcut("0", modifiers: [.command])
+                Divider()
                 Button("Refresh Preview") { workspace.refresh() }.keyboardShortcut("r")
                 Button("Table Preview") { workspace.section = "preview" }.keyboardShortcut("1")
                 Button("HTML Source") { workspace.section = "source" }.keyboardShortcut("2")
             }
             CommandGroup(replacing: .help) {
                 Link("YACHT User Guide", destination: URL(string: "https://github.com/tlolabs/yacht#using-yacht")!)
+                Link("YACHT Releases", destination: URL(string: "https://github.com/tlolabs/yacht/releases")!)
             }
         }
         Settings { SettingsView(preferences: workspace.preferences, updater: fileOpenDelegate.updater).preferredColorScheme(colorScheme) }

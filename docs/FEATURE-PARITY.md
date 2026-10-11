@@ -1,6 +1,6 @@
 # Current shared UI parity
 
-The complete current feature audit, including retained commands, controls, dialogs,
+The current feature inventory, including retained commands, controls, dialogs,
 shortcuts, settings, updater behavior, accessibility and validation, is in
 [QT-MIGRATION.md](QT-MIGRATION.md). Current test/build evidence is in [VERIFICATION.md](VERIFICATION.md).
 
@@ -20,7 +20,7 @@ necessary even for rows with automated verification.
 | Sample and single-file open | V | V | V | V | XCTest + native runtime smoke |
 | All sixteen style controls, native color choice | V | V | I | I | Rust CSS tests; UI smoke; picker acceptance manual |
 | Styled/unstyled and numeric alignment | V | V | V | V | Rust/Swift document-contract and style tests |
-| Live actual HTML preview | V | V | V | V | Rust preview tests + native runtime smoke |
+| Live actual HTML preview | V | V | I | I | Rust preview tests + native runtime smoke; Qt static rendering does not reproduce browser hover behavior |
 | Bounded preview/source, unlimited export/copy | V | V | V | V | 100k rows/huge-cell tests, binding export checks |
 | Preset defaults, load/save/delete, confirmation | V | V | I | I | Rust preset tests; XCTest; runtime preset tests |
 | Legacy partial/null preset format and migration | V | V | V | V | Rust/Swift/ctypes/C++ round trips |

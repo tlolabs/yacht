@@ -51,7 +51,7 @@ fn digest(path: &Path) -> Result<(u64, String)> {
         size += n as u64;
         h.update(&b[..n]);
     }
-    Ok((size, format!("{:x}", h.finalize())))
+    Ok((size, hex_digest(&h.finalize())))
 }
 fn run() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();

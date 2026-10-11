@@ -82,9 +82,10 @@ CI intentionally produces development signatures until credentials are configure
 Windows 10 1809+, Visual Studio 2022 Build Tools with Windows SDK/C++ desktop tools,
 CMake 3.16+, Qt 6.4+ (Widgets, Gui, Core, Network), Rust MSVC toolchain and Inno Setup 6.
 The UI is shared Qt 6 Widgets; `QTextBrowser` powers the preview.
-The Windows Cargo targets statically link the compiler C runtime. Packaging rejects
-undeclared VC runtime DLL imports, including delay imports; Visual Studio is not a
-runtime prerequisite. Rebuild with an updated toolchain for compiler-runtime fixes.
+The Windows Cargo targets statically link the compiler C runtime. Qt plugins may
+import MSVC runtime DLLs, so packaging includes those DLLs and rejects any missing
+normal or delay import. Visual Studio is not a runtime prerequisite. Rebuild with
+an updated toolchain for compiler-runtime fixes.
 
 ```powershell
 rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
@@ -96,7 +97,10 @@ cmake --build build/qt --config Release
 ./platform/windows/test_ui.ps1 -Executable "$PWD/target/windows-x64/YachtApp.exe"
 ```
 
-Packaging uses `windeployqt` to deploy Qt runtime libraries alongside the app, Rust DLL and CLI.
+Packaging uses `windeployqt` for Qt libraries and plugins, then copies the matching
+MSVC redistributable DLLs from the installed Visual Studio toolchain alongside the
+app, Rust DLL and CLI. The package audit checks every binary's architecture and
+compiler runtime imports.
 Outputs: per-user Inno installer, portable ZIP and SHA256SUMS-windows-<arch>. The GUI is YachtApp.exe;
 yacht.exe is the CLI. Inno registers Open With entries without taking over the user's default CSV
 application. Runtime smoke tests isolate preference writes.
@@ -156,7 +160,9 @@ It is never the production Mac download. See [isolation safeguards](QT-MIGRATION
 
 The Native cross-platform workflow builds/tests six native targets on pull requests
 and main. Platform checks run separately, and successful development artifacts are
-retained for 30 days. A runnable nightly package is intended only for macOS (ARM64);
+retained for 30 days. Failed jobs remain visible and are summarized in one GitHub Issue;
+they do not prevent unrelated commits or pushes. A runnable nightly package is
+intended only for macOS (ARM64);
 the other nightly targets may compile/test without packaging.
 
 The previous tag workflow created a draft release from development-signed artifacts.
