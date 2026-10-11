@@ -30,6 +30,13 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "base64",
+      "version": "0.23.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "bitflags",
       "version": "2.13.2",
       "source": "crates.io",
@@ -38,7 +45,7 @@
     {
       "ecosystem": "cargo",
       "name": "block-buffer",
-      "version": "0.10.4",
+      "version": "0.12.1",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -93,8 +100,8 @@
     },
     {
       "ecosystem": "cargo",
-      "name": "cpufeatures",
-      "version": "0.2.17",
+      "name": "const-oid",
+      "version": "0.10.2",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -108,7 +115,7 @@
     {
       "ecosystem": "cargo",
       "name": "crypto-common",
-      "version": "0.1.7",
+      "version": "0.2.2",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -122,7 +129,7 @@
     {
       "ecosystem": "cargo",
       "name": "digest",
-      "version": "0.10.7",
+      "version": "0.11.3",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -212,13 +219,6 @@
     },
     {
       "ecosystem": "cargo",
-      "name": "generic-array",
-      "version": "0.14.7",
-      "source": "crates.io",
-      "license": "NOASSERTION"
-    },
-    {
-      "ecosystem": "cargo",
       "name": "getrandom",
       "version": "0.2.17",
       "source": "crates.io",
@@ -256,6 +256,13 @@
       "ecosystem": "cargo",
       "name": "httparse",
       "version": "1.10.1",
+      "source": "crates.io",
+      "license": "NOASSERTION"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "hybrid-array",
+      "version": "0.4.15",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -577,7 +584,7 @@
     {
       "ecosystem": "cargo",
       "name": "rustls",
-      "version": "0.23.44",
+      "version": "0.23.45",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -654,7 +661,7 @@
     {
       "ecosystem": "cargo",
       "name": "sha2",
-      "version": "0.10.9",
+      "version": "0.11.0",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -738,14 +745,14 @@
     {
       "ecosystem": "cargo",
       "name": "thiserror",
-      "version": "2.0.20",
+      "version": "2.0.21",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
     {
       "ecosystem": "cargo",
       "name": "thiserror-impl",
-      "version": "2.0.20",
+      "version": "2.0.21",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
@@ -858,13 +865,6 @@
       "ecosystem": "cargo",
       "name": "utf8_iter",
       "version": "1.0.4",
-      "source": "crates.io",
-      "license": "NOASSERTION"
-    },
-    {
-      "ecosystem": "cargo",
-      "name": "version_check",
-      "version": "0.9.5",
       "source": "crates.io",
       "license": "NOASSERTION"
     },
