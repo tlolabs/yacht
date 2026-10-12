@@ -36,3 +36,23 @@ jobs:
         run: cargo run --locked -p tlo-updater --bin tlo-release -- qualify "$EXPECTED_TAG" target/published-update config/update-trust.json "$OLDER_VERSION"
       - name: Explain qualification boundary
         run: echo 'Discovery, signatures and digests passed. Native installation qualification must be recorded separately on all six targets.'
+  report-failures:
+    name: Consolidated update failure report
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || (!github.event.release.draft && !github.event.release.prerelease)) }}
+    needs: [authenticate]
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: yacht-ci-failure-report
+      cancel-in-progress: false
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Update the unresolved CI issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_REPORT_KEY: update:${{ inputs.tag || github.event.release.tag_name }}
+        run: python3 script/report_ci_failures.py
