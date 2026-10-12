@@ -6,7 +6,7 @@ The Git tag is the release version: stable `vMAJOR.MINOR.PATCH`, prerelease `vMA
 
 | Category | Origin and treatment |
 |---|---|
-| Stable | Cryptographically signed and verified tag by Thomas Lothian; production platform signing, checksums, SBOM, attestation, and GitHub Release |
+| Stable | Version-matched tag authorized by Thomas Lothian; verified platform artifacts, checksums, and GitHub Release. Signing and notarization are optional until configured. |
 | Prerelease | Tagged beta/RC; clearly marked prerelease, no production signing |
 | Development | `main` build; clearly unsupported, no production signing, artifact retention 30 days; routine runnable nightly package only for macOS (ARM64) |
 
@@ -15,9 +15,9 @@ GitHub Releases are the canonical direct download and update source. The candida
 ## Target stable pipeline
 
 1. Review the [licensing audit](LICENSE_AUDIT.md), exact bundled third-party notices, test evidence, and [support matrix](SUPPORT_MATRIX.md). Resolve the Windows package questions before calling that artifact GPL compliant or SignPath eligible.
-2. Update the next version in `Cargo.toml`, run `script/sync_version.py`, and verify the generated macOS/Windows metadata. Review the changelog and release notes. Thomas Lothian signs the maintainer commit and creates a signed annotated tag; CI rejects an unsigned or unverified stable tag.
-3. Each platform builds and runs its required tests independently. A platform publishes only after its own tests and signature checks pass. A failure cannot mark that platform artifact as validated or block a separate successful platform from completing.
-4. **macOS (ARM64/x64):** Build `.app`, Developer ID sign, notarize, staple, verify, then ZIP. **Windows (x64/ARM64):** Build and Azure Artifact Sign shipped binaries, verify Authenticode, then portable ZIP. **Linux (x64/ARM64):** Build AppImage, GPG sign it, and generate GitHub/Sigstore artifact attestation.
+2. Update the next version in `Cargo.toml`, run `script/sync_version.py`, and verify the generated macOS/Windows metadata. Review the changelog and release notes. Thomas Lothian creates an annotated tag; CI checks the tag's version and source commit. Cryptographic tag signing is optional.
+3. Each platform builds and runs its required tests independently. A platform publishes only after its own tests and any configured signature checks pass. A failure cannot mark that platform artifact as validated or block a separate successful platform from completing.
+4. Build and functionally verify each platform's current package format. When credentials are configured, Developer ID sign/notarize/staple macOS apps, Authenticode-sign Windows binaries, and GPG-sign Linux packages; verify every configured signature. Otherwise label the platform artifact unsigned or ad-hoc signed and keep it out of the signed automatic-update channel.
 5. Produce a release SBOM in SPDX or CycloneDX format, `SHA256SUMS`, a signed checksum manifest where appropriate, artifact attestations, and release notes. Use lowercase filenames like `yacht-2.1.2-macos-arm64.zip`. Publish a GitHub Release that identifies every expected platform and plainly lists any missing/failed artifact. Omit empty release-note sections.
 
 Release notes use **Highlights**, **Changes**, **Fixes**, **Known issues**, **Supported platforms**, **Installation/update notes**, and **Verification/security information** as applicable. Keep source and build provenance linked to the tag.

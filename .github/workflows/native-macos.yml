@@ -26,6 +26,7 @@ jobs:
           python3 script/check_compliance.py
           python3 script/check_update_contract.py
           python3 script/test_ci_report.py
+          python3 script/test_release_tag.py
           python3 script/test_update_release.py
           python3 -O script/test_update_release.py
       - name: Automated accessibility and platform support checks (nonblocking)
@@ -41,7 +42,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: Check version and stable tag signature
+      - name: Check version and stable tag provenance
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
