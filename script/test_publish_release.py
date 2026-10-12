@@ -7,6 +7,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import publish_release as release
@@ -58,6 +59,13 @@ class ReleaseTests(unittest.TestCase):
                 f"{release.digest(directory / filename)}  {filename}\n" for filename in ("YACHT-macos-arm64.zip", "yacht-macos-arm64")))
             with self.assertRaisesRegex(ValueError, "Incomplete"):
                 release.verify_package(directory, "macos-arm64", VERSION)
+
+    @patch.object(release, "command")
+    def test_debian_field_accepts_labeled_output(self, command):
+        command.return_value = SimpleNamespace(stdout="Version: 2.1.2\n")
+        self.assertEqual(release.debian_field(Path("package.deb"), "Version"), VERSION)
+        command.return_value = SimpleNamespace(stdout="amd64\n")
+        self.assertEqual(release.debian_field(Path("package.deb"), "Architecture"), "amd64")
 
     @patch.object(release, "release_info", return_value={"assets": [{"name": "package.zip"}]})
     @patch.object(release, "remote_digest", return_value="b" * 64)

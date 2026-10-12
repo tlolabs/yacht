@@ -83,6 +83,11 @@ def verify_checksum(directory, filenames, checksum_name):
             raise ValueError(f"Invalid or corrupt package: {name}")
 
 
+def debian_field(path, name):
+    raw = command("dpkg-deb", "--field", str(path), name).stdout.strip()
+    return raw.removeprefix(name + ":").strip()
+
+
 def verify_package(directory, target, source_version):
     filenames, checksum_name = files_for(target, source_version)
     verify_checksum(directory, filenames, checksum_name)
@@ -108,8 +113,8 @@ def verify_package(directory, target, source_version):
             if not any(name.endswith("/bin/yacht") for name in names) or not any(name.endswith("/lib/yacht/YachtApp") for name in names):
                 raise ValueError("Incomplete Linux application")
         debian_arch = "amd64" if target == "linux-x64" else "arm64"
-        metadata = command("dpkg-deb", "-f", str(directory / filenames[0]), "Version", "Architecture").stdout.splitlines()
-        if metadata != [source_version, debian_arch]:
+        debian_file = directory / filenames[0]
+        if debian_field(debian_file, "Version") != source_version or debian_field(debian_file, "Architecture") != debian_arch:
             raise ValueError("Linux package version or architecture mismatch")
     return filenames + [checksum_name]
 
