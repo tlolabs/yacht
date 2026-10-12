@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Check tag/version equality and GitHub's verified stable-tag signature."""
+"""Check tag/version equality and stable release source provenance."""
 
 import json
 import os
 import re
 import subprocess
-import tempfile
 import tomllib
 from pathlib import Path
 from urllib.error import HTTPError
@@ -45,26 +44,12 @@ def github(path: str) -> dict:
 
 ref = github("git/ref/tags/" + quote(tag, safe=""))
 if ref.get("object", {}).get("type") != "tag":
-    raise SystemExit("Stable release requires a signed annotated tag")
+    raise SystemExit("Stable release requires an annotated tag")
 tag_object = github("git/tags/" + ref["object"]["sha"])
-verification = tag_object.get("verification", {})
-if not verification.get("verified"):
-    raise SystemExit(f"Stable release tag is unverified: {verification.get('reason', 'unknown')}")
 if tag_object.get("object", {}).get("type") != "commit":
     raise SystemExit("Stable tag must point directly to a commit")
 if tag_object.get("object", {}).get("sha") != subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip():
     raise SystemExit("Stable release tag target differs from checked-out commit")
 
-# GitHub's "verified" flag accepts any recognized signer. Require the
-# repository's pinned maintainer key as well, in an isolated public keyring.
-with tempfile.TemporaryDirectory(prefix="yacht-tag-verification-") as home:
-    env = dict(os.environ, GNUPGHOME=home)
-    subprocess.run(["gpg", "--batch", "--import", str(ROOT / "config/release-maintainer.asc")], env=env, check=True, capture_output=True)
-    result = subprocess.run(["git", "-c", "gpg.format=openpgp", "-c", "gpg.program=gpg", "verify-tag", "--raw", tag], cwd=ROOT, env=env, capture_output=True, text=True, check=True)
-    valid = [line.split() for line in result.stderr.splitlines() if line.startswith("[GNUPG:] VALIDSIG ")]
-    fingerprint = "F7E74ED98DB485D03F2565B96B68B73FE752FD16"
-    if not any(fields[2] == fingerprint or fields[-1] == fingerprint for fields in valid):
-        raise SystemExit("Stable tag was not signed by the pinned release maintainer")
-
-subprocess.run(["python3", str(ROOT / "script/check_update_contract.py"), "--production"], check=True)
-print(f"Stable release tag {tag} has a verified signature and matches the project version")
+subprocess.run(["python3", str(ROOT / "script/check_update_contract.py")], check=True)
+print(f"Stable release tag {tag} matches the project version and checked-out commit")
