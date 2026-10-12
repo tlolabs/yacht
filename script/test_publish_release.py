@@ -4,6 +4,8 @@
 import json
 import os
 import plistlib
+import subprocess
+import sys
 import tempfile
 import unittest
 import zipfile
@@ -49,6 +51,17 @@ class ReleaseTests(unittest.TestCase):
             (directory / "yacht-macos-arm64").write_bytes(b"tampered")
             with self.assertRaisesRegex(ValueError, "corrupt"):
                 release.verify_manifest(directory, "macos-arm64", SHA, "123", VERSION)
+
+    def test_prepare_cli_accepts_directory_after_options(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.package(directory)
+            commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=release.ROOT, text=True).strip()
+            subprocess.run([sys.executable, str(release.ROOT / "script/publish_release.py"), "prepare",
+                            "--target", "macos-arm64", "--source-sha", commit,
+                            "--source-ref", "refs/heads/main", "--run-id", "123", str(directory)],
+                           cwd=release.ROOT, check=True)
+            release.verify_manifest(directory, "macos-arm64", commit, "123", VERSION)
 
     def test_incomplete_package_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:

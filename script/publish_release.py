@@ -262,7 +262,7 @@ if __name__ == "__main__":
     parser.add_argument("--source-ref", required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("directory", type=Path, nargs="?")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     try:
         if args.mode != "initialize" and (args.target is None or args.directory is None):
             parser.error("prepare and publish require --target and directory")
