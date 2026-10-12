@@ -51,6 +51,51 @@ class ReportTests(unittest.TestCase):
         writes = [call for call in calls if call[0] != "GET"]
         self.assertEqual(writes, [("PATCH", "/repos/tlolabs/yacht/issues/7", {"state": "closed", "state_reason": "completed"})])
 
+    def test_successful_main_run_keeps_unresolved_release_failure(self):
+        release = {
+            "tag:v2.1.2": {
+                "run": "https://github.com/tlolabs/yacht/actions/runs/100/attempts/1",
+                "sha": "b" * 40,
+                "jobs": [{"name": "Linux arm64", "url": "https://github.com/tlolabs/yacht/actions/runs/100/job/9", "result": "failure"}],
+            }
+        }
+        issue = {"number": 7, "title": report_ci_failures.TITLE, "state": "open", "body": report_ci_failures.issue_body(release)}
+        calls = []
+
+        def api(method, path, payload=None):
+            calls.append((method, path, payload))
+            if "/jobs?" in path:
+                return {"jobs": [{"name": "macOS (ARM64)", "conclusion": "success"}]}
+            if method == "GET":
+                return [issue]
+            return issue
+
+        with patch.dict(os.environ, ENV), patch.object(report_ci_failures, "api", side_effect=api):
+            report_ci_failures.main()
+        writes = [call for call in calls if call[0] != "GET"]
+        self.assertEqual(len(writes), 1)
+        self.assertEqual(writes[0][0], "PATCH")
+        self.assertIn("tag:v2.1.2", writes[0][2]["body"])
+        self.assertIn("Linux arm64", writes[0][2]["body"])
+
+    def test_release_failure_uses_same_issue(self):
+        calls = []
+
+        def api(method, path, payload=None):
+            calls.append((method, path, payload))
+            if "/jobs?" in path:
+                return {"jobs": [{"name": "Release tag policy", "conclusion": "failure", "html_url": "https://github.com/tlolabs/yacht/actions/runs/123/job/5"}]}
+            if method == "GET":
+                return []
+            return {"number": 7}
+
+        env = dict(ENV, GITHUB_REF="refs/tags/v2.1.2")
+        with patch.dict(os.environ, env), patch.object(report_ci_failures, "api", side_effect=api):
+            report_ci_failures.main()
+        writes = [call for call in calls if call[0] != "GET"]
+        self.assertEqual(len(writes), 1)
+        self.assertIn("tag:v2.1.2", writes[0][2]["body"])
+
 
 if __name__ == "__main__":
     unittest.main()

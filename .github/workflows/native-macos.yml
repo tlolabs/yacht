@@ -290,8 +290,8 @@ jobs:
           retention-days: 14
   report-failures:
     name: Consolidated CI failure report
-    if: ${{ always() && github.ref == 'refs/heads/main' }}
-    needs: [compliance, dependency-security, macos, windows, linux, qt-macos-internal]
+    if: ${{ always() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+    needs: [compliance, dependency-security, tag-policy, macos, windows, linux, qt-macos-internal]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
