@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 import tomllib
 import zipfile
 from pathlib import Path
@@ -150,7 +151,14 @@ def release_info(tag):
     matches = [item for page in pages for item in page if item["tag_name"] == tag]
     if len(matches) > 1:
         raise RuntimeError(f"Duplicate releases exist for {tag}; resolve them before publication")
-    return matches[0] if matches else None
+    if matches:
+        return matches[0]
+    result = command("gh", "release", "view", tag, "--repo", os.environ["GITHUB_REPOSITORY"],
+                     "--json", "isDraft,isPrerelease,assets", check=False)
+    if result.returncode == 0:
+        data = json.loads(result.stdout)
+        return {"draft": data["isDraft"], "prerelease": data["isPrerelease"], "assets": data["assets"]}
+    return None
 
 
 def verify_tag(tag, commit, development):
@@ -178,8 +186,15 @@ def ensure_release(tag, commit, prerelease):
                 f"--latest={'false' if prerelease else 'true'}"]
         if prerelease:
             args.append("--prerelease")
-        command(*args, check=False)
-        info = release_info(tag)
+        result = command(*args, check=False)
+        if result.returncode:
+            raise RuntimeError(f"Could not create draft {tag}: {result.stderr.strip()}")
+        # GitHub may not include a just-created draft in the release list yet.
+        for _ in range(20):
+            info = release_info(tag)
+            if info is not None:
+                break
+            time.sleep(2)
     if info is None or info["prerelease"] != prerelease:
         raise RuntimeError(f"Release {tag} is missing or has the wrong channel")
     return info

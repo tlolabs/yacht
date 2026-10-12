@@ -68,8 +68,9 @@ class ReleaseTests(unittest.TestCase):
         command.return_value = SimpleNamespace(stdout="amd64\n")
         self.assertEqual(release.debian_field(Path("package.deb"), "Architecture"), "amd64")
 
+    @patch.object(release, "command")
     @patch.object(release, "github_json")
-    def test_draft_lookup_rejects_duplicate_releases(self, github_json):
+    def test_draft_lookup_rejects_duplicate_releases(self, github_json, command):
         tag = "dev-v2.1.2-" + SHA
         with patch.dict(os.environ, {"GITHUB_REPOSITORY": "tlolabs/yacht"}):
             github_json.return_value = [[{"tag_name": tag, "draft": True, "assets": []}]]
@@ -77,6 +78,10 @@ class ReleaseTests(unittest.TestCase):
             github_json.return_value = github_json.return_value * 2
             with self.assertRaisesRegex(RuntimeError, "Duplicate releases"):
                 release.release_info(tag)
+            github_json.return_value = [[]]
+            command.return_value = SimpleNamespace(returncode=0, stdout=json.dumps({
+                "isDraft": True, "isPrerelease": True, "assets": []}))
+            self.assertTrue(release.release_info(tag)["prerelease"])
 
     @patch.object(release, "release_info", return_value={"assets": [{"name": "package.zip"}]})
     @patch.object(release, "remote_digest", return_value="b" * 64)
