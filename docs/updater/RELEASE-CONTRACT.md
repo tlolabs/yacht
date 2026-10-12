@@ -60,9 +60,9 @@ and semantic version ordering uses `semver`, including `1.10.0 > 1.9.0`.
    private keys in managed CI secrets or an ephemeral local keychain. No new paid
    service is required by this design; existing platform signing policy remains.
 2. Bump the Cargo version; run sync, native generation, source contract checks,
-   locked Rust/native tests. Create the authorized signed stable tag. The current
-   tag checker verifies GitHub's annotated-tag signature and checked-out commit;
-   signer-to-maintainer enforcement still relies on repository release controls.
+   locked Rust/native tests. Create the authorized annotated stable tag. The tag
+   checker verifies its version and checked-out commit; cryptographic tag signing
+   is optional. The updater's separate artifact and feed signatures remain required.
 3. Build all six targets from that commit. Developer ID-sign nested macOS code,
    hardened runtime, notarize/staple/verify. Use the project's Azure Artifact
    Signing policy on Windows and verify shipped native binaries and installer.
@@ -81,7 +81,7 @@ and semantic version ordering uses `semver`, including `1.10.0 > 1.9.0`.
    `TLO_UPDATE_PRIVATE_KEY` (base64 32-byte seed), and `SPARKLE_PRIVATE_KEY` in the
    approved secret environment. Sparkle receives its key through stdin, not argv.
    Run `python3 script/build_update_metadata.py <assets> --sparkle-tools
-   <pinned-Sparkle-directory>/bin`. The command verifies the signed tag/version,
+   <pinned-Sparkle-directory>/bin`. The command verifies the tag/version,
    all six evidence records/digests, and delegates feed signing to Sparkle. The
    generic `tlo-release` sign/verify tool can be used by other apps; it checks
    cryptography/digests, not native signing or release authority by itself.
