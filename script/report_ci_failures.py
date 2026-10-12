@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Maintain one issue for unresolved main and release-tag workflow failures."""
+"""Maintain one issue for unresolved build, release and update workflow failures."""
 
 import json
 import os
@@ -32,7 +32,7 @@ def read_state(issue):
 
 def issue_body(state):
     lines = [
-        "Unresolved failures in `main` or release-tag workflows. Development may continue while these are investigated.",
+        "Unresolved build, release or update failures. Development may continue while these are investigated.",
         "",
     ]
     for key, record in sorted(state.items()):
@@ -70,7 +70,7 @@ def main():
     attempt = os.environ["GITHUB_RUN_ATTEMPT"]
     sha = os.environ["GITHUB_SHA"]
     ref = os.environ.get("GITHUB_REF", "refs/heads/main")
-    key = "main" if ref == "refs/heads/main" else "tag:" + ref.removeprefix("refs/tags/")
+    key = os.environ.get("CI_REPORT_KEY") or ("main" if ref == "refs/heads/main" else "tag:" + ref.removeprefix("refs/tags/"))
     base = "/repos/" + "/".join(quote(part, safe="") for part in repo.split("/"))
     jobs = api("GET", f"{base}/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100")["jobs"]
     failures = failed_jobs(jobs)

@@ -96,6 +96,24 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(len(writes), 1)
         self.assertIn("tag:v2.1.2", writes[0][2]["body"])
 
+    def test_update_qualification_failure_has_its_own_issue_section(self):
+        calls = []
+
+        def api(method, path, payload=None):
+            calls.append((method, path, payload))
+            if "/jobs?" in path:
+                return {"jobs": [{"name": "Published update authentication", "conclusion": "failure", "html_url": "https://github.com/tlolabs/yacht/actions/runs/123/job/6"}]}
+            if method == "GET":
+                return []
+            return {"number": 7}
+
+        env = dict(ENV, CI_REPORT_KEY="update:v2.1.2")
+        with patch.dict(os.environ, env), patch.object(report_ci_failures, "api", side_effect=api):
+            report_ci_failures.main()
+        writes = [call for call in calls if call[0] != "GET"]
+        self.assertEqual(len(writes), 1)
+        self.assertIn("update:v2.1.2", writes[0][2]["body"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -160,8 +160,8 @@ It is never the production Mac download. See [isolation safeguards](QT-MIGRATION
 
 The Native cross-platform workflow builds/tests six native targets on pull requests
 and main. Platform checks run separately, and successful development artifacts are
-retained for 30 days. Failed main and release-tag jobs remain visible and are
-summarized in one GitHub Issue; they do not prevent unrelated commits or pushes.
+retained for 30 days. Failed main, release-tag, and update-authentication jobs
+remain visible in one GitHub Issue; they do not prevent unrelated commits or pushes.
 A runnable nightly package is intended only for macOS (ARM64);
 the other nightly targets may compile/test without packaging.
 
