@@ -1,0 +1,64 @@
+name: Build macos application
+on:
+  workflow_call:
+    inputs:
+      arch:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    name: macOS (${{ inputs.arch }})
+    runs-on: ${{ inputs.arch == 'arm64' && 'macos-26' || 'macos-15-intel' }}
+    timeout-minutes: 35
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ inputs.arch == 'arm64' && '26.6' || '26.3' }}.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.98.1'
+          targets: ${{ inputs.arch == 'arm64' && 'aarch64-apple-darwin' || 'x86_64-apple-darwin' }}
+          components: rustfmt,clippy
+      - name: Verify native runner architecture
+        run: test "$(uname -m)" = '${{ inputs.arch == 'arm64' && 'arm64' || 'x86_64' }}'
+      - name: Rust tests and static checks
+        run: cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings && cargo test --workspace --locked
+      - name: Verify generated files
+        run: python3 script/sync_version.py && python3 script/generate_project.py && git diff --exit-code -- Yacht.xcodeproj platform/macos/Support/Info.plist platform/windows/Version.props platform/windows/app.manifest
+      - name: Pinned Sparkle authentication tools
+        run: |
+          ./script/prepare_sparkle.sh
+          python3 script/test_sparkle_tools.py build/sparkle/2.9.6/bin
+      - name: Swift binding tests
+        run: ./script/build_rust_macos.sh && swift test
+      - name: CLI compatibility regressions
+        run: python3 script/verify_compatibility.py
+      - name: Native ctypes binding tests
+        run: cargo build --workspace --locked && python3 script/test_native_binding.py target/debug/libyacht_ffi.dylib
+      - name: macOS UI tests
+        run: xcodebuild -project Yacht.xcodeproj -scheme Yacht -derivedDataPath build -destination 'platform=macOS,arch=${{ inputs.arch == 'arm64' && 'arm64' || 'x86_64' }}' -resultBundlePath build/UITests.xcresult test -quiet
+      - name: Package native macOS development build
+        if: github.event_name != 'schedule' || inputs.arch == 'arm64'
+        run: ./script/package.sh --arch ${{ inputs.arch }}
+      - name: Prepare verified release inputs
+        if: github.event_name != 'schedule' || inputs.arch == 'arm64'
+        run: python3 script/publish_release.py prepare --target macos-${{ inputs.arch }} --source-sha "$GITHUB_SHA" --source-ref "$GITHUB_REF" --run-id "$GITHUB_RUN_ID" release
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: macOS-${{ inputs.arch }}-UI-test-results
+          path: build/UITests.xcresult
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v6
+        if: github.event_name != 'schedule' || inputs.arch == 'arm64'
+        with:
+          name: YACHT-macos-${{ inputs.arch }}-${{ github.sha }}
+          path: |
+            release/YACHT-macos-${{ inputs.arch }}.zip
+            release/yacht-macos-${{ inputs.arch }}
+            release/SHA256SUMS-macos-${{ inputs.arch }}
+            release/publication-macos-${{ inputs.arch }}.json
+          if-no-files-found: error
+          retention-days: 30

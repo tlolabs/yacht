@@ -6,4 +6,6 @@ Keep automated unit, integration, functional, regression, accessibility, securit
 
 Build and release each supported platform independently. Publish a platform artifact only after its own build, tests, package checks, and functional verification succeed. Package signing and notarization are optional until configured; never claim an unsigned artifact is signed. Keep stable release tag verification before production signing. Preserve update signature verification and runtime security controls. Retry transient failures a bounded number of times after a relevant change, and retain the failure record when retries fail.
 
+Eligible `main` commits publish commit-bound `dev-vVERSION-SHA` prereleases automatically. Six read-only build jobs feed six separate, contents-write publisher jobs; each publisher verifies its own package and checksum and refuses to replace different published bytes. Documentation-only pushes do not create development releases. Development direct downloads are not signed automatic-update feed entries.
+
 Preserve supported macOS ARM64/x64, Windows x64/ARM64, and Linux x64/ARM64 targets. Do not weaken authentication, update signatures, artifact integrity checks, or platform runtime safeguards to make CI pass.

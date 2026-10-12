@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
     tags: ['v*', '!v1.*']
+    paths-ignore: ['**/*.md', 'docs/**']
   pull_request:
   workflow_dispatch:
   schedule:
@@ -27,6 +28,7 @@ jobs:
           python3 script/check_update_contract.py
           python3 script/test_ci_report.py
           python3 script/test_release_tag.py
+          python3 script/test_publish_release.py
           python3 script/test_update_release.py
           python3 -O script/test_update_release.py
       - name: Automated accessibility and platform support checks (nonblocking)
@@ -59,199 +61,36 @@ jobs:
           toolchain: stable
       - name: Audit Rust dependencies against RustSec advisories
         run: cargo install cargo-audit --locked && cargo audit
-  macos:
-    name: macOS (${{ matrix.display }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: macos-26
-            display: ARM64
-            xcode: '26.6'
-            arch: arm64
-            apple_arch: arm64
-            triple: aarch64-apple-darwin
-          # Avoid the iconservicesagent/Metal crash observed on macos-26-intel.
-          - runner: macos-15-intel
-            display: x64
-            xcode: '26.3'
-            arch: x64
-            apple_arch: x86_64
-            triple: x86_64-apple-darwin
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 35
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: '1.98.1'
-          targets: ${{ matrix.triple }}
-          components: rustfmt,clippy
-      - name: Verify native runner architecture
-        run: test "$(uname -m)" = '${{ matrix.apple_arch }}'
-      - name: Rust tests and static checks
-        run: cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings && cargo test --workspace --locked
-      - name: Verify generated files
-        run: python3 script/sync_version.py && python3 script/generate_project.py && git diff --exit-code -- Yacht.xcodeproj platform/macos/Support/Info.plist platform/windows/Version.props platform/windows/app.manifest
-      - name: Pinned Sparkle authentication tools
-        run: |
-          ./script/prepare_sparkle.sh
-          python3 script/test_sparkle_tools.py build/sparkle/2.9.6/bin
-      - name: Swift binding tests
-        run: ./script/build_rust_macos.sh && swift test
-      - name: CLI compatibility regressions
-        run: python3 script/verify_compatibility.py
-      - name: Native ctypes binding tests
-        run: cargo build --workspace --locked && python3 script/test_native_binding.py target/debug/libyacht_ffi.dylib
-      - name: macOS UI tests
-        run: xcodebuild -project Yacht.xcodeproj -scheme Yacht -derivedDataPath build -destination 'platform=macOS,arch=${{ matrix.apple_arch }}' -resultBundlePath build/UITests.xcresult test -quiet
-      - name: Package native macOS development build
-        if: github.event_name != 'schedule' || matrix.arch == 'arm64'
-        run: ./script/package.sh --arch ${{ matrix.arch }}
-      - uses: actions/upload-artifact@v6
-        if: always()
-        with:
-          name: macOS-${{ matrix.arch }}-UI-test-results
-          path: build/UITests.xcresult
-          if-no-files-found: ignore
-      - uses: actions/upload-artifact@v6
-        if: github.event_name != 'schedule' || matrix.arch == 'arm64'
-        with:
-          name: YACHT-macos-${{ matrix.arch }}-${{ github.sha }}
-          path: |
-            release/YACHT-macos-${{ matrix.arch }}.zip
-            release/yacht-macos-${{ matrix.arch }}
-            release/SHA256SUMS-macos-${{ matrix.arch }}
-          if-no-files-found: error
-          retention-days: 30
-  windows:
-    name: Windows ${{ matrix.arch }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: windows-2025
-            arch: x64
-            triple: x86_64-pc-windows-msvc
-            platform: x64
-            qt_host: windows
-            qt_arch: win64_msvc2022_64
-          - runner: windows-11-arm
-            arch: arm64
-            triple: aarch64-pc-windows-msvc
-            platform: ARM64
-            qt_host: windows_arm64
-            qt_arch: win64_msvc2022_arm64
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: '1.98.1'
-          targets: ${{ matrix.triple }}
-      - uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.8.0'
-          host: ${{ matrix.qt_host }}
-          target: 'desktop'
-          arch: ${{ matrix.qt_arch }}
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.12'
-      - name: Rust and CLI compatibility
-        shell: bash
-        run: cargo test --workspace --locked && python script/verify_compatibility.py
-      - name: Build library and Qt integration tests
-        shell: pwsh
-        run: |
-          cargo build --workspace --locked --release --target ${{ matrix.triple }}
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          cmake -S platform/qt -B build/qt -DCMAKE_BUILD_TYPE=Release
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          cmake --build build/qt --config Release
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          Copy-Item target/${{ matrix.triple }}/release/yacht_ffi.dll build/qt/tests/Release/ -ErrorAction SilentlyContinue
-          Copy-Item target/${{ matrix.triple }}/release/yacht_ffi.dll build/qt/tests/ -ErrorAction SilentlyContinue
-          $testExe = if (Test-Path build/qt/tests/Release/test_integration.exe) { "build/qt/tests/Release/test_integration.exe" } else { "build/qt/tests/test_integration.exe" }
-          & $testExe
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          python script/test_native_binding.py target/${{ matrix.triple }}/release/yacht_ffi.dll
-      - name: Ensure Inno Setup
-        if: github.event_name != 'schedule'
-        shell: pwsh
-        run: |
-          if (!(Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup --no-progress -y; if ($LASTEXITCODE) { exit $LASTEXITCODE } }
-      - name: Package native Windows application
-        if: github.event_name != 'schedule'
-        shell: pwsh
-        run: ./script/package_windows.ps1 -Architecture ${{ matrix.arch }}
-      - name: Publish native Windows application for scheduled UI test
-        if: github.event_name == 'schedule'
-        shell: pwsh
-        run: ./script/package_windows.ps1 -Architecture ${{ matrix.arch }} -BuildOnly
-      - name: Qt runtime integration
-        shell: pwsh
-        run: ./platform/windows/test_ui.ps1 -Executable "$PWD/target/windows-${{ matrix.arch }}/YachtApp.exe"
-      - uses: actions/upload-artifact@v6
-        if: github.event_name != 'schedule'
-        with:
-          name: YACHT-windows-${{ matrix.arch }}-${{ github.sha }}
-          path: |
-            release/YACHT-*-windows-*
-            release/SHA256SUMS-windows-*
-          if-no-files-found: error
-          retention-days: 30
-  linux:
-    name: Linux ${{ matrix.arch }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: ubuntu-24.04
-            arch: x64
-          - runner: ubuntu-24.04-arm
-            arch: arm64
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: '1.98.1'
-      - name: Install native runtime, Qt and UI test dependencies
-        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-base-private-dev libqt6widgets6t64 libqt6gui6t64 libqt6core6t64 libqt6network6t64 xdg-utils xvfb dbus-x11 at-spi2-core desktop-file-utils apparmor
-      - name: Rust, CLI and native binding tests
-        run: |
-          cargo test --workspace --locked
-          python3 script/verify_compatibility.py
-          cargo build --workspace --locked
-          python3 script/test_native_binding.py target/debug/libyacht_ffi.so
-      - name: Shared presentation and native Qt integration
-        run: |
-          cmake -S platform/qt -B build/qt-linux -DCMAKE_BUILD_TYPE=Release
-          cmake --build build/qt-linux --target test_integration YachtApp
-          cp target/debug/libyacht_ffi.so build/qt-linux/tests/
-          cp target/debug/libyacht_ffi.so build/qt-linux/
-          xvfb-run -a dbus-run-session -- ./build/qt-linux/tests/test_integration
-          xvfb-run -a dbus-run-session -- python3 script/test_qt_ui.py build/qt-linux/YachtApp
-      - name: Package and validate Linux artifacts
-        if: github.event_name != 'schedule'
-        run: |
-          desktop-file-validate platform/linux/data/*.desktop
-          ./script/package_linux.sh
-      - uses: actions/upload-artifact@v6
-        if: github.event_name != 'schedule'
-        with:
-          name: YACHT-linux-${{ matrix.arch }}-${{ github.sha }}
-          path: |
-            release/YACHT-*-linux-*
-            release/SHA256SUMS-linux-*
-          if-no-files-found: error
-          retention-days: 30
-
+  macos-arm64:
+    name: macos arm64
+    uses: ./.github/workflows/build-macos.yml
+    with:
+      arch: arm64
+  macos-x64:
+    name: macos x64
+    uses: ./.github/workflows/build-macos.yml
+    with:
+      arch: x64
+  windows-x64:
+    name: windows x64
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      arch: x64
+  windows-arm64:
+    name: windows arm64
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      arch: arm64
+  linux-x64:
+    name: linux x64
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      arch: x64
+  linux-arm64:
+    name: linux arm64
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      arch: arm64
   qt-macos-internal:
     name: Qt INTERNAL reference (macOS ARM64)
     runs-on: macos-26
@@ -289,10 +128,154 @@ jobs:
           path: build/internal-artifacts/YACHT-Qt-INTERNAL-macos-arm64.zip
           if-no-files-found: error
           retention-days: 14
+  publish-macos-arm64:
+    name: Publish macos-arm64
+    needs: [macos-arm64]
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) &&
+      needs.macos-arm64.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: YACHT-macos-arm64-${{ github.sha }}
+          path: release-inputs
+      - name: Verify identity and publish this platform
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 script/publish_release.py publish --target macos-arm64 --source-sha "$GITHUB_SHA" --source-ref "$GITHUB_REF" --run-id "$GITHUB_RUN_ID" release-inputs
+  publish-macos-x64:
+    name: Publish macos-x64
+    needs: [macos-x64]
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) &&
+      needs.macos-x64.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: YACHT-macos-x64-${{ github.sha }}
+          path: release-inputs
+      - name: Verify identity and publish this platform
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 script/publish_release.py publish --target macos-x64 --source-sha "$GITHUB_SHA" --source-ref "$GITHUB_REF" --run-id "$GITHUB_RUN_ID" release-inputs
+  publish-windows-x64:
+    name: Publish windows-x64
+    needs: [windows-x64]
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) &&
+      needs.windows-x64.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: YACHT-windows-x64-${{ github.sha }}
+          path: release-inputs
+      - name: Verify identity and publish this platform
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 script/publish_release.py publish --target windows-x64 --source-sha "$GITHUB_SHA" --source-ref "$GITHUB_REF" --run-id "$GITHUB_RUN_ID" release-inputs
+  publish-windows-arm64:
+    name: Publish windows-arm64
+    needs: [windows-arm64]
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) &&
+      needs.windows-arm64.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: YACHT-windows-arm64-${{ github.sha }}
+          path: release-inputs
+      - name: Verify identity and publish this platform
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 script/publish_release.py publish --target windows-arm64 --source-sha "$GITHUB_SHA" --source-ref "$GITHUB_REF" --run-id "$GITHUB_RUN_ID" release-inputs
+  publish-linux-x64:
+    name: Publish linux-x64
+    needs: [linux-x64]
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) &&
+      needs.linux-x64.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: YACHT-linux-x64-${{ github.sha }}
+          path: release-inputs
+      - name: Verify identity and publish this platform
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 script/publish_release.py publish --target linux-x64 --source-sha "$GITHUB_SHA" --source-ref "$GITHUB_REF" --run-id "$GITHUB_RUN_ID" release-inputs
+  publish-linux-arm64:
+    name: Publish linux-arm64
+    needs: [linux-arm64]
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) &&
+      needs.linux-arm64.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: YACHT-linux-arm64-${{ github.sha }}
+          path: release-inputs
+      - name: Verify identity and publish this platform
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 script/publish_release.py publish --target linux-arm64 --source-sha "$GITHUB_SHA" --source-ref "$GITHUB_REF" --run-id "$GITHUB_RUN_ID" release-inputs
   report-failures:
     name: Consolidated CI failure report
     if: ${{ always() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
-    needs: [compliance, dependency-security, tag-policy, macos, windows, linux, qt-macos-internal]
+    needs: [compliance, dependency-security, tag-policy, macos-arm64, macos-x64, windows-x64, windows-arm64, linux-x64, linux-arm64, qt-macos-internal, publish-macos-arm64, publish-macos-x64, publish-windows-x64, publish-windows-arm64, publish-linux-x64, publish-linux-arm64]
     runs-on: ubuntu-24.04
     concurrency:
       group: yacht-ci-failure-report

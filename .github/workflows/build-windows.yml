@@ -1,0 +1,77 @@
+name: Build windows application
+on:
+  workflow_call:
+    inputs:
+      arch:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    name: Windows ${{ inputs.arch }}
+    runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2025' }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.98.1'
+          targets: ${{ inputs.arch == 'arm64' && 'aarch64-pc-windows-msvc' || 'x86_64-pc-windows-msvc' }}
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.0'
+          host: ${{ inputs.arch == 'arm64' && 'windows_arm64' || 'windows' }}
+          target: 'desktop'
+          arch: ${{ inputs.arch == 'arm64' && 'win64_msvc2022_arm64' || 'win64_msvc2022_64' }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Rust and CLI compatibility
+        shell: bash
+        run: cargo test --workspace --locked && python script/verify_compatibility.py
+      - name: Build library and Qt integration tests
+        shell: pwsh
+        run: |
+          cargo build --workspace --locked --release --target ${{ inputs.arch == 'arm64' && 'aarch64-pc-windows-msvc' || 'x86_64-pc-windows-msvc' }}
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cmake -S platform/qt -B build/qt -DCMAKE_BUILD_TYPE=Release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cmake --build build/qt --config Release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Copy-Item target/${{ inputs.arch == 'arm64' && 'aarch64-pc-windows-msvc' || 'x86_64-pc-windows-msvc' }}/release/yacht_ffi.dll build/qt/tests/Release/ -ErrorAction SilentlyContinue
+          Copy-Item target/${{ inputs.arch == 'arm64' && 'aarch64-pc-windows-msvc' || 'x86_64-pc-windows-msvc' }}/release/yacht_ffi.dll build/qt/tests/ -ErrorAction SilentlyContinue
+          $testExe = if (Test-Path build/qt/tests/Release/test_integration.exe) { "build/qt/tests/Release/test_integration.exe" } else { "build/qt/tests/test_integration.exe" }
+          & $testExe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python script/test_native_binding.py target/${{ inputs.arch == 'arm64' && 'aarch64-pc-windows-msvc' || 'x86_64-pc-windows-msvc' }}/release/yacht_ffi.dll
+      - name: Ensure Inno Setup
+        if: github.event_name != 'schedule'
+        shell: pwsh
+        run: |
+          if (!(Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup --no-progress -y; if ($LASTEXITCODE) { exit $LASTEXITCODE } }
+      - name: Package native Windows application
+        if: github.event_name != 'schedule'
+        shell: pwsh
+        run: ./script/package_windows.ps1 -Architecture ${{ inputs.arch }}
+      - name: Publish native Windows application for scheduled UI test
+        if: github.event_name == 'schedule'
+        shell: pwsh
+        run: ./script/package_windows.ps1 -Architecture ${{ inputs.arch }} -BuildOnly
+      - name: Qt runtime integration
+        shell: pwsh
+        run: ./platform/windows/test_ui.ps1 -Executable "$PWD/target/windows-${{ inputs.arch }}/YachtApp.exe"
+      - name: Prepare verified release inputs
+        if: github.event_name != 'schedule'
+        shell: bash
+        run: python script/publish_release.py prepare --target windows-${{ inputs.arch }} --source-sha "$GITHUB_SHA" --source-ref "$GITHUB_REF" --run-id "$GITHUB_RUN_ID" release
+      - uses: actions/upload-artifact@v6
+        if: github.event_name != 'schedule'
+        with:
+          name: YACHT-windows-${{ inputs.arch }}-${{ github.sha }}
+          path: |
+            release/YACHT-*-windows-*
+            release/SHA256SUMS-windows-*
+            release/publication-windows-${{ inputs.arch }}.json
+          if-no-files-found: error
+          retention-days: 30

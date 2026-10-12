@@ -8,7 +8,11 @@ The Git tag is the release version: stable `vMAJOR.MINOR.PATCH`, prerelease `vMA
 |---|---|
 | Stable | Version-matched tag authorized by Thomas Lothian; verified platform artifacts, checksums, and GitHub Release. Signing and notarization are optional until configured. |
 | Prerelease | Tagged beta/RC; clearly marked prerelease, no production signing |
-| Development | `main` build; clearly unsupported, no production signing, artifact retention 30 days; routine runnable nightly package only for macOS (ARM64) |
+| Development | Eligible `main` push; automatic `dev-vVERSION-COMMIT` GitHub prerelease, direct-download artifacts unsigned or ad-hoc signed, no production update feed |
+
+The native workflow skips documentation-only pushes. Every other `main` push builds the six targets independently. Each successful platform job writes an artifact manifest with its source commit, workflow run, version, file names, and SHA-256 hashes. Its own dedicated publisher checks that manifest, verifies the package and checksum contents, creates the commit-bound development tag and prerelease if needed, and uploads only that platform's files. Publishers have `contents: write`; build and test jobs remain read-only. A second run for the same commit is idempotent. A different asset with the same name is a publication error, never an overwrite. Later platforms can join an already published prerelease. A platform's failure appears in the consolidated CI issue without blocking another publisher.
+
+Development releases are direct downloads for community testing. They are not signed automatic updates. The published-update qualification workflow continues to reject production updates when trust keys or signatures are missing. The same independent publishers can process version-matched stable and beta/RC tags under the existing tag policy; stable tags still require an annotated source tag. No manual tag is needed for a development release.
 
 GitHub Releases are the canonical direct download and update source. The candidate updater uses signed GitHub Release metadata and native adapters; see [the update release contract](updater/RELEASE-CONTRACT.md). Production keys and full installation qualification are still required. A future project website should link to GitHub releases. Native app stores, if used, are the exception.
 
@@ -24,4 +28,4 @@ Release notes use **Highlights**, **Changes**, **Fixes**, **Known issues**, **Su
 
 ## Current implementation gaps
 
-Current scripts still emit Windows Inno installers and Linux `.deb`/tar files. Automatic release drafting from development-signed outputs has been disabled. Azure Artifact Signing, Linux AppImage packaging, complete SBOM generation and attestation are not wired. Existing v2.1.1 artifacts are historical and should not be relabeled. Production signing credentials and a Linux GPG key must be provisioned outside the repository. See [CODE_SIGNING_POLICY.md](../CODE_SIGNING_POLICY.md) for the policy. Until these gaps are closed, do not publish a new release as fully signed/validated.
+Current scripts still emit Windows Inno installers and Linux `.deb`/tar files. Azure Artifact Signing, Linux AppImage packaging, complete SBOM generation and attestation are not wired. Existing v2.1.1 artifacts are historical and should not be relabeled. Production signing credentials and a Linux GPG key must be provisioned outside the repository. See [CODE_SIGNING_POLICY.md](../CODE_SIGNING_POLICY.md) for the policy. Development direct downloads can publish without those credentials; do not describe them as fully signed or eligible for automatic updates.

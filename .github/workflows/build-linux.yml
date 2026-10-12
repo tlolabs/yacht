@@ -1,0 +1,53 @@
+name: Build linux application
+on:
+  workflow_call:
+    inputs:
+      arch:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    name: Linux ${{ inputs.arch }}
+    runs-on: ${{ inputs.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.98.1'
+      - name: Install native runtime, Qt and UI test dependencies
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-base-private-dev libqt6widgets6t64 libqt6gui6t64 libqt6core6t64 libqt6network6t64 xdg-utils xvfb dbus-x11 at-spi2-core desktop-file-utils apparmor
+      - name: Rust, CLI and native binding tests
+        run: |
+          cargo test --workspace --locked
+          python3 script/verify_compatibility.py
+          cargo build --workspace --locked
+          python3 script/test_native_binding.py target/debug/libyacht_ffi.so
+      - name: Shared presentation and native Qt integration
+        run: |
+          cmake -S platform/qt -B build/qt-linux -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/qt-linux --target test_integration YachtApp
+          cp target/debug/libyacht_ffi.so build/qt-linux/tests/
+          cp target/debug/libyacht_ffi.so build/qt-linux/
+          xvfb-run -a dbus-run-session -- ./build/qt-linux/tests/test_integration
+          xvfb-run -a dbus-run-session -- python3 script/test_qt_ui.py build/qt-linux/YachtApp
+      - name: Package and validate Linux artifacts
+        if: github.event_name != 'schedule'
+        run: |
+          desktop-file-validate platform/linux/data/*.desktop
+          ./script/package_linux.sh
+      - name: Prepare verified release inputs
+        if: github.event_name != 'schedule'
+        run: python3 script/publish_release.py prepare --target linux-${{ inputs.arch }} --source-sha "$GITHUB_SHA" --source-ref "$GITHUB_REF" --run-id "$GITHUB_RUN_ID" release
+      - uses: actions/upload-artifact@v6
+        if: github.event_name != 'schedule'
+        with:
+          name: YACHT-linux-${{ inputs.arch }}-${{ github.sha }}
+          path: |
+            release/YACHT-*-linux-*
+            release/SHA256SUMS-linux-*
+            release/publication-linux-${{ inputs.arch }}.json
+          if-no-files-found: error
+          retention-days: 30
