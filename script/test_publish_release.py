@@ -2,6 +2,7 @@
 """Exercise release identity, package integrity, and immutable asset policy."""
 
 import json
+import os
 import plistlib
 import tempfile
 import unittest
@@ -66,6 +67,16 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(release.debian_field(Path("package.deb"), "Version"), VERSION)
         command.return_value = SimpleNamespace(stdout="amd64\n")
         self.assertEqual(release.debian_field(Path("package.deb"), "Architecture"), "amd64")
+
+    @patch.object(release, "github_json")
+    def test_draft_lookup_rejects_duplicate_releases(self, github_json):
+        tag = "dev-v2.1.2-" + SHA
+        with patch.dict(os.environ, {"GITHUB_REPOSITORY": "tlolabs/yacht"}):
+            github_json.return_value = [[{"tag_name": tag, "draft": True, "assets": []}]]
+            self.assertTrue(release.release_info(tag)["draft"])
+            github_json.return_value = github_json.return_value * 2
+            with self.assertRaisesRegex(RuntimeError, "Duplicate releases"):
+                release.release_info(tag)
 
     @patch.object(release, "release_info", return_value={"assets": [{"name": "package.zip"}]})
     @patch.object(release, "remote_digest", return_value="b" * 64)

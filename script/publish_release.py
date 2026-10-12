@@ -143,7 +143,14 @@ def github_json(endpoint, *args, check=True):
 
 
 def release_info(tag):
-    return github_json(f"repos/{os.environ['GITHUB_REPOSITORY']}/releases/tags/{tag}", check=False)
+    # GitHub's release-by-tag endpoint returns 404 for drafts, even when the
+    # authenticated release list and gh release view can see them.
+    pages = github_json(f"repos/{os.environ['GITHUB_REPOSITORY']}/releases", "-X", "GET",
+                        "-f", "per_page=100", "--paginate", "--slurp")
+    matches = [item for page in pages for item in page if item["tag_name"] == tag]
+    if len(matches) > 1:
+        raise RuntimeError(f"Duplicate releases exist for {tag}; resolve them before publication")
+    return matches[0] if matches else None
 
 
 def verify_tag(tag, commit, development):
@@ -200,6 +207,17 @@ def upload(tag, path):
     print(f"Verified {path.name}: sha256={local_hash}")
 
 
+def initialize(source_sha, source_ref):
+    commit = source_commit(source_sha)
+    tag, prerelease = identity(source_ref, commit, version())
+    if source_ref.startswith("refs/tags/"):
+        env = {**os.environ, "GH_REPO": os.environ["GITHUB_REPOSITORY"], "RELEASE_TAG": tag}
+        subprocess.run(["python3", "script/check_release_tag.py"], cwd=ROOT, env=env, check=True)
+    verify_tag(tag, commit, source_ref == "refs/heads/main")
+    ensure_release(tag, commit, prerelease)
+    print(f"Initialized release {tag} for {commit}")
+
+
 def publish(directory, target, source_sha, source_ref, run_id):
     if target not in TARGETS or not re.fullmatch(r"[0-9]+", run_id):
         raise ValueError("Invalid target or workflow run")
@@ -211,7 +229,9 @@ def publish(directory, target, source_sha, source_ref, run_id):
         env = {**os.environ, "GH_REPO": os.environ["GITHUB_REPOSITORY"], "RELEASE_TAG": tag}
         subprocess.run(["python3", "script/check_release_tag.py"], cwd=ROOT, env=env, check=True)
     verify_tag(tag, commit, source_ref == "refs/heads/main")
-    ensure_release(tag, commit, prerelease)
+    info = release_info(tag)
+    if info is None or info["prerelease"] != prerelease:
+        raise RuntimeError(f"Initialized release {tag} is missing or has the wrong channel")
     for name in [names[-1], *names[:-1]]:
         upload(tag, directory / name)
     command("gh", "release", "edit", tag, "--repo", os.environ["GITHUB_REPOSITORY"], "--draft=false",
@@ -221,16 +241,20 @@ def publish(directory, target, source_sha, source_ref, run_id):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=["prepare", "publish"])
-    parser.add_argument("--target", required=True, choices=sorted(TARGETS))
+    parser.add_argument("mode", choices=["prepare", "initialize", "publish"])
+    parser.add_argument("--target", choices=sorted(TARGETS))
     parser.add_argument("--source-sha", required=True)
     parser.add_argument("--source-ref", required=True)
     parser.add_argument("--run-id", required=True)
-    parser.add_argument("directory", type=Path)
+    parser.add_argument("directory", type=Path, nargs="?")
     args = parser.parse_args()
     try:
+        if args.mode != "initialize" and (args.target is None or args.directory is None):
+            parser.error("prepare and publish require --target and directory")
         commit = source_commit(args.source_sha)
-        if args.mode == "prepare":
+        if args.mode == "initialize":
+            initialize(args.source_sha, args.source_ref)
+        elif args.mode == "prepare":
             manifest(args.directory, args.target, commit, args.run_id, version())
         else:
             publish(args.directory, args.target, args.source_sha, args.source_ref, args.run_id)
