@@ -39,7 +39,7 @@ StyleField::StyleField(const QString &key, const QString &label,
 
     if (m_isFlag) {
         m_checkBox = new QCheckBox(QStringLiteral("Enabled"), this);
-        m_checkBox->setAccessibleName(m_label);
+        m_checkBox->setAccessibleName(QStringLiteral("%1 Enabled").arg(m_label));
         m_checkBox->setAccessibleDescription(QStringLiteral("Toggle %1").arg(m_label));
         m_checkBox->setToolTip(m_label);
         lbl->setBuddy(m_checkBox);
@@ -159,6 +159,13 @@ void StyleField::onPickColor() {
         return;
     }
     setFieldText(color.name(QColor::HexRgb));
+}
+
+QWidget *StyleField::inputWidget() const {
+    if (m_checkBox) return m_checkBox;
+    if (m_comboBox) return m_comboBox;
+    if (m_lineEdit) return m_lineEdit;
+    return nullptr;
 }
 
 } // namespace Yacht

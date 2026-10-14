@@ -27,6 +27,9 @@ public:
     void setFieldText(const QString &text);
     QString fieldText() const;
 
+    QWidget *inputWidget() const;
+    QPushButton *colorButton() const { return m_colorButton; }
+
 signals:
     void valueChanged();
 

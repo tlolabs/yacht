@@ -111,6 +111,7 @@ private:
     void applyAppearance(const QString &appearance);
     bool mayClose();
     void downloadAndVerifyUpdate(const QString &ver, const QString &sha256);
+    void announceStatus(const QString &message, bool isAlert = false);
 
     std::shared_ptr<IDesktopServices> m_desktop;
     Preferences m_preferences;

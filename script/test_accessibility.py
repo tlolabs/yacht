@@ -60,6 +60,20 @@ def audit_macos_swiftui():
         ".accessibilityValue(" in inspector_text,
         "StyleInspector provides dynamic accessibility values for numeric inputs",
     )
+    # Check WCAG 2.5.3 label-in-name alignment for preset save input
+    check(
+        'accessibilityLabel("Save as preset name")' in inspector_text,
+        "StyleInspector aligns visible 'Save as' prompt with accessible name (WCAG 2.5.3)",
+    )
+
+    # Check VoiceOver status announcement policy
+    content_text = (
+        ROOT / "platform/macos/Sources/YachtApp/Views/ContentView.swift"
+    ).read_text(encoding="utf-8")
+    check(
+        "notification: .announcementRequested" in content_text,
+        "ContentView announces completion, cancellation and error transitions via VoiceOver",
+    )
 
 
 def audit_qt():
@@ -94,13 +108,36 @@ def audit_qt():
             f"{src.name} wires buddy labels for accessible relationships",
         )
 
+    # Check WCAG 2.5.3 label-in-name alignment for checkbox flag controls
+    style_field_text = (ROOT / "platform/qt/src/StyleField.cpp").read_text(encoding="utf-8")
+    check(
+        'setAccessibleName(QStringLiteral("%1 Enabled").arg(m_label))' in style_field_text,
+        "StyleField aligns visible 'Enabled' checkbox label with accessible name (WCAG 2.5.3)",
+    )
+
+    # Check status announcement policy and accessible events
+    main_window = (ROOT / "platform/qt/src/MainWindow.cpp").read_text(encoding="utf-8")
+    check(
+        "QAccessible::updateAccessibility" in main_window and "announceStatus(" in main_window,
+        "MainWindow implements dynamic status announcement policy via QAccessible events",
+    )
+
+    # Check accessible tab order chain through all style fields
+    check(
+        "for (StyleField *field : m_styleFields)" in main_window and "QWidget::setTabOrder(" in main_window,
+        "MainWindow chains accessible keyboard tab order through all style fields",
+    )
+
+    # Check flexible sidebar scaling and horizontal scrollbar
+    check(
+        "scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded)" in main_window,
+        "Sidebar supports flexible horizontal scaling and scrolling under high DPI / magnification",
+    )
+
     # Check dark theme tooltip contrast bug is absent
     desktop_services = (
         ROOT / "platform/qt/src/DesktopServices.cpp"
     ).read_text(encoding="utf-8")
-    main_window = (ROOT / "platform/qt/src/MainWindow.cpp").read_text(
-        encoding="utf-8"
-    )
     check(
         "m_desktop->applyAppearance(appearance)" in main_window,
         "MainWindow delegates appearance changes to the shared desktop service",

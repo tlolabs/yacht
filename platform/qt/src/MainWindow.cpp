@@ -4,6 +4,7 @@
 #include "Presets.h"
 #include "UpdateClient.h"
 
+#include <QAccessible>
 #include <QAction>
 #include <QApplication>
 #include <QComboBox>
@@ -174,9 +175,9 @@ void MainWindow::setupUi() {
     // Left Sidebar: Presets & Style Fields
     auto *scrollArea = new QScrollArea(this);
     scrollArea->setWidgetResizable(true);
-    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scrollArea->setMinimumWidth(310);
-    scrollArea->setMaximumWidth(400);
+    scrollArea->setMaximumWidth(600);
 
     m_sidebarWidget = new QWidget(scrollArea);
     auto *sidebarLayout = new QVBoxLayout(m_sidebarWidget);
@@ -406,7 +407,20 @@ void MainWindow::setupUi() {
     QWidget::setTabOrder(m_savePresetEdit, savePresetBtn);
     QWidget::setTabOrder(savePresetBtn, styledBtn);
     QWidget::setTabOrder(styledBtn, unstyledBtn);
-    QWidget::setTabOrder(unstyledBtn, m_delimiterCombo);
+
+    QWidget *prevWidget = unstyledBtn;
+    for (StyleField *field : m_styleFields) {
+        if (auto *input = field->inputWidget()) {
+            QWidget::setTabOrder(prevWidget, input);
+            prevWidget = input;
+            if (auto *colorBtn = field->colorButton()) {
+                QWidget::setTabOrder(prevWidget, colorBtn);
+                prevWidget = colorBtn;
+            }
+        }
+    }
+
+    QWidget::setTabOrder(prevWidget, m_delimiterCombo);
     QWidget::setTabOrder(m_delimiterCombo, m_recentCombo);
     QWidget::setTabOrder(m_recentCombo, openRecentBtn);
     QWidget::setTabOrder(openRecentBtn, m_tabWidget);
@@ -877,11 +891,11 @@ void MainWindow::copyHtmlToClipboard() {
         });
         QString html = htmlVal.toString();
         m_desktop->setClipboard(html);
-        m_statusLabel->setText(QStringLiteral("Copied complete HTML document"));
+        announceStatus(QStringLiteral("Copied complete HTML document"));
     } catch (const YachtCancelledException &) {
-        m_statusLabel->setText(QStringLiteral("Cancelled"));
+        announceStatus(QStringLiteral("Cancelled"), true);
     } catch (const std::exception &e) {
-        m_statusLabel->setText(QString::fromUtf8(e.what()));
+        announceStatus(QString::fromUtf8(e.what()), true);
         m_desktop->showMessage(QStringLiteral("YACHT"), QString::fromUtf8(e.what()));
     }
     setBusy(false);
@@ -926,14 +940,14 @@ void MainWindow::exportTo(const QString &path, bool overwrite) {
                                [this] { return m_cancelled.load(); });
         });
         m_lastExport = path;
-        m_statusLabel->setText(QStringLiteral("Exported ") + QFileInfo(path).fileName());
+        announceStatus(QStringLiteral("Exported ") + QFileInfo(path).fileName());
         guard.disarm();
     } catch (const YachtCancelledException &) {
-        m_statusLabel->setText(QStringLiteral("Cancelled"));
+        announceStatus(QStringLiteral("Cancelled"), true);
         guard.disarm();
         throw;
     } catch (const std::exception &e) {
-        m_statusLabel->setText(QString::fromUtf8(e.what()));
+        announceStatus(QString::fromUtf8(e.what()), true);
         guard.disarm();
         throw;
     }
@@ -947,7 +961,15 @@ void MainWindow::cancelActiveWork() {
     m_cancelled = true;
     m_updateCancelled = true;
     m_previewDebounceTimer.stop();
-    m_statusLabel->setText(QStringLiteral("Cancellation requested"));
+    announceStatus(QStringLiteral("Cancellation requested"), true);
+}
+
+void MainWindow::announceStatus(const QString &message, bool isAlert) {
+    m_statusLabel->setText(message);
+    if (QAccessible::isActive()) {
+        QAccessibleEvent event(m_statusLabel, isAlert ? QAccessible::Alert : QAccessible::NameChanged);
+        QAccessible::updateAccessibility(&event);
+    }
 }
 
 void MainWindow::onSettings() {

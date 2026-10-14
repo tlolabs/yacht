@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 import YachtCore
@@ -44,6 +45,11 @@ struct ContentView: View {
         } isTargeted: { dropTargeted = $0 }
         .overlay { if dropTargeted { RoundedRectangle(cornerRadius: 8).stroke(.tint, lineWidth: 3).padding(4).allowsHitTesting(false) } }
         .onChange(of: workspace.preferences.previewRows) { workspace.schedulePreview() }
+        .onChange(of: workspace.status) { newStatus in
+            if !newStatus.isEmpty && !newStatus.contains("Reading") && !newStatus.contains("Rendering") {
+                NSAccessibility.post(element: NSApp.mainWindow as Any, notification: .announcementRequested, userInfo: [.announcement: newStatus])
+            }
+        }
     }
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {

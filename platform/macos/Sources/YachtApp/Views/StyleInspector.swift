@@ -28,7 +28,7 @@ struct StyleInspector: View {
                 }
                 TextField("Save as", text: $presetName)
                     .accessibilityIdentifier("presetName")
-                    .accessibilityLabel("Preset name")
+                    .accessibilityLabel("Save as preset name")
                     .help("Enter a name to save current style settings")
                 Button("Save Current") {
                     if workspace.preferences.presets[presetName.trimmingCharacters(in: .whitespacesAndNewlines)] != nil { confirmReplace = true }
