@@ -1,0 +1,20 @@
+Community Data License Agreement – Permissive, Version 2.0
+
+This Community Data License Agreement – Permissive, Version 2.0 ("Agreement") governs the use and sharing of Data made available by any Data Provider. By exercising any of the permissions granted under this Agreement, You accept and agree to be bound by the terms and conditions of this Agreement.
+
+1. Definitions
+1.1 "Data" means the collection of information made available by any Data Provider under this Agreement.
+1.2 "Data Provider" means any individual, entity, or combination thereof that provides Data under this Agreement.
+1.3 "Recipient" or "You" means each individual or entity exercising rights under this Agreement.
+1.4 "Ledger" means a distributed shared ledger or database.
+
+2. Permissions and Grant
+2.1 Grant. Each Data Provider hereby grants to You a worldwide, royalty-free, irrevocable, non-exclusive license to use, access, analyze, copy, modify, create derivative works of, and share the Data for any purpose.
+
+3. Conditions
+3.1 Attribution. If You share the Data, or create and share a work based on the Data, You must retain any copyright, trademark, and other intellectual property and attribution notices that are included in the Data.
+3.2 No Other Conditions. No other conditions are imposed on Your use or sharing of the Data.
+
+4. Disclaimer of Warranties and Limitation of Liability
+4.1 Disclaimer of Warranties. The Data is provided on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including, without limitation, any warranties or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE.
+4.2 Limitation of Liability. IN NO EVENT SHALL ANY DATA PROVIDER BE LIABLE TO YOU FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, LOST PROFITS) ARISING IN ANY WAY OUT OF THIS AGREEMENT OR THE USE OF THE DATA.

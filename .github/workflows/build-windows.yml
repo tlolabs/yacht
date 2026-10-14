@@ -13,18 +13,18 @@ jobs:
     runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2025' }}
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@e8b4e760db708b770da6b55e396e67776d0fa733 # stable
         with:
           toolchain: '1.98.1'
           targets: ${{ inputs.arch == 'arm64' && 'aarch64-pc-windows-msvc' || 'x86_64-pc-windows-msvc' }}
-      - uses: jurplel/install-qt-action@v4
+      - uses: jurplel/install-qt-action@a40733519c2c62c2f42a5cb83d47ad9269411832 # v4.1.1
         with:
           version: '6.8.2'
           host: ${{ inputs.arch == 'arm64' && 'windows_arm64' || 'windows' }}
           target: 'desktop'
           arch: ${{ inputs.arch == 'arm64' && 'win64_msvc2022_arm64' || 'win64_msvc2022_64' }}
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: '3.12'
       - name: Rust and CLI compatibility
@@ -65,7 +65,7 @@ jobs:
         if: github.event_name != 'schedule'
         shell: bash
         run: python script/publish_release.py prepare --target windows-${{ inputs.arch }} --source-sha "$GITHUB_SHA" --source-ref "$GITHUB_REF" --run-id "$GITHUB_RUN_ID" release
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         if: github.event_name != 'schedule'
         with:
           name: YACHT-windows-${{ inputs.arch }}-${{ github.sha }}

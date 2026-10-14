@@ -1,0 +1,2211 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "YACHT-2.1.2",
+  "documentNamespace": "https://github.com/tlolabs/yacht/spdx/v2.1.2",
+  "creationInfo": {
+    "creators": [
+      "Tool: tlo-labs-dependency-inventory/v1"
+    ],
+    "created": "2026-10-14T00:00:00Z"
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-YACHT",
+      "name": "yacht",
+      "versionInfo": "2.1.2",
+      "downloadLocation": "https://github.com/tlolabs/yacht",
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseDeclared": "GPL-3.0-or-later",
+      "filesAnalyzed": false,
+      "supplier": "Organization: TLO Labs"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-aho-corasick-1.1.5",
+      "name": "aho-corasick",
+      "versionInfo": "1.1.5",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unlicense OR MIT",
+      "licenseDeclared": "Unlicense OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-atomic-waker-1.1.2",
+      "name": "atomic-waker",
+      "versionInfo": "1.1.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-base64-0.22.1",
+      "name": "base64",
+      "versionInfo": "0.22.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-base64-0.23.1",
+      "name": "base64",
+      "versionInfo": "0.23.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-bitflags-2.13.2",
+      "name": "bitflags",
+      "versionInfo": "2.13.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-block-buffer-0.12.1",
+      "name": "block-buffer",
+      "versionInfo": "0.12.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-block2-0.6.2",
+      "name": "block2",
+      "versionInfo": "0.6.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-bumpalo-3.20.3",
+      "name": "bumpalo",
+      "versionInfo": "3.20.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-bytes-1.12.1",
+      "name": "bytes",
+      "versionInfo": "1.12.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-cc-1.4.7",
+      "name": "cc",
+      "versionInfo": "1.4.7",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-cfg-if-1.0.4",
+      "name": "cfg-if",
+      "versionInfo": "1.0.4",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-cfg-aliases-0.2.2",
+      "name": "cfg_aliases",
+      "versionInfo": "0.2.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-chacha20-0.10.2",
+      "name": "chacha20",
+      "versionInfo": "0.10.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-const-oid-0.10.2",
+      "name": "const-oid",
+      "versionInfo": "0.10.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-cpufeatures-0.3.1",
+      "name": "cpufeatures",
+      "versionInfo": "0.3.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-crypto-common-0.2.2",
+      "name": "crypto-common",
+      "versionInfo": "0.2.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-ctrlc-3.5.2",
+      "name": "ctrlc",
+      "versionInfo": "3.5.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT/Apache-2.0",
+      "licenseDeclared": "MIT/Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-digest-0.11.3",
+      "name": "digest",
+      "versionInfo": "0.11.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-dispatch2-0.3.1",
+      "name": "dispatch2",
+      "versionInfo": "0.3.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Zlib OR Apache-2.0 OR MIT",
+      "licenseDeclared": "Zlib OR Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-displaydoc-0.2.7",
+      "name": "displaydoc",
+      "versionInfo": "0.2.7",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-errno-0.3.14",
+      "name": "errno",
+      "versionInfo": "0.3.14",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-fastrand-2.5.0",
+      "name": "fastrand",
+      "versionInfo": "2.5.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-find-msvc-tools-0.1.13",
+      "name": "find-msvc-tools",
+      "versionInfo": "0.1.13",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-form-urlencoded-1.2.2",
+      "name": "form_urlencoded",
+      "versionInfo": "1.2.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-futures-channel-0.3.34",
+      "name": "futures-channel",
+      "versionInfo": "0.3.34",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-futures-core-0.3.34",
+      "name": "futures-core",
+      "versionInfo": "0.3.34",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-futures-io-0.3.34",
+      "name": "futures-io",
+      "versionInfo": "0.3.34",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-futures-sink-0.3.34",
+      "name": "futures-sink",
+      "versionInfo": "0.3.34",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-futures-task-0.3.34",
+      "name": "futures-task",
+      "versionInfo": "0.3.34",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-futures-util-0.3.34",
+      "name": "futures-util",
+      "versionInfo": "0.3.34",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-getrandom-0.2.17",
+      "name": "getrandom",
+      "versionInfo": "0.2.17",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-getrandom-0.4.3",
+      "name": "getrandom",
+      "versionInfo": "0.4.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-http-1.5.0",
+      "name": "http",
+      "versionInfo": "1.5.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-http-body-1.1.0",
+      "name": "http-body",
+      "versionInfo": "1.1.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-http-body-util-0.1.5",
+      "name": "http-body-util",
+      "versionInfo": "0.1.5",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-httparse-1.10.1",
+      "name": "httparse",
+      "versionInfo": "1.10.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-hybrid-array-0.4.15",
+      "name": "hybrid-array",
+      "versionInfo": "0.4.15",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-hyper-1.11.1",
+      "name": "hyper",
+      "versionInfo": "1.11.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-hyper-rustls-0.27.9",
+      "name": "hyper-rustls",
+      "versionInfo": "0.27.9",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 OR ISC OR MIT",
+      "licenseDeclared": "Apache-2.0 OR ISC OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-hyper-util-0.1.20",
+      "name": "hyper-util",
+      "versionInfo": "0.1.20",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-icu-collections-2.3.0",
+      "name": "icu_collections",
+      "versionInfo": "2.3.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-icu-locale-core-2.3.0",
+      "name": "icu_locale_core",
+      "versionInfo": "2.3.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-icu-normalizer-2.3.0",
+      "name": "icu_normalizer",
+      "versionInfo": "2.3.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-icu-normalizer-data-2.3.0",
+      "name": "icu_normalizer_data",
+      "versionInfo": "2.3.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-icu-properties-2.3.0",
+      "name": "icu_properties",
+      "versionInfo": "2.3.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-icu-properties-data-2.3.0",
+      "name": "icu_properties_data",
+      "versionInfo": "2.3.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-icu-provider-2.3.1",
+      "name": "icu_provider",
+      "versionInfo": "2.3.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-idna-1.1.0",
+      "name": "idna",
+      "versionInfo": "1.1.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-idna-adapter-1.2.2",
+      "name": "idna_adapter",
+      "versionInfo": "1.2.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-ipnet-2.12.2",
+      "name": "ipnet",
+      "versionInfo": "2.12.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-itoa-1.0.18",
+      "name": "itoa",
+      "versionInfo": "1.0.18",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-js-sys-0.3.105",
+      "name": "js-sys",
+      "versionInfo": "0.3.105",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-libc-0.2.189",
+      "name": "libc",
+      "versionInfo": "0.2.189",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-linux-raw-sys-0.12.1",
+      "name": "linux-raw-sys",
+      "versionInfo": "0.12.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-litemap-0.8.3",
+      "name": "litemap",
+      "versionInfo": "0.8.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-log-0.4.34",
+      "name": "log",
+      "versionInfo": "0.4.34",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-lru-slab-0.1.3",
+      "name": "lru-slab",
+      "versionInfo": "0.1.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0 OR Zlib",
+      "licenseDeclared": "MIT OR Apache-2.0 OR Zlib",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-memchr-2.8.3",
+      "name": "memchr",
+      "versionInfo": "2.8.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unlicense OR MIT",
+      "licenseDeclared": "Unlicense OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-mio-1.2.3",
+      "name": "mio",
+      "versionInfo": "1.2.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-nix-0.31.3",
+      "name": "nix",
+      "versionInfo": "0.31.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-objc2-0.6.4",
+      "name": "objc2",
+      "versionInfo": "0.6.4",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-objc2-encode-4.1.0",
+      "name": "objc2-encode",
+      "versionInfo": "4.1.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-once-cell-1.21.4",
+      "name": "once_cell",
+      "versionInfo": "1.21.4",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-percent-encoding-2.3.2",
+      "name": "percent-encoding",
+      "versionInfo": "2.3.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-pin-project-lite-0.2.17",
+      "name": "pin-project-lite",
+      "versionInfo": "0.2.17",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-potential-utf-0.1.6",
+      "name": "potential_utf",
+      "versionInfo": "0.1.6",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-proc-macro2-1.0.107",
+      "name": "proc-macro2",
+      "versionInfo": "1.0.107",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-quinn-0.11.11",
+      "name": "quinn",
+      "versionInfo": "0.11.11",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-quinn-proto-0.11.19",
+      "name": "quinn-proto",
+      "versionInfo": "0.11.19",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-quinn-udp-0.5.15",
+      "name": "quinn-udp",
+      "versionInfo": "0.5.15",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-quote-1.0.47",
+      "name": "quote",
+      "versionInfo": "1.0.47",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-r-efi-6.0.0",
+      "name": "r-efi",
+      "versionInfo": "6.0.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+      "licenseDeclared": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-rand-0.10.2",
+      "name": "rand",
+      "versionInfo": "0.10.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-rand-core-0.10.1",
+      "name": "rand_core",
+      "versionInfo": "0.10.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-rand-pcg-0.10.2",
+      "name": "rand_pcg",
+      "versionInfo": "0.10.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-regex-1.13.1",
+      "name": "regex",
+      "versionInfo": "1.13.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-regex-automata-0.4.18",
+      "name": "regex-automata",
+      "versionInfo": "0.4.18",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-regex-syntax-0.8.11",
+      "name": "regex-syntax",
+      "versionInfo": "0.8.11",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-reqwest-0.12.28",
+      "name": "reqwest",
+      "versionInfo": "0.12.28",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-ring-0.17.14",
+      "name": "ring",
+      "versionInfo": "0.17.14",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 AND ISC",
+      "licenseDeclared": "Apache-2.0 AND ISC",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-rustc-hash-2.1.3",
+      "name": "rustc-hash",
+      "versionInfo": "2.1.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-rustix-1.1.4",
+      "name": "rustix",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-rustls-0.23.45",
+      "name": "rustls",
+      "versionInfo": "0.23.45",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 OR ISC OR MIT",
+      "licenseDeclared": "Apache-2.0 OR ISC OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-rustls-pki-types-1.15.1",
+      "name": "rustls-pki-types",
+      "versionInfo": "1.15.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-rustls-webpki-0.103.15",
+      "name": "rustls-webpki",
+      "versionInfo": "0.103.15",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-rustversion-1.0.23",
+      "name": "rustversion",
+      "versionInfo": "1.0.23",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-ryu-1.0.23",
+      "name": "ryu",
+      "versionInfo": "1.0.23",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 OR BSL-1.0",
+      "licenseDeclared": "Apache-2.0 OR BSL-1.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-semver-1.0.28",
+      "name": "semver",
+      "versionInfo": "1.0.28",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-serde-1.0.229",
+      "name": "serde",
+      "versionInfo": "1.0.229",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-serde-core-1.0.229",
+      "name": "serde_core",
+      "versionInfo": "1.0.229",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-serde-derive-1.0.229",
+      "name": "serde_derive",
+      "versionInfo": "1.0.229",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-serde-json-1.0.151",
+      "name": "serde_json",
+      "versionInfo": "1.0.151",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-serde-urlencoded-0.7.1",
+      "name": "serde_urlencoded",
+      "versionInfo": "0.7.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT/Apache-2.0",
+      "licenseDeclared": "MIT/Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-sha2-0.11.0",
+      "name": "sha2",
+      "versionInfo": "0.11.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-shlex-2.0.1",
+      "name": "shlex",
+      "versionInfo": "2.0.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-slab-0.4.12",
+      "name": "slab",
+      "versionInfo": "0.4.12",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-smallvec-1.16.1",
+      "name": "smallvec",
+      "versionInfo": "1.16.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-socket2-0.6.5",
+      "name": "socket2",
+      "versionInfo": "0.6.5",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-stable-deref-trait-1.2.1",
+      "name": "stable_deref_trait",
+      "versionInfo": "1.2.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-subtle-2.6.1",
+      "name": "subtle",
+      "versionInfo": "2.6.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-syn-2.0.119",
+      "name": "syn",
+      "versionInfo": "2.0.119",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-syn-3.0.5",
+      "name": "syn",
+      "versionInfo": "3.0.5",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-sync-wrapper-1.0.2",
+      "name": "sync_wrapper",
+      "versionInfo": "1.0.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-synstructure-0.13.2",
+      "name": "synstructure",
+      "versionInfo": "0.13.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-tempfile-3.27.0",
+      "name": "tempfile",
+      "versionInfo": "3.27.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-thiserror-2.0.21",
+      "name": "thiserror",
+      "versionInfo": "2.0.21",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-thiserror-impl-2.0.21",
+      "name": "thiserror-impl",
+      "versionInfo": "2.0.21",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-tinystr-0.8.4",
+      "name": "tinystr",
+      "versionInfo": "0.8.4",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-tinyvec-1.13.3",
+      "name": "tinyvec",
+      "versionInfo": "1.13.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Zlib OR Apache-2.0 OR MIT",
+      "licenseDeclared": "Zlib OR Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-tokio-1.53.1",
+      "name": "tokio",
+      "versionInfo": "1.53.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-tokio-rustls-0.26.5",
+      "name": "tokio-rustls",
+      "versionInfo": "0.26.5",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-tower-0.5.3",
+      "name": "tower",
+      "versionInfo": "0.5.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-tower-http-0.6.11",
+      "name": "tower-http",
+      "versionInfo": "0.6.11",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-tower-layer-0.3.3",
+      "name": "tower-layer",
+      "versionInfo": "0.3.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-tower-service-0.3.3",
+      "name": "tower-service",
+      "versionInfo": "0.3.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-tracing-0.1.44",
+      "name": "tracing",
+      "versionInfo": "0.1.44",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-tracing-core-0.1.36",
+      "name": "tracing-core",
+      "versionInfo": "0.1.36",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-try-lock-0.2.5",
+      "name": "try-lock",
+      "versionInfo": "0.2.5",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-typenum-1.20.1",
+      "name": "typenum",
+      "versionInfo": "1.20.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-unicode-ident-1.0.24",
+      "name": "unicode-ident",
+      "versionInfo": "1.0.24",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "(MIT OR Apache-2.0) AND Unicode-3.0",
+      "licenseDeclared": "(MIT OR Apache-2.0) AND Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-untrusted-0.9.0",
+      "name": "untrusted",
+      "versionInfo": "0.9.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-url-2.5.8",
+      "name": "url",
+      "versionInfo": "2.5.8",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-utf8-iter-1.0.4",
+      "name": "utf8_iter",
+      "versionInfo": "1.0.4",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-want-0.3.1",
+      "name": "want",
+      "versionInfo": "0.3.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-wasi-0.11.1-wasi-snapshot-preview1",
+      "name": "wasi",
+      "versionInfo": "0.11.1+wasi-snapshot-preview1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-wasm-bindgen-0.2.128",
+      "name": "wasm-bindgen",
+      "versionInfo": "0.2.128",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-wasm-bindgen-futures-0.4.78",
+      "name": "wasm-bindgen-futures",
+      "versionInfo": "0.4.78",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-wasm-bindgen-macro-0.2.128",
+      "name": "wasm-bindgen-macro",
+      "versionInfo": "0.2.128",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-wasm-bindgen-macro-support-0.2.128",
+      "name": "wasm-bindgen-macro-support",
+      "versionInfo": "0.2.128",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-wasm-bindgen-shared-0.2.128",
+      "name": "wasm-bindgen-shared",
+      "versionInfo": "0.2.128",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-web-sys-0.3.105",
+      "name": "web-sys",
+      "versionInfo": "0.3.105",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-web-time-1.1.0",
+      "name": "web-time",
+      "versionInfo": "1.1.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-webpki-roots-1.0.9",
+      "name": "webpki-roots",
+      "versionInfo": "1.0.9",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "CDLA-Permissive-2.0",
+      "licenseDeclared": "CDLA-Permissive-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-link-0.2.1",
+      "name": "windows-link",
+      "versionInfo": "0.2.1",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-sys-0.52.0",
+      "name": "windows-sys",
+      "versionInfo": "0.52.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-sys-0.61.2",
+      "name": "windows-sys",
+      "versionInfo": "0.61.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-targets-0.52.6",
+      "name": "windows-targets",
+      "versionInfo": "0.52.6",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-aarch64-gnullvm-0.52.6",
+      "name": "windows_aarch64_gnullvm",
+      "versionInfo": "0.52.6",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-aarch64-msvc-0.52.6",
+      "name": "windows_aarch64_msvc",
+      "versionInfo": "0.52.6",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-i686-gnu-0.52.6",
+      "name": "windows_i686_gnu",
+      "versionInfo": "0.52.6",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-i686-gnullvm-0.52.6",
+      "name": "windows_i686_gnullvm",
+      "versionInfo": "0.52.6",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-i686-msvc-0.52.6",
+      "name": "windows_i686_msvc",
+      "versionInfo": "0.52.6",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-x86-64-gnu-0.52.6",
+      "name": "windows_x86_64_gnu",
+      "versionInfo": "0.52.6",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-x86-64-gnullvm-0.52.6",
+      "name": "windows_x86_64_gnullvm",
+      "versionInfo": "0.52.6",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-windows-x86-64-msvc-0.52.6",
+      "name": "windows_x86_64_msvc",
+      "versionInfo": "0.52.6",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-writeable-0.6.4",
+      "name": "writeable",
+      "versionInfo": "0.6.4",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-yoke-0.8.3",
+      "name": "yoke",
+      "versionInfo": "0.8.3",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-yoke-derive-0.8.2",
+      "name": "yoke-derive",
+      "versionInfo": "0.8.2",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-zerofrom-0.1.8",
+      "name": "zerofrom",
+      "versionInfo": "0.1.8",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-zerofrom-derive-0.1.7",
+      "name": "zerofrom-derive",
+      "versionInfo": "0.1.7",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-zeroize-1.9.0",
+      "name": "zeroize",
+      "versionInfo": "1.9.0",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-zerotrie-0.2.5",
+      "name": "zerotrie",
+      "versionInfo": "0.2.5",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-zerovec-0.11.8",
+      "name": "zerovec",
+      "versionInfo": "0.11.8",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-zerovec-derive-0.11.6",
+      "name": "zerovec-derive",
+      "versionInfo": "0.11.6",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "Unicode-3.0",
+      "licenseDeclared": "Unicode-3.0",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-cargo-zmij-1.0.23",
+      "name": "zmij",
+      "versionInfo": "1.0.23",
+      "downloadLocation": "crates.io",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-Package-swiftpm-Sparkle-2.9.6",
+      "name": "Sparkle",
+      "versionInfo": "2.9.6",
+      "downloadLocation": "https://github.com/sparkle-project/Sparkle",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-aho-corasick-1.1.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-atomic-waker-1.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-base64-0.22.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-base64-0.23.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-bitflags-2.13.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-block-buffer-0.12.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-block2-0.6.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-bumpalo-3.20.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-bytes-1.12.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-cc-1.4.7"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-cfg-if-1.0.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-cfg-aliases-0.2.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-chacha20-0.10.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-const-oid-0.10.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-cpufeatures-0.3.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-crypto-common-0.2.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-ctrlc-3.5.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-digest-0.11.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-dispatch2-0.3.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-displaydoc-0.2.7"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-errno-0.3.14"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-fastrand-2.5.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-find-msvc-tools-0.1.13"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-form-urlencoded-1.2.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-futures-channel-0.3.34"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-futures-core-0.3.34"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-futures-io-0.3.34"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-futures-sink-0.3.34"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-futures-task-0.3.34"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-futures-util-0.3.34"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-getrandom-0.2.17"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-getrandom-0.4.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-http-1.5.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-http-body-1.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-http-body-util-0.1.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-httparse-1.10.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-hybrid-array-0.4.15"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-hyper-1.11.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-hyper-rustls-0.27.9"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-hyper-util-0.1.20"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-icu-collections-2.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-icu-locale-core-2.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-icu-normalizer-2.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-icu-normalizer-data-2.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-icu-properties-2.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-icu-properties-data-2.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-icu-provider-2.3.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-idna-1.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-idna-adapter-1.2.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-ipnet-2.12.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-itoa-1.0.18"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-js-sys-0.3.105"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-libc-0.2.189"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-linux-raw-sys-0.12.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-litemap-0.8.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-log-0.4.34"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-lru-slab-0.1.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-memchr-2.8.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-mio-1.2.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-nix-0.31.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-objc2-0.6.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-objc2-encode-4.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-once-cell-1.21.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-percent-encoding-2.3.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-pin-project-lite-0.2.17"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-potential-utf-0.1.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-proc-macro2-1.0.107"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-quinn-0.11.11"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-quinn-proto-0.11.19"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-quinn-udp-0.5.15"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-quote-1.0.47"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-r-efi-6.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-rand-0.10.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-rand-core-0.10.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-rand-pcg-0.10.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-regex-1.13.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-regex-automata-0.4.18"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-regex-syntax-0.8.11"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-reqwest-0.12.28"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-ring-0.17.14"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-rustc-hash-2.1.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-rustix-1.1.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-rustls-0.23.45"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-rustls-pki-types-1.15.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-rustls-webpki-0.103.15"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-rustversion-1.0.23"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-ryu-1.0.23"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-semver-1.0.28"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-serde-1.0.229"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-serde-core-1.0.229"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-serde-derive-1.0.229"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-serde-json-1.0.151"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-serde-urlencoded-0.7.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-sha2-0.11.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-shlex-2.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-slab-0.4.12"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-smallvec-1.16.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-socket2-0.6.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-stable-deref-trait-1.2.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-subtle-2.6.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-syn-2.0.119"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-syn-3.0.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-sync-wrapper-1.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-synstructure-0.13.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tempfile-3.27.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-thiserror-2.0.21"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-thiserror-impl-2.0.21"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tinystr-0.8.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tinyvec-1.13.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tokio-1.53.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tokio-rustls-0.26.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tower-0.5.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tower-http-0.6.11"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tower-layer-0.3.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tower-service-0.3.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tracing-0.1.44"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tracing-core-0.1.36"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-try-lock-0.2.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-typenum-1.20.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-unicode-ident-1.0.24"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-untrusted-0.9.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-url-2.5.8"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-utf8-iter-1.0.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-want-0.3.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-wasi-0.11.1-wasi-snapshot-preview1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-wasm-bindgen-0.2.128"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-wasm-bindgen-futures-0.4.78"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-wasm-bindgen-macro-0.2.128"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-wasm-bindgen-macro-support-0.2.128"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-wasm-bindgen-shared-0.2.128"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-web-sys-0.3.105"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-web-time-1.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-webpki-roots-1.0.9"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-link-0.2.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-sys-0.52.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-sys-0.61.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-targets-0.52.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-aarch64-gnullvm-0.52.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-aarch64-msvc-0.52.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-i686-gnu-0.52.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-i686-gnullvm-0.52.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-i686-msvc-0.52.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-x86-64-gnu-0.52.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-x86-64-gnullvm-0.52.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-windows-x86-64-msvc-0.52.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-writeable-0.6.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-yoke-0.8.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-yoke-derive-0.8.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-zerofrom-0.1.8"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-zerofrom-derive-0.1.7"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-zeroize-1.9.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-zerotrie-0.2.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-zerovec-0.11.8"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-zerovec-derive-0.11.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-cargo-zmij-1.0.23"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-YACHT",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-swiftpm-Sparkle-2.9.6"
+    }
+  ]
+}

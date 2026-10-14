@@ -43,7 +43,8 @@ cp "$CLI_DIR/yacht" "$STAGING_DIR/yacht"
 update_args=("$STAGING_DIR/YACHT.app" --arch "$PACKAGE_ARCH")
 if [[ "$PACKAGE_MODE" == --notarize ]]; then update_args+=(--production); fi
 python3 script/configure_macos_updates.py "${update_args[@]}"
-cp LICENSE README.md "$STAGING_DIR/"
+cp LICENSE README.md THIRD_PARTY_NOTICES.md "$STAGING_DIR/"
+cp THIRD_PARTY_NOTICES.md "$STAGING_DIR/YACHT.app/Contents/Resources/"
 SIGNING_IDENTITY="${SIGNING_IDENTITY:--}"
 # Sign Sparkle inside out, including its installer and XPC services, before the app.
 FRAMEWORK="$STAGING_DIR/YACHT.app/Contents/Frameworks/Sparkle.framework"
