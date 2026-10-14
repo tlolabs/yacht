@@ -193,13 +193,23 @@ impl Engine {
         Ok(out)
     }
     pub fn dispatch(&self, bytes: &[u8], cancel: Cancel<'_>) -> Vec<u8> {
-        let response = match serde_json::from_slice(bytes)
+        let result = serde_json::from_slice(bytes)
             .map_err(crate::Error::from)
-            .and_then(|v| self.request(v, cancel))
-        {
-            Ok(value) => json!({"ok":value}),
-            Err(e) => json!({"error":crate::Failure::from(e)}),
-        };
-        serde_json::to_vec(&response).expect("JSON response")
+            .and_then(|v| self.request(v, cancel));
+        let mut out = Vec::with_capacity(1024);
+        match result {
+            Ok(value) => {
+                out.extend_from_slice(b"{\"ok\":");
+                let _ = serde_json::to_writer(&mut out, &value);
+                out.push(b'}');
+            }
+            Err(e) => {
+                let failure = crate::Failure::from(e);
+                out.extend_from_slice(b"{\"error\":");
+                let _ = serde_json::to_writer(&mut out, &failure);
+                out.push(b'}');
+            }
+        }
+        out
     }
 }

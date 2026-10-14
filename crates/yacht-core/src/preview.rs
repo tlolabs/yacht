@@ -18,7 +18,8 @@ struct Excerpt {
 }
 impl Write for Excerpt {
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        let n = bytes.len().min(self.budget - self.bytes.len());
+        let remaining = self.budget.saturating_sub(self.bytes.len());
+        let n = bytes.len().min(remaining);
         self.bytes.extend_from_slice(&bytes[..n]);
         if n < bytes.len() {
             self.truncated = true;
@@ -36,12 +37,14 @@ impl Excerpt {
         if let Err(e) = std::str::from_utf8(&self.bytes) {
             self.bytes.truncate(e.valid_up_to());
         }
-        String::from_utf8(self.bytes).expect("UTF-8 prefix")
+        // SAFETY: self.bytes has been verified and truncated to valid_up_to().
+        unsafe { String::from_utf8_unchecked(self.bytes) }
     }
 }
 pub fn generate(table: &Table, style: &Style, limit: usize, cancel: Cancel<'_>) -> Result<Preview> {
     style.validate()?;
     check(cancel)?;
+    let header_overhead = table.header.len().saturating_mul(100);
     let mut cost = table
         .header
         .iter()
@@ -50,10 +53,10 @@ pub fn generate(table: &Table, style: &Style, limit: usize, cancel: Cancel<'_>) 
     let mut count = 0;
     for row in table.rows.iter().take(limit) {
         check(cancel)?;
-        let next = row.iter().map(|s| s.len().saturating_mul(6)).fold(
-            table.header.len().saturating_mul(100),
-            usize::saturating_add,
-        );
+        let next = row
+            .iter()
+            .map(|s| s.len().saturating_mul(6))
+            .fold(header_overhead, usize::saturating_add);
         if cost.saturating_add(next) > PREVIEW_BUDGET {
             break;
         }
@@ -64,7 +67,7 @@ pub fn generate(table: &Table, style: &Style, limit: usize, cancel: Cancel<'_>) 
     let mut html = String::new();
     if !unavailable {
         let mut sink = Excerpt {
-            bytes: vec![],
+            bytes: Vec::with_capacity(cost.min(PREVIEW_BUDGET).max(1024)),
             truncated: false,
             budget: PREVIEW_BUDGET,
         };
@@ -85,11 +88,11 @@ pub fn generate(table: &Table, style: &Style, limit: usize, cancel: Cancel<'_>) 
                 if let Err(e) = std::str::from_utf8(&bytes) {
                     bytes.truncate(e.valid_up_to());
                 }
-                (String::from_utf8(bytes).expect("UTF-8 prefix"), true)
+                (unsafe { String::from_utf8_unchecked(bytes) }, true)
             }
         } else {
             let mut sink = Excerpt {
-                bytes: vec![],
+                bytes: Vec::with_capacity(SOURCE_BUDGET.min(cost.saturating_mul(4)).max(65536)),
                 truncated: false,
                 budget: SOURCE_BUDGET,
             };
