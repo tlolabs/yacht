@@ -16,8 +16,11 @@ if a.production and (not key or not trust["macos_team_id"]):
 p = a.bundle / "Contents/Info.plist"
 info = plistlib.loads(p.read_bytes())
 info["SUFeedURL"] = f'https://github.com/{trust["repository"]}/releases/latest/download/appcast-macos-{a.arch}.xml'
-if key:
+team_id = trust.get("macos_team_id")
+if key and team_id:
     info["SUPublicEDKey"] = key
+    info["YachtDeveloperIDTeam"] = team_id
 else:
     info.pop("SUPublicEDKey", None)
+    info.pop("YachtDeveloperIDTeam", None)
 p.write_bytes(plistlib.dumps(info))

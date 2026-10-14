@@ -921,13 +921,7 @@ void MainWindow::onExport() {
 
 void MainWindow::exportTo(const QString &path, bool overwrite) {
     if (m_busy || !m_table) return;
-    struct BusyGuard {
-        MainWindow *w;
-        bool active{true};
-        ~BusyGuard() { if (active) w->setBusy(false); }
-        void disarm() { active = false; w->setBusy(false); }
-    } guard{this};
-    setBusy(true);
+    BusyScope guard{this};
     m_cancelled = false;
     try {
         QJsonObject args;
@@ -1161,12 +1155,7 @@ void MainWindow::batchConvert(const QStringList &paths) {
         return;
     }
 
-    struct BusyGuard {
-        MainWindow *w;
-        ~BusyGuard() { w->setBusy(false); }
-    } guard{this};
-
-    setBusy(true);
+    BusyScope guard{this};
 
     auto overwriteOpt = m_desktop->reviewBatch(paths);
     if (!overwriteOpt.has_value()) {

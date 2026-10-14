@@ -3,10 +3,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-extern "C" {
-char *yacht_request(const char *request, bool (*cancelled)(void *), void *context);
-void yacht_free(char *response);
-}
+#include <yacht.h>
 
 namespace Yacht {
 

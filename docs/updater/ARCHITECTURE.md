@@ -126,3 +126,39 @@ not established shared dependencies. Fleet adoption is pending consolidation int
 one source and wire contract. This candidate must not be published as the shared
 standard until that coordination is complete. Their files and installed feeds
 have not been overwritten by this chat.
+
+## Production Update Qualification & Security Analysis (SEC-04)
+
+### Native Identity and Fail-Closed Qualification Policy
+
+Production updates are **unqualified and disabled by default**. The updater enforces a fail-closed policy across all supported targets:
+
+1. **Public-Key Presence Insufficiency**: Having an Ed25519 or Sparkle public key in `config/update-trust.json` or `Info.plist` is **not** sufficient to enable production feeds. Both the cryptographic signature key and the verified native identity (`macos_team_id`, `windows_publisher`, or `linux_gpg_fingerprint`) must be configured and validated.
+2. **macOS Native Developer ID Enforcement**: In `ApplicationUpdater.swift`, the updater queries the running process code-signing identity via `SecCodeCopySelf`, `SecCodeCopyStaticCode`, and `SecCodeCopySigningInformation`. If the running binary is unsigned, ad-hoc signed, or signed by a team ID different from `YachtDeveloperIDTeam`, `UpdateSafety.isProductionUpdateQualified` returns false, and Sparkle is never initialized.
+3. **Windows Authenticode Verification**: `yacht-update` checks that `windows_publisher` is configured before allowing update checks. The Inno Setup download must pass both signed SHA-256 validation and native Authenticode certificate subject verification matching `windows_publisher` before it is presented to the user.
+4. **Linux Provenance & GPG Verification**: Linux update checks require a valid 40- or 64-character `linux_gpg_fingerprint`. AppImage downloads must verify against this fingerprint and the signed SHA-256 release metadata.
+
+### Installation, Interruption, Recovery, and Work Preservation
+
+* **User Work Preservation**:
+  * **macOS**: `ApplicationUpdater.allowsTermination` queries `isBusy()` (checking table parsing, conversion, batch processing, or active dialogs). If busy, termination is strictly vetoed. If an installation is pending and unsaved work exists, the user is prompted with an explicit confirmation dialog (`Restart YACHT to install the update?`) before any quit/relaunch occurs.
+  * **Windows / Linux**: The Qt frontend utilizes RAII `BusyScope` guards across export, load, and batch workflows. Inno Setup runs with `CloseApplications=no`, ensuring running processes are never terminated automatically. The user is instructed to export and cleanly quit prior to running the installer.
+* **Interrupted & Corrupted Downloads**:
+  * Downloads are written to temporary staging paths (`download-<timestamp>-<pid>`).
+  * On transfer error, cancellation, or digest mismatch, the partial file and staging directory are immediately removed.
+  * Complete downloads are retained in `LocalAppData` (Windows) or `XDG_STATE_HOME` (Linux) for up to 7 days to permit user installation, after which older directories are pruned.
+* **State Recovery and Rollback Protection**:
+  * The updater maintains `highest_seen` version watermark in `state.json`. Any offered update with a version equal to or lower than `highest_seen` or `installed_version` is rejected (`SemVer` lexicographical and numerical precedence check).
+  * If `state.json` is corrupted, the updater refuses to run update checks and returns an error rather than resetting or discarding the stored version floor.
+  * Rollback attempts via replayed feed manifests are rejected through mandatory signed expiration timestamps (`now < manifest.expires`).
+
+### Target Qualification Matrix and Deferred Items
+
+| Platform | Target Arch | Native Identity Requirement | Current Status | Blocker / Deferred Qualification Work |
+| :--- | :--- | :--- | :--- | :--- |
+| macOS | ARM64 | Apple Developer ID Team ID (`VR64M92P2M`) + Notarization | **Unqualified / Disabled** | Requires production Apple Developer ID certificate, Xcode notarization submission, and physical older-to-newer upgrade test. |
+| macOS | x86_64 | Apple Developer ID Team ID (`VR64M92P2M`) + Notarization | **Unqualified / Disabled** | Same as macOS ARM64; requires Intel/Rosetta verification on physical runner. |
+| Windows | x64 | Authenticode EV Code Signing (`windows_publisher`) | **Unqualified / Disabled** | Assisted installer flow implemented; full silent/automated installer qualification requires Windows Hardware Lab Kit (HLK) / physical VM test. |
+| Windows | ARM64 | Authenticode EV Code Signing (`windows_publisher`) | **Unqualified / Disabled** | Same as Windows x64; requires physical ARM64 Windows device testing. |
+| Linux | x64 | Pinned GPG Key Fingerprint (`linux_gpg_fingerprint`) | **Unqualified / Disabled** | Deployable AppImage pipeline and atomic in-place replacement adapter not yet implemented. |
+| Linux | ARM64 | Pinned GPG Key Fingerprint (`linux_gpg_fingerprint`) | **Unqualified / Disabled** | Same as Linux x64; requires ARM64 AppImage pipeline and testing. |

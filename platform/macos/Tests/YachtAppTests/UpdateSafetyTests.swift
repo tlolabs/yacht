@@ -30,6 +30,27 @@ final class UpdateSafetyTests: XCTestCase {
         XCTAssertFalse(UpdateSafety.allowsTermination(busy: true, installationPending: true, hasWork: true, confirm: { XCTFail("Must not prompt while busy"); return true }))
         XCTAssertTrue(UpdateSafety.allowsTermination(busy: false, installationPending: true, hasWork: false, confirm: { XCTFail("No work to discard"); return false }))
     }
+    func testProductionUpdateQualificationRequiresValidKeyTeamAndRunningMatch() {
+        let validKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" // 32 bytes base64
+        let validTeam = "VR64M92P2M"
+
+        // Public key presence alone is not sufficient
+        XCTAssertFalse(UpdateSafety.isProductionUpdateQualified(key: validKey, teamID: nil, runningTeamID: nil))
+        XCTAssertFalse(UpdateSafety.isProductionUpdateQualified(key: validKey, teamID: "", runningTeamID: validTeam))
+        XCTAssertFalse(UpdateSafety.isProductionUpdateQualified(key: validKey, teamID: "invalid-team", runningTeamID: "invalid-team"))
+
+        // Unsigned or ad-hoc builds must fail closed
+        XCTAssertFalse(UpdateSafety.isProductionUpdateQualified(key: validKey, teamID: validTeam, runningTeamID: nil))
+
+        // Mismatched team IDs must be rejected
+        XCTAssertFalse(UpdateSafety.isProductionUpdateQualified(key: validKey, teamID: validTeam, runningTeamID: "OTHER12345"))
+
+        // Invalid key length must be rejected
+        XCTAssertFalse(UpdateSafety.isProductionUpdateQualified(key: "short", teamID: validTeam, runningTeamID: validTeam))
+
+        // Fully qualified state matches
+        XCTAssertTrue(UpdateSafety.isProductionUpdateQualified(key: validKey, teamID: validTeam, runningTeamID: validTeam))
+    }
     private func accepts(_ version: String, installed: String = "2.1.1") -> Bool {
         UpdateSafety.accepts(version: version, installed: installed, url: URL(string: "https://github.com/tlolabs/yacht/releases/download/v\(version)/YACHT-macos-arm64.zip"), arch: "arm64")
     }

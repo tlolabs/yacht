@@ -34,6 +34,8 @@ public:
     void initialize();
     bool isBusy() const { return m_busy; }
 
+    friend class BusyScope;
+
     void loadFile(const QString &path, bool infer = true);
     void receive(const QStringList &paths, bool batch = false);
     void setStyle(const QJsonObject &style);
@@ -161,6 +163,29 @@ private:
 
     QProgressBar *m_progressBar{nullptr};
     QLabel *m_statusLabel{nullptr};
+};
+
+class BusyScope {
+public:
+    explicit BusyScope(MainWindow *w) : m_window(w) {
+        if (m_window) m_window->setBusy(true);
+    }
+    ~BusyScope() {
+        if (m_window && m_active) {
+            m_window->setBusy(false);
+        }
+    }
+    void disarm() {
+        if (m_window && m_active) {
+            m_active = false;
+            m_window->setBusy(false);
+        }
+    }
+    BusyScope(const BusyScope &) = delete;
+    BusyScope &operator=(const BusyScope &) = delete;
+private:
+    MainWindow *m_window{nullptr};
+    bool m_active{true};
 };
 
 } // namespace Yacht

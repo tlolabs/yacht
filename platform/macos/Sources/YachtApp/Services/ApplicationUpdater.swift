@@ -1,4 +1,5 @@
 import AppKit
+import Security
 import Sparkle
 
 /// Sparkle owns scheduling, authenticated downloads, installation and relaunch.
@@ -9,10 +10,23 @@ final class ApplicationUpdater: NSObject, SPUUpdaterDelegate {
     var confirmTermination: @MainActor () -> Bool = ApplicationUpdater.confirmRestart
     var isConfigured: Bool { controller != nil }
     var isBusy: () -> Bool = { false }
+
+    private func runningTeamIdentifier() -> String? {
+        var code: SecCode?
+        guard SecCodeCopySelf(SecCSFlags(), &code) == errSecSuccess, let code = code else { return nil }
+        var staticCode: SecStaticCode?
+        guard SecCodeCopyStaticCode(code, SecCSFlags(), &staticCode) == errSecSuccess, let staticCode = staticCode else { return nil }
+        var infoCF: CFDictionary?
+        guard SecCodeCopySigningInformation(staticCode, SecCSFlags(rawValue: UInt32(kSecCSSigningInformation)), &infoCF) == errSecSuccess,
+              let info = infoCF as? [String: Any] else { return nil }
+        return info[kSecCodeInfoTeamIdentifier as String] as? String
+    }
+
     func start() {
         guard controller == nil,
               let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String,
-              Data(base64Encoded: key)?.count == 32 else { return }
+              let teamId = Bundle.main.object(forInfoDictionaryKey: "YachtDeveloperIDTeam") as? String,
+              UpdateSafety.isProductionUpdateQualified(key: key, teamID: teamId, runningTeamID: runningTeamIdentifier()) else { return }
         controller = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: self, userDriverDelegate: nil)
         controller?.updater.userAgentString = "TLO-Updater/1"
         controller?.startUpdater()
@@ -88,5 +102,11 @@ enum UpdateSafety {
         guard ["arm64", "x64"].contains(arch), let new = components(version),
               let old = components(installed), old.lexicographicallyPrecedes(new) else { return false }
         return url?.absoluteString == "https://github.com/tlolabs/yacht/releases/download/v\(version)/YACHT-macos-\(arch).zip"
+    }
+    static func isProductionUpdateQualified(key: String?, teamID: String?, runningTeamID: String?) -> Bool {
+        guard let key = key, let keyData = Data(base64Encoded: key), keyData.count == 32 else { return false }
+        guard let teamID = teamID, teamID.range(of: #"^[A-Z0-9]{10}$"#, options: .regularExpression) != nil else { return false }
+        guard let runningTeamID = runningTeamID else { return false }
+        return runningTeamID == teamID
     }
 }
