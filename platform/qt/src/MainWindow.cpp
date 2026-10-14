@@ -12,6 +12,7 @@
 #include <QDropEvent>
 #include <QEventLoop>
 #include <QFileInfo>
+#include <QFontDatabase>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -42,8 +43,16 @@ namespace {
 // The result is still delivered synchronously to existing callers on the GUI thread.
 template <typename Work>
 auto runCoreResponsive(Work work) -> decltype(work()) {
-    auto result = std::async(std::launch::async, std::move(work));
     QEventLoop loop;
+    auto result = std::async(std::launch::async, [work = std::move(work), &loop]() mutable {
+        struct LoopQuitter {
+            QEventLoop &loop;
+            ~LoopQuitter() {
+                QMetaObject::invokeMethod(&loop, "quit", Qt::QueuedConnection);
+            }
+        } quitter{loop};
+        return work();
+    });
     QTimer poll;
     poll.setInterval(16);
     QObject::connect(&poll, &QTimer::timeout, &loop, [&] {
@@ -328,8 +337,7 @@ void MainWindow::setupUi() {
     m_sourceEdit->setReadOnly(true);
     m_sourceEdit->setAccessibleName(QStringLiteral("HTML Source"));
     m_sourceEdit->setAccessibleDescription(QStringLiteral("Read-only HTML table source code"));
-    QFont monoFont(QStringLiteral("monospace"));
-    monoFont.setStyleHint(QFont::Monospace);
+    QFont monoFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     m_sourceEdit->setFont(monoFont);
 
     m_tabWidget->addTab(m_previewWidget, QStringLiteral("Table Preview"));
