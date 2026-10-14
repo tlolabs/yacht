@@ -42,6 +42,7 @@ struct Parser {
     state: State,
     field: Vec<u8>,
     row: Vec<String>,
+    header: Option<Vec<String>>,
     records: Vec<Vec<String>>,
     started: bool,
     skip_lf: bool,
@@ -49,13 +50,14 @@ struct Parser {
     line: usize,
 }
 impl Parser {
-    fn new(d: Delimiter) -> Self {
+    fn new(d: Delimiter, row_cap_hint: usize) -> Self {
         Self {
             delimiter: d.byte(),
             state: State::Start,
             field: Vec::with_capacity(64),
-            row: vec![],
-            records: vec![],
+            row: Vec::with_capacity(8),
+            header: None,
+            records: Vec::with_capacity(row_cap_hint),
             started: false,
             skip_lf: false,
             previous_cr: false,
@@ -66,7 +68,7 @@ impl Parser {
         invalid(format!(
             "Malformed CSV at line {}, record {}: {}",
             self.line,
-            self.records.len() + 1,
+            self.records.len() + if self.header.is_some() { 2 } else { 1 },
             why
         ))
     }
@@ -86,18 +88,41 @@ impl Parser {
         if self.started {
             self.field()?;
         }
-        let cap = self.row.len();
-        self.records
-            .push(std::mem::replace(&mut self.row, Vec::with_capacity(cap)));
+        let cap = self.row.len().max(4);
+        let row = std::mem::replace(&mut self.row, Vec::with_capacity(cap));
+        if self.header.is_none() {
+            self.header = Some(row);
+        } else {
+            self.records.push(row);
+        }
         self.started = false;
         self.state = State::Start;
         Ok(())
     }
     fn consume(&mut self, bytes: &[u8], cancel: Cancel<'_>) -> Result<()> {
-        for (index, &b) in bytes.iter().enumerate() {
-            if (index & 0xffff) == 0 {
+        let mut i = 0;
+        let len = bytes.len();
+        let mut next_cancel = 65536;
+
+        let mut is_special_unquoted = [false; 256];
+        is_special_unquoted[0] = true;
+        is_special_unquoted[b'"' as usize] = true;
+        is_special_unquoted[self.delimiter as usize] = true;
+        is_special_unquoted[b'\n' as usize] = true;
+        is_special_unquoted[b'\r' as usize] = true;
+
+        let mut is_special_quoted = [false; 256];
+        is_special_quoted[0] = true;
+        is_special_quoted[b'"' as usize] = true;
+        is_special_quoted[b'\n' as usize] = true;
+        is_special_quoted[b'\r' as usize] = true;
+
+        while i < len {
+            if i >= next_cancel {
                 check(cancel)?;
+                next_cancel = i.saturating_add(65536);
             }
+            let b = bytes[i];
             if b == 0 {
                 return Err(self
                     .fail("NUL bytes are unsupported. Save the file as UTF-8 CSV (not UTF-16)."));
@@ -106,38 +131,68 @@ impl Parser {
                 self.skip_lf = false;
                 if b == b'\n' {
                     self.previous_cr = false;
+                    i += 1;
                     continue;
                 }
             }
             if self.state == State::Quoted {
                 if b == b'"' {
                     self.state = State::AfterQuote;
-                } else {
+                    i += 1;
+                } else if b == b'\r' || b == b'\n' {
                     self.field.push(b);
+                    if b == b'\r' || !self.previous_cr {
+                        self.line += 1;
+                    }
+                    self.previous_cr = b == b'\r';
+                    i += 1;
+                } else {
+                    let start = i;
+                    while i < len && !is_special_quoted[bytes[i] as usize] {
+                        i += 1;
+                    }
+                    self.field.extend_from_slice(&bytes[start..i]);
+                    self.previous_cr = false;
                 }
             } else if b == self.delimiter {
                 self.field()?;
                 self.state = State::Start;
                 self.started = true;
+                self.previous_cr = false;
+                i += 1;
             } else if b == b'\n' || b == b'\r' {
                 self.row()?;
                 self.skip_lf = b == b'\r';
+                self.line += 1;
+                self.previous_cr = b == b'\r';
+                i += 1;
             } else {
                 match self.state {
                     State::Start => {
                         self.started = true;
                         if b == b'"' {
                             self.state = State::Quoted;
+                            i += 1;
                         } else {
                             self.state = State::Unquoted;
-                            self.field.push(b);
+                            let start = i;
+                            while i < len && !is_special_unquoted[bytes[i] as usize] {
+                                i += 1;
+                            }
+                            self.field.extend_from_slice(&bytes[start..i]);
+                            self.previous_cr = false;
                         }
                     }
                     State::Unquoted => {
                         if b == b'"' {
                             return Err(self.fail("quote inside an unquoted field; enclose the whole field in quotes."));
                         }
-                        self.field.push(b);
+                        let start = i;
+                        while i < len && !is_special_unquoted[bytes[i] as usize] {
+                            i += 1;
+                        }
+                        self.field.extend_from_slice(&bytes[start..i]);
+                        self.previous_cr = false;
                     }
                     State::AfterQuote => {
                         if b != b'"' {
@@ -147,14 +202,12 @@ impl Parser {
                         }
                         self.field.push(b);
                         self.state = State::Quoted;
+                        self.previous_cr = false;
+                        i += 1;
                     }
                     State::Quoted => unreachable!(),
                 }
             }
-            if b == b'\r' || (b == b'\n' && !self.previous_cr) {
-                self.line += 1;
-            }
-            self.previous_cr = b == b'\r';
         }
         Ok(())
     }
@@ -165,15 +218,17 @@ impl Parser {
         if self.started {
             self.row()?;
         }
-        Table::new(self.records)
+        let Some(header) = self.header else {
+            return Err(invalid("CSV file is empty."));
+        };
+        Table::from_parts(header, self.records)
     }
 }
 pub fn parse(bytes: &[u8], delimiter: Delimiter, cancel: Cancel<'_>) -> Result<Table> {
-    let mut parser = Parser::new(delimiter);
-    parser.consume(
-        bytes.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(bytes),
-        cancel,
-    )?;
+    let unbom = bytes.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(bytes);
+    let row_cap_hint = (unbom.len() / 32).clamp(16, 500_000);
+    let mut parser = Parser::new(delimiter, row_cap_hint);
+    parser.consume(unbom, cancel)?;
     parser.finish()
 }
 pub fn read(
@@ -192,21 +247,32 @@ pub fn read(
         return Err(invalid("Choose a regular CSV or TSV file."));
     }
     let file = std::fs::File::open(path)?;
-    if !file.metadata()?.is_file() {
+    let metadata = file.metadata()?;
+    if !metadata.is_file() {
         return Err(invalid("Choose a regular CSV or TSV file."));
     }
-    read_stream(file, delimiter, chunk_size, cancel)
+    let hint = (metadata.len() / 32).clamp(16, 500_000) as usize;
+    read_stream_with_hint(file, delimiter, chunk_size, hint, cancel)
 }
 pub fn read_stream(
+    reader: impl Read,
+    delimiter: Delimiter,
+    chunk_size: usize,
+    cancel: Cancel<'_>,
+) -> Result<Table> {
+    read_stream_with_hint(reader, delimiter, chunk_size, 0, cancel)
+}
+fn read_stream_with_hint(
     mut reader: impl Read,
     delimiter: Delimiter,
     chunk_size: usize,
+    hint: usize,
     cancel: Cancel<'_>,
 ) -> Result<Table> {
     if chunk_size == 0 {
         return Err(invalid("CSV read buffer must be positive."));
     }
-    let mut parser = Parser::new(delimiter);
+    let mut parser = Parser::new(delimiter, hint);
     let mut prefix = [0u8; 3];
     let mut prefix_len = 0;
     while prefix_len < 3 {

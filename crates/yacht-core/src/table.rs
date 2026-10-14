@@ -12,7 +12,10 @@ impl Table {
         if records.is_empty() {
             return Err(invalid("CSV file is empty."));
         }
-        let mut header = records.remove(0);
+        let header = records.remove(0);
+        Self::from_parts(header, records)
+    }
+    pub fn from_parts(mut header: Vec<String>, records: Vec<Vec<String>>) -> Result<Self> {
         let original = header.len();
         let mut width = original;
         let mut short_row_count = 0;

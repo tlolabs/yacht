@@ -1,28 +1,52 @@
 use crate::{check, style::Style, table::Table, Cancel, Result};
 use std::io::Write;
+
 pub fn escape(text: &str) -> String {
-    if !text
-        .bytes()
-        .any(|b| matches!(b, b'&' | b'<' | b'>' | b'"' | b'\''))
+    let bytes = text.as_bytes();
+    if !bytes
+        .iter()
+        .any(|&b| matches!(b, b'&' | b'<' | b'>' | b'"' | b'\''))
     {
         return text.to_owned();
     }
-    let mut out = String::with_capacity(text.len() + 16);
-    for c in text.chars() {
-        match c {
-            '&' => out.push_str("&amp;"),
-            '<' => out.push_str("&lt;"),
-            '>' => out.push_str("&gt;"),
-            '"' => out.push_str("&quot;"),
-            '\'' => out.push_str("&#x27;"),
-            _ => out.push(c),
-        }
+    let mut out = Vec::with_capacity(text.len() + 16);
+    let mut start = 0;
+    for (i, &b) in bytes.iter().enumerate() {
+        let replacement: &[u8] = match b {
+            b'&' => b"&amp;",
+            b'<' => b"&lt;",
+            b'>' => b"&gt;",
+            b'"' => b"&quot;",
+            b'\'' => b"&#x27;",
+            _ => continue,
+        };
+        out.extend_from_slice(&bytes[start..i]);
+        out.extend_from_slice(replacement);
+        start = i + 1;
     }
-    out
+    out.extend_from_slice(&bytes[start..]);
+    // SAFETY: replacing ASCII characters with valid ASCII entity strings preserves valid UTF-8.
+    unsafe { String::from_utf8_unchecked(out) }
 }
+
+#[inline]
 pub fn is_numeric(text: &str) -> bool {
-    let trimmed = text.trim();
-    let bytes = trimmed.as_bytes();
+    let bytes = text.as_bytes();
+    if bytes.is_empty() {
+        return false;
+    }
+    let first = bytes[0];
+    // Fast rejection: if first byte is neither a digit, sign, nor ASCII whitespace, it cannot be numeric.
+    if !first.is_ascii_digit() && first != b'+' && first != b'-' && !first.is_ascii_whitespace() {
+        return false;
+    }
+    // Fast path: if first and last bytes are not whitespace, skip expensive Unicode trim().
+    let last = bytes[bytes.len() - 1];
+    let bytes = if !first.is_ascii_whitespace() && !last.is_ascii_whitespace() {
+        bytes
+    } else {
+        text.trim().as_bytes()
+    };
     if bytes.is_empty() {
         return false;
     }
@@ -59,6 +83,7 @@ pub fn is_numeric(text: &str) -> bool {
     }
     digits > 0 && (fraction || !grouped || digits == 3)
 }
+
 /// Writes directly to the caller's buffered sink, including very large cells.
 fn escaped(text: &str, out: &mut impl Write, cancel: Cancel<'_>) -> Result<()> {
     let bytes = text.as_bytes();
@@ -81,21 +106,22 @@ fn escaped(text: &str, out: &mut impl Write, cancel: Cancel<'_>) -> Result<()> {
         if (i & 0xffff) == 0 && i > 0 {
             check(cancel)?;
         }
-        let replacement = match b {
-            b'&' => "&amp;",
-            b'<' => "&lt;",
-            b'>' => "&gt;",
-            b'"' => "&quot;",
-            b'\'' => "&#x27;",
+        let replacement: &[u8] = match b {
+            b'&' => b"&amp;",
+            b'<' => b"&lt;",
+            b'>' => b"&gt;",
+            b'"' => b"&quot;",
+            b'\'' => b"&#x27;",
             _ => continue,
         };
         out.write_all(&bytes[start..i])?;
-        out.write_all(replacement.as_bytes())?;
+        out.write_all(replacement)?;
         start = i + 1;
     }
     out.write_all(&bytes[start..])?;
     Ok(())
 }
+
 pub fn write(
     table: &Table,
     s: &Style,
@@ -145,10 +171,12 @@ pub fn write(
         out.write_all(b"</th>")?;
     }
     out.write_all(b"</tr></thead>\n      <tbody>\n")?;
+
+    let header_len = table.header.len();
     for row in table.rows.iter().take(row_limit.unwrap_or(usize::MAX)) {
         check(cancel)?;
         out.write_all(b"        <tr>")?;
-        for i in 0..table.header.len() {
+        for i in 0..header_len {
             let cell = row.get(i).map(String::as_str).unwrap_or("");
             out.write_all(if !unstyled && is_numeric(cell) {
                 b"<td class=\"num\">"
@@ -163,6 +191,7 @@ pub fn write(
     out.write_all(b"      </tbody>\n    </table>\n  </div>\n</body>\n</html>\n")?;
     Ok(())
 }
+
 pub fn document(
     table: &Table,
     s: &Style,
@@ -175,5 +204,6 @@ pub fn document(
         1024 + rows_to_render.saturating_mul(cols.saturating_mul(16).saturating_add(24));
     let mut out = Vec::with_capacity(estimated.min(128 * 1024 * 1024));
     write(table, s, row_limit, &mut out, cancel)?;
-    Ok(String::from_utf8(out).expect("generator writes UTF-8"))
+    // SAFETY: write only outputs valid UTF-8 HTML structure, escaped cell content, and validated style properties.
+    Ok(unsafe { String::from_utf8_unchecked(out) })
 }
