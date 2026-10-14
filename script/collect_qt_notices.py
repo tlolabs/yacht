@@ -12,15 +12,18 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('publish', type=Path)
     p.add_argument('--rid', required=True, choices=['win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-arm64'])
+    p.add_argument('--qt-version', default='6.8.2', help='Exact Qt runtime version')
     a = p.parse_args()
     destination = a.publish / 'ThirdPartyLicenses'
     destination.mkdir(parents=True, exist_ok=True)
     records = [
         {
             "name": "qt6",
-            "version": "6.8",
+            "version": a.qt_version,
             "license": "LGPL-3.0-only OR GPL-3.0-only",
-            "source": "https://www.qt.io/"
+            "source": "https://www.qt.io/",
+            "modules": ["QtCore", "QtGui", "QtWidgets", "QtNetwork"],
+            "plugins": ["platforms/qwindows"] if "win" in a.rid else ["platforms/libqxcb"]
         }
     ]
     upstream = destination / 'upstream'

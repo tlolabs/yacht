@@ -43,6 +43,29 @@ class ReleaseTagTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "differs from checked-out commit"):
             self.check_tag(head="c" * 40)
 
+    def test_prerelease_tag_rejected_for_production(self):
+        env = {"RELEASE_TAG": TAG + "-rc.1", "GH_REPO": "tlolabs/yacht", "GH_TOKEN": "fixture"}
+        with patch.dict(os.environ, env), patch("sys.argv", ["check_release_tag.py", "--stable-only"]):
+            with self.assertRaisesRegex(SystemExit, "not authorized for production signing"):
+                runpy.run_path(str(ROOT / "script/check_release_tag.py"), run_name="__main__")
+
+    def test_dirty_working_tree_rejected(self):
+        def git_output(args, **kwargs):
+            if "diff" in args:
+                return "crates/yacht-core/src/lib.rs\n"
+            return SHA + "\n"
+
+        env = {"RELEASE_TAG": TAG, "GH_REPO": "tlolabs/yacht", "GH_TOKEN": "fixture"}
+        with patch.dict(os.environ, env), patch("urllib.request.urlopen", side_effect=github_response), patch.object(subprocess, "check_output", side_effect=git_output), patch("sys.argv", ["check_release_tag.py", "--require-clean"]):
+            with self.assertRaisesRegex(SystemExit, "Working tree has uncommitted modifications"):
+                runpy.run_path(str(ROOT / "script/check_release_tag.py"), run_name="__main__")
+
+    def test_wrong_version_tag_rejected(self):
+        env = {"RELEASE_TAG": "v0.0.1", "GH_REPO": "tlolabs/yacht", "GH_TOKEN": "fixture"}
+        with patch.dict(os.environ, env):
+            with self.assertRaisesRegex(SystemExit, "does not match Cargo version"):
+                runpy.run_path(str(ROOT / "script/check_release_tag.py"), run_name="__main__")
+
 
 if __name__ == "__main__":
     unittest.main()

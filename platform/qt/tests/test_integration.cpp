@@ -13,6 +13,7 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QStyle>
+#include <QTextBrowser>
 #include <QDir>
 #include <QFile>
 #include <QJsonArray>
@@ -44,7 +45,10 @@ public:
     QStringList openFiles() override {
         return openFilesFunc ? openFilesFunc() : QStringList();
     }
-    QString saveFile(const QString &) override { return QString(); }
+    std::function<QString(const QString &)> saveFileFunc;
+    QString saveFile(const QString &defaultName) override {
+        return saveFileFunc ? saveFileFunc(defaultName) : QString();
+    }
     bool confirm(const QString &, const QString &, const QString &) override {
         return accept;
     }
@@ -365,6 +369,106 @@ void testViewModelAndPresentation() {
     prefFile.write(validPrefs);
     prefFile.close();
 
+    // -------------------------------------------------------------------------
+    // QLT-01 Regression: Preset store data preservation & recovery
+    // -------------------------------------------------------------------------
+    QString presetFilePath = AppIdentity::presetPath();
+    QFile presetFile(presetFilePath);
+    check(presetFile.open(QIODevice::WriteOnly | QIODevice::Truncate), "Corrupt preset store");
+    QByteArray corruptedPresetData = "{ invalid json preset store: ";
+    presetFile.write(corruptedPresetData);
+    presetFile.close();
+
+    {
+        MainWindow presetRecovery(desktop);
+        presetRecovery.initialize();
+        check(!presetRecovery.presetsReadable(), "Corrupted preset store marked unreadable");
+
+        // Attempting to save preset without explicit recovery is refused and preserves original bytes
+        desktop->accept = false;
+        presetRecovery.setPresetNameInput(QStringLiteral("ShouldNotOverwrite"));
+        presetRecovery.saveCurrentPreset();
+
+        // Attempting to delete preset is also refused
+        presetRecovery.deleteSelectedPreset();
+    }
+
+    check(presetFile.open(QIODevice::ReadOnly), "Verify unreadable presets preserved");
+    QByteArray preservedPresets = presetFile.readAll();
+    presetFile.close();
+    check(preservedPresets == corruptedPresetData, "Exact original bytes of corrupt preset file preserved");
+
+    // Invalid remembered style does NOT prevent loading valid presets
+    check(presetFile.open(QIODevice::WriteOnly | QIODevice::Truncate), "Write valid preset store");
+    presetFile.write("{\"CustomPreset\":{\"font_size_px\":24}}");
+    presetFile.close();
+
+    check(prefFile.open(QIODevice::WriteOnly | QIODevice::Truncate), "Write preferences with invalid last_style");
+    prefFile.write("{\"remember_style\":true,\"last_style\":{\"font_size_px\":\"not-a-number\"}}");
+    prefFile.close();
+
+    {
+        MainWindow sepWindow(desktop);
+        sepWindow.initialize();
+        check(sepWindow.presetsReadable(), "Presets loaded despite invalid last_style");
+        check(sepWindow.presetNames().contains(QStringLiteral("CustomPreset")), "Valid preset loaded when lastStyle is invalid");
+    }
+
+    // Explicit recovery behavior with backup
+    check(presetFile.open(QIODevice::WriteOnly | QIODevice::Truncate), "Re-corrupt preset store for recovery test");
+    presetFile.write(corruptedPresetData);
+    presetFile.close();
+
+    {
+        MainWindow recWindow(desktop);
+        recWindow.initialize();
+        check(!recWindow.presetsReadable(), "Store is unreadable before recovery");
+        bool recovered = recWindow.recoverPresetsWithBackup();
+        check(recovered, "Explicit recovery succeeded");
+        check(recWindow.presetsReadable(), "Store is readable after recovery");
+        recWindow.setPresetNameInput(QStringLiteral("FreshPreset"));
+        recWindow.saveCurrentPreset();
+        check(recWindow.presetNames().contains(QStringLiteral("FreshPreset")), "Can save preset after explicit recovery");
+    }
+
+    // -------------------------------------------------------------------------
+    // QLT-02 Regression: Qt GUI callback exception containment
+    // -------------------------------------------------------------------------
+    {
+        MainWindow guiWindow(desktop);
+        guiWindow.initialize();
+
+        // 1. Unwritable export destination in onExport()
+        desktop->saveFileFunc = [](const QString &) {
+            return QStringLiteral("/nonexistent/directory/path/export.html");
+        };
+        desktop->messages.clear();
+        guiWindow.onExport();
+        check(!guiWindow.isBusy(), "onExport to unwritable path resets busy state");
+        check(!desktop->messages.isEmpty(), "onExport displays error dialog on write failure");
+
+        // 2. Invalid style validation in onExport()
+        desktop->saveFileFunc = [&](const QString &) {
+            return dataDir + QStringLiteral("/export_invalid.html");
+        };
+        StyleField *sizeField = guiWindow.findField(QStringLiteral("font_size_px"));
+        check(sizeField != nullptr, "Find font_size_px field");
+        sizeField->setFieldText(QStringLiteral("invalid-size"));
+        desktop->messages.clear();
+        guiWindow.onExport();
+        check(!guiWindow.isBusy(), "onExport with invalid style resets busy state");
+        check(!desktop->messages.isEmpty(), "onExport with invalid style displays error message");
+
+        // 3. Batch conversion with invalid style
+        desktop->messages.clear();
+        guiWindow.batchConvert({dataDir + QStringLiteral("/tabs.tsv")});
+        check(!guiWindow.isBusy(), "batchConvert with invalid style resets busy state");
+        check(!desktop->messages.isEmpty(), "batchConvert with invalid style displays error message");
+
+        // Reset field to valid
+        sizeField->setFieldText(QStringLiteral("14"));
+    }
+
     qunsetenv("YACHT_TEST_DATA");
     std::cout << "Shared Qt presentation: all assertions passed." << std::endl;
 }
@@ -429,6 +533,41 @@ void testAccessibilityAndPlatformSupport() {
           "Light palette text and base must have contrast");
     realServices.applyAppearance(QStringLiteral("System"));
     check(qApp->style()->objectName() == systemStyle, "System appearance restores the OS style");
+
+    // -------------------------------------------------------------------------
+    // A11Y-01 Regression: Preview contrast in Dark, Light, and System appearances
+    // -------------------------------------------------------------------------
+    HtmlPreviewWidget contrastPreview;
+    TablePtr sampleTable = YachtCore::sample();
+    QJsonObject previewArgs;
+    previewArgs[QStringLiteral("style")] = YachtCore::style(QStringLiteral("defaults"));
+    previewArgs[QStringLiteral("limit")] = 10;
+    QJsonObject rendered = sampleTable->call(QStringLiteral("preview"), previewArgs).toObject();
+    QString previewHtml = rendered.value(QStringLiteral("html")).toString();
+
+    // Verify generated HTML specifies accessible foreground text color in table cells
+    check(previewHtml.contains(QStringLiteral("color: #222222")),
+          "Preview HTML specifies accessible body cell text color");
+    check(previewHtml.contains(QStringLiteral("background: #ffffff")),
+          "Preview HTML specifies light body background");
+    check(previewHtml.contains(QStringLiteral("background: #fbfbfb")),
+          "Preview HTML specifies zebra background");
+    check(previewHtml.contains(QStringLiteral("background: #f2f8ff")),
+          "Preview HTML specifies hover background");
+
+    // Apply Dark appearance and verify rendering
+    realServices.applyAppearance(QStringLiteral("Dark"));
+    contrastPreview.setHtml(previewHtml);
+    check(!contrastPreview.findChild<QTextBrowser *>()->toPlainText().trimmed().isEmpty(),
+          "Preview renders successfully under Dark appearance");
+
+    // Apply Light appearance and verify rendering
+    realServices.applyAppearance(QStringLiteral("Light"));
+    contrastPreview.setHtml(previewHtml);
+    check(!contrastPreview.findChild<QTextBrowser *>()->toPlainText().trimmed().isEmpty(),
+          "Preview renders successfully under Light appearance");
+
+    realServices.applyAppearance(QStringLiteral("System"));
 
     // 5. Verify BatchDialog accessibility
     BatchDialog batchDialog({QStringLiteral("/tmp/sample.csv")});

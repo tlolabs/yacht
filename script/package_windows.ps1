@@ -40,6 +40,10 @@ python script/check_windows_runtime.py $publish --arch $Architecture --compiler-
 if($LASTEXITCODE){throw 'Windows native runtime dependency audit failed'}
 # Signing is optional. Certificate is selected from an ephemeral CI/user store;
 # certificate material/passwords never appear in the repository or command line.
+if($env:YACHT_SIGNING_THUMBPRINT){
+  python script/check_release_tag.py --stable-only --require-clean
+  if($LASTEXITCODE){throw "Production signing authorization failed: stable release tag and clean source required"}
+}
 function Sign([string]$path){
   if($env:YACHT_SIGNING_THUMBPRINT){
     signtool sign /sha1 $env:YACHT_SIGNING_THUMBPRINT /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $path

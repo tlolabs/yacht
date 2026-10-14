@@ -36,14 +36,14 @@ pub fn is_numeric(text: &str) -> bool {
         return false;
     }
     let first = bytes[0];
-    // Fast rejection: if first byte is neither a digit, sign, nor ASCII whitespace, it cannot be numeric.
-    if !first.is_ascii_digit() && first != b'+' && first != b'-' && !first.is_ascii_whitespace() {
-        return false;
-    }
-    // Fast path: if first and last bytes are not whitespace, skip expensive Unicode trim().
     let last = bytes[bytes.len() - 1];
-    let bytes = if !first.is_ascii_whitespace() && !last.is_ascii_whitespace() {
+    // Fast path: if bounded by ASCII digits/signs and ending in an ASCII digit,
+    // skip trim() completely.
+    let bytes = if (first.is_ascii_digit() || first == b'+' || first == b'-') && last.is_ascii_digit() {
         bytes
+    } else if first < 128 && !first.is_ascii_whitespace() && !first.is_ascii_digit() && first != b'+' && first != b'-' {
+        // Fast rejection: leading ASCII byte that is neither digit, sign, nor whitespace
+        return false;
     } else {
         text.trim().as_bytes()
     };
@@ -122,6 +122,30 @@ fn escaped(text: &str, out: &mut impl Write, cancel: Cancel<'_>) -> Result<()> {
     Ok(())
 }
 
+pub fn accessible_text_color(bg: &str) -> &'static str {
+    let hex = bg.trim().strip_prefix('#').unwrap_or(bg.trim());
+    if hex.len() == 6 {
+        if let (Ok(r), Ok(g), Ok(b)) = (
+            u8::from_str_radix(&hex[0..2], 16),
+            u8::from_str_radix(&hex[2..4], 16),
+            u8::from_str_radix(&hex[4..6], 16),
+        ) {
+            let lum = 0.2126 * (r as f32) + 0.7152 * (g as f32) + 0.0722 * (b as f32);
+            return if lum < 128.0 { "#ffffff" } else { "#222222" };
+        }
+    } else if hex.len() == 3 {
+        if let (Ok(r), Ok(g), Ok(b)) = (
+            u8::from_str_radix(&hex[0..1], 16),
+            u8::from_str_radix(&hex[1..2], 16),
+            u8::from_str_radix(&hex[2..3], 16),
+        ) {
+            let lum = 0.2126 * ((r * 17) as f32) + 0.7152 * ((g * 17) as f32) + 0.0722 * ((b * 17) as f32);
+            return if lum < 128.0 { "#ffffff" } else { "#222222" };
+        }
+    }
+    "#222222"
+}
+
 pub fn write(
     table: &Table,
     s: &Style,
@@ -134,17 +158,20 @@ pub fn write(
     let unstyled = *s == Style::unstyled();
     out.write_all(b"<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>YACHT Table</title>\n")?;
     if !unstyled {
-        let mut css = format!(".csv-table-wrap {{\n  font-family: {};\n  font-size: {}px;\n}}\n.csv-table {{\n  width: 100%;\n  border-collapse: {};\n  border-spacing: {}px;\n}}\n.csv-table th, .csv-table td {{\n  border: {}px {} {};\n  padding: {}px;\n  vertical-align: top;\n}}\n.csv-table th {{\n  background: {};\n  color: {};\n  text-align: left;\n}}\n.csv-table td {{\n  background: {};\n}}\n.csv-table td.num {{\n  text-align: right;\n}}\n", if s.font_family.is_empty() { "inherit" } else { &s.font_family }, s.font_size_px, s.border_collapse, s.border_spacing_px, s.border_width_px, s.border_style, s.border_color, s.cell_padding_px, s.header_bg, s.header_text_color, s.body_bg);
+        let body_fg = accessible_text_color(&s.body_bg);
+        let mut css = format!(".csv-table-wrap {{\n  font-family: {};\n  font-size: {}px;\n}}\n.csv-table {{\n  width: 100%;\n  border-collapse: {};\n  border-spacing: {}px;\n}}\n.csv-table th, .csv-table td {{\n  border: {}px {} {};\n  padding: {}px;\n  vertical-align: top;\n}}\n.csv-table th {{\n  background: {};\n  color: {};\n  text-align: left;\n}}\n.csv-table td {{\n  background: {};\n  color: {};\n}}\n.csv-table td.num {{\n  text-align: right;\n}}\n", if s.font_family.is_empty() { "inherit" } else { &s.font_family }, s.font_size_px, s.border_collapse, s.border_spacing_px, s.border_width_px, s.border_style, s.border_color, s.cell_padding_px, s.header_bg, s.header_text_color, s.body_bg, body_fg);
         if s.zebra_enabled {
+            let zebra_fg = accessible_text_color(&s.zebra_bg);
             css.push_str(&format!(
-                ".csv-table tbody tr:nth-child(even) td {{\n  background: {};\n}}\n",
-                s.zebra_bg
+                ".csv-table tbody tr:nth-child(even) td {{\n  background: {};\n  color: {};\n}}\n",
+                s.zebra_bg, zebra_fg
             ));
         }
         if s.hover_enabled {
+            let hover_fg = accessible_text_color(&s.hover_bg);
             css.push_str(&format!(
-                ".csv-table tbody tr:hover td {{\n  background: {};\n}}\n",
-                s.hover_bg
+                ".csv-table tbody tr:hover td {{\n  background: {};\n  color: {};\n}}\n",
+                s.hover_bg, hover_fg
             ));
         }
         out.write_all(b"  <style>\n")?;

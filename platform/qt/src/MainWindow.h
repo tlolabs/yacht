@@ -70,6 +70,10 @@ public:
     void copyHtmlToClipboard();
     void batchConvert(const QStringList &paths);
 
+    bool presetsReadable() const { return m_presetsReadable; }
+    QString presetLoadError() const { return m_presetLoadError; }
+    bool recoverPresetsWithBackup();
+
     void switchTab(int index);
 
 protected:
@@ -111,6 +115,8 @@ private:
     Preferences m_preferences;
     TablePtr m_table;
     QJsonObject m_presets;
+    bool m_presetsReadable{true};
+    QString m_presetLoadError;
     QString m_sourcePath;
     QString m_lastExport;
     QString m_delimiter{QStringLiteral("comma")};

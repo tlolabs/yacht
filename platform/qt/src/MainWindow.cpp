@@ -7,10 +7,12 @@
 #include <QAction>
 #include <QApplication>
 #include <QComboBox>
+#include <QDateTime>
 #include <QDesktopServices>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QEventLoop>
+#include <QFile>
 #include <QFileInfo>
 #include <QFontDatabase>
 #include <QFormLayout>
@@ -527,20 +529,33 @@ void MainWindow::initialize() {
     syncRecent();
 
     QJsonObject initStyle = YachtCore::style(QStringLiteral("defaults"));
-    try {
-        if (m_preferences.rememberStyle && !m_preferences.lastStyle.isEmpty()) {
+    if (m_preferences.rememberStyle && !m_preferences.lastStyle.isEmpty()) {
+        try {
             QJsonObject normArgs;
             normArgs[QStringLiteral("style")] = m_preferences.lastStyle;
-            initStyle = YachtCore::call(QStringLiteral("normalize_style"), normArgs).toObject();
+            QJsonObject normStyle = YachtCore::call(QStringLiteral("normalize_style"), normArgs).toObject();
             QJsonObject valArgs;
-            valArgs[QStringLiteral("style")] = initStyle;
+            valArgs[QStringLiteral("style")] = normStyle;
             YachtCore::call(QStringLiteral("validate_style"), valArgs);
+            initStyle = normStyle;
+        } catch (const std::exception &e) {
+            QString styleWarn = QStringLiteral("Could not load saved style: ") + QString::fromUtf8(e.what());
+            warning = warning.isEmpty() ? styleWarn : warning + QStringLiteral("\n") + styleWarn;
+            initStyle = YachtCore::style(QStringLiteral("defaults"));
         }
+    }
+
+    try {
         m_presets = Presets::load();
+        m_presetsReadable = true;
+        m_presetLoadError.clear();
     } catch (const std::exception &e) {
-        warning = QStringLiteral("Could not load saved style/presets; the original files will be preserved: ") +
-                  QString::fromUtf8(e.what());
-        initStyle = YachtCore::style(QStringLiteral("defaults"));
+        m_presetsReadable = false;
+        m_presetLoadError = QString::fromUtf8(e.what());
+        m_presets = QJsonObject();
+        QString presetWarn = QStringLiteral("Could not load presets; the original file will be preserved: ") +
+                             m_presetLoadError;
+        warning = warning.isEmpty() ? presetWarn : warning + QStringLiteral("\n") + presetWarn;
     }
 
     syncPresets();
@@ -879,12 +894,25 @@ void MainWindow::onExport() {
                               : QFileInfo(m_sourcePath).completeBaseName() + QStringLiteral(".html");
     QString path = m_desktop->saveFile(defaultName);
     if (!path.isEmpty()) {
-        exportTo(path, true);
+        try {
+            exportTo(path, true);
+        } catch (const YachtCancelledException &) {
+            m_statusLabel->setText(QStringLiteral("Cancelled"));
+        } catch (const std::exception &e) {
+            m_statusLabel->setText(QString::fromUtf8(e.what()));
+            m_desktop->showMessage(QStringLiteral("Export Failed"), QString::fromUtf8(e.what()));
+        }
     }
 }
 
 void MainWindow::exportTo(const QString &path, bool overwrite) {
     if (m_busy || !m_table) return;
+    struct BusyGuard {
+        MainWindow *w;
+        bool active{true};
+        ~BusyGuard() { if (active) w->setBusy(false); }
+        void disarm() { active = false; w->setBusy(false); }
+    } guard{this};
     setBusy(true);
     m_cancelled = false;
     try {
@@ -899,14 +927,16 @@ void MainWindow::exportTo(const QString &path, bool overwrite) {
         });
         m_lastExport = path;
         m_statusLabel->setText(QStringLiteral("Exported ") + QFileInfo(path).fileName());
+        guard.disarm();
     } catch (const YachtCancelledException &) {
         m_statusLabel->setText(QStringLiteral("Cancelled"));
+        guard.disarm();
+        throw;
     } catch (const std::exception &e) {
         m_statusLabel->setText(QString::fromUtf8(e.what()));
-        setBusy(false);
+        guard.disarm();
         throw;
     }
-    setBusy(false);
 }
 
 void MainWindow::onCancel() {
@@ -958,15 +988,43 @@ void MainWindow::loadSelectedPreset() {
     }
 }
 
+bool MainWindow::recoverPresetsWithBackup() {
+    QString presetFile = AppIdentity::presetPath();
+    if (QFile::exists(presetFile)) {
+        QString backupPath = presetFile + QStringLiteral(".corrupt-") + QString::number(QDateTime::currentSecsSinceEpoch());
+        QFile::copy(presetFile, backupPath);
+    }
+    m_presets = QJsonObject();
+    try {
+        Presets::save(m_presets);
+        m_presetsReadable = true;
+        m_presetLoadError.clear();
+        syncPresets();
+        m_statusLabel->setText(QStringLiteral("Preset store reset with backup preserved"));
+        return true;
+    } catch (const std::exception &e) {
+        m_desktop->showMessage(QStringLiteral("Recovery Error"), QString::fromUtf8(e.what()));
+        return false;
+    }
+}
+
 void MainWindow::onSavePreset() {
     saveCurrentPreset();
 }
 
 void MainWindow::saveCurrentPreset() {
-    if (!m_preferences.readable) {
-        m_desktop->showMessage(QStringLiteral("YACHT"),
-                               QStringLiteral("Repair the unreadable preset store and restart before saving presets."));
-        return;
+    if (!m_presetsReadable) {
+        if (m_desktop->confirm(
+                QStringLiteral("Preset Store Unreadable"),
+                QStringLiteral("The preset store could not be read safely (%1). The original file has been preserved to prevent data loss.\n\nWould you like to backup the unreadable file and reset presets?")
+                    .arg(m_presetLoadError),
+                QStringLiteral("Backup and Reset"))) {
+            if (!recoverPresetsWithBackup()) {
+                return;
+            }
+        } else {
+            return;
+        }
     }
     QString name = m_savePresetEdit->text().trimmed();
     if (name.isEmpty() || name == QStringLiteral("Unstyled") || name == QStringLiteral("Default (Styled)")) {
@@ -1000,6 +1058,11 @@ void MainWindow::onDeletePreset() {
 }
 
 void MainWindow::deleteSelectedPreset() {
+    if (!m_presetsReadable) {
+        m_desktop->showMessage(QStringLiteral("Preset Store Unreadable"),
+                               QStringLiteral("Cannot delete presets because the preset store could not be read safely. The original file has been preserved."));
+        return;
+    }
     QString name = m_presetsCombo->currentText();
     if (name.isEmpty() || name == QStringLiteral("Unstyled") || name == QStringLiteral("Default (Styled)")) {
         return;
@@ -1064,11 +1127,26 @@ void MainWindow::receive(const QStringList &paths, bool batch) {
 
 void MainWindow::batchConvert(const QStringList &paths) {
     if (m_busy || paths.isEmpty()) return;
+
+    // Validate style before entering busy transaction
+    QJsonObject styleObj;
+    try {
+        styleObj = currentStyle();
+    } catch (const std::exception &e) {
+        m_statusLabel->setText(QString::fromUtf8(e.what()));
+        m_desktop->showMessage(QStringLiteral("Invalid Style"), QString::fromUtf8(e.what()));
+        return;
+    }
+
+    struct BusyGuard {
+        MainWindow *w;
+        ~BusyGuard() { w->setBusy(false); }
+    } guard{this};
+
     setBusy(true);
 
     auto overwriteOpt = m_desktop->reviewBatch(paths);
     if (!overwriteOpt.has_value()) {
-        setBusy(false);
         return;
     }
 
@@ -1078,14 +1156,12 @@ void MainWindow::batchConvert(const QStringList &paths) {
                 QStringLiteral("Replace existing HTML?"),
                 QStringLiteral("CSV inputs are preserved. Existing matching HTML will be replaced."),
                 QStringLiteral("Replace and Convert"))) {
-            setBusy(false);
             return;
         }
     }
 
     QStringList results;
     m_cancelled = false;
-    QJsonObject styleObj = currentStyle();
     QString separator = m_delimiter;
 
     for (int i = 0; i < paths.size(); ++i) {

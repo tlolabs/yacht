@@ -20,8 +20,12 @@ case "$PACKAGE_ARCH" in
 esac
 case "$PACKAGE_MODE" in
   --unsigned) SIGNING_IDENTITY=-; NOTARY_PROFILE= ;;
-  --sign) : "${SIGNING_IDENTITY:?Set SIGNING_IDENTITY for --sign}"; NOTARY_PROFILE= ;;
-  --notarize) : "${SIGNING_IDENTITY:?Set SIGNING_IDENTITY for --notarize}"; : "${NOTARY_PROFILE:?Set NOTARY_PROFILE for --notarize}" ;;
+  --sign)
+    python3 "$ROOT_DIR/script/check_release_tag.py" --stable-only --require-clean
+    : "${SIGNING_IDENTITY:?Set SIGNING_IDENTITY for --sign}"; NOTARY_PROFILE= ;;
+  --notarize)
+    python3 "$ROOT_DIR/script/check_release_tag.py" --stable-only --require-clean
+    : "${SIGNING_IDENTITY:?Set SIGNING_IDENTITY for --notarize}"; : "${NOTARY_PROFILE:?Set NOTARY_PROFILE for --notarize}" ;;
 esac
 BUILD_DIR="$ROOT_DIR/build/package-macos-$PACKAGE_ARCH"
 DIST_DIR="$ROOT_DIR/dist/macos-$PACKAGE_ARCH"

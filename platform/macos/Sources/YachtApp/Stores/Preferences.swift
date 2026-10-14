@@ -9,6 +9,8 @@ final class Preferences {
     let defaults: UserDefaults
     let repository: PresetRepository
     var presets: [String: StyleOptions] = [:]
+    var presetsReadable: Bool = true
+    var presetLoadError: String?
     var recentFiles: [URL] = []
     var problem: String?
     var appearance: String {
@@ -35,13 +37,24 @@ final class Preferences {
             FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Y.A.C.H.T.")
         repository = PresetRepository(url: base.appendingPathComponent("presets.json"))
         do {
-            if FileManager.default.fileExists(atPath: repository.url.path) { presets = try repository.load() }
-            else if !testing {
+            if FileManager.default.fileExists(atPath: repository.url.path) {
+                presets = try repository.load()
+                presetsReadable = true
+                presetLoadError = nil
+            } else if !testing {
                 let legacy = PresetRepository(url: FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".yacht_presets.json"))
-                presets = try legacy.load()
-                if !presets.isEmpty { try repository.save(presets) }
+                if FileManager.default.fileExists(atPath: legacy.url.path) {
+                    presets = try legacy.load()
+                    if !presets.isEmpty { try repository.save(presets) }
+                }
+                presetsReadable = true
+                presetLoadError = nil
             }
-        } catch { problem = "Could not load presets: \(error.localizedDescription). The original file is unchanged." }
+        } catch {
+            presetsReadable = false
+            presetLoadError = error.localizedDescription
+            problem = "Could not load presets: \(error.localizedDescription). The original file is unchanged."
+        }
         recentFiles = (defaults.stringArray(forKey: "recentFiles") ?? []).map { URL(fileURLWithPath: $0) }
         applyAppearance()
     }
@@ -73,11 +86,38 @@ final class Preferences {
     }
     func clearRecent() { recentFiles = []; defaults.removeObject(forKey: "recentFiles") }
     func savePreset(name: String, style: StyleOptions) throws {
+        guard presetsReadable else {
+            throw PresetStoreError.unreadableStore(presetLoadError ?? "decoding error")
+        }
         var next = presets; next[name] = style
         try repository.save(next); presets = next
     }
     func deletePreset(_ name: String) throws {
+        guard presetsReadable else {
+            throw PresetStoreError.unreadableStore(presetLoadError ?? "decoding error")
+        }
         var next = presets; next.removeValue(forKey: name)
         try repository.save(next); presets = next
+    }
+    func recoverPresetsWithBackup() throws {
+        if FileManager.default.fileExists(atPath: repository.url.path) {
+            let backupUrl = repository.url.deletingLastPathComponent().appendingPathComponent("presets.json.corrupt-\(Int(Date().timeIntervalSince1970))")
+            try? FileManager.default.copyItem(at: repository.url, to: backupUrl)
+        }
+        presets = [:]
+        presetsReadable = true
+        presetLoadError = nil
+        problem = nil
+        try repository.save([:])
+    }
+}
+
+enum PresetStoreError: LocalizedError {
+    case unreadableStore(String)
+    var errorDescription: String? {
+        switch self {
+        case .unreadableStore(let reason):
+            return "Cannot modify presets: the existing preset store could not be read safely (\(reason)). The original file is preserved to prevent data loss. Repair or recover the preset store before saving or deleting presets."
+        }
     }
 }

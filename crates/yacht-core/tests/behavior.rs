@@ -124,11 +124,29 @@ fn escaping_and_css() {
         "1,234.5",
         " 12.0 ",
         "123456789",
+        "\u{00a0}12",
+        "12\u{00a0}",
+        "\u{2003}42.5",
+        "12\u{2003}",
+        "\u{00a0}  +1,234.5\u{2003} ",
+        "\u{2002}99",
     ] {
-        assert!(html::is_numeric(value));
+        assert!(html::is_numeric(value), "expected {value:?} to be numeric");
     }
-    for value in ["", "17%", "1,23", "1,2345", "NaN", "1e4", "—", "3a"] {
-        assert!(!html::is_numeric(value));
+    for value in [
+        "",
+        "17%",
+        "1,23",
+        "1,2345",
+        "NaN",
+        "1e4",
+        "—",
+        "3a",
+        "\u{00a0}abc",
+        "\u{2003}Café",
+        "\u{00a0}",
+    ] {
+        assert!(!html::is_numeric(value), "expected {value:?} to not be numeric");
     }
     let bare = html::document(&table, &Style::unstyled(), None, &|| false).unwrap();
     assert!(!bare.contains("<style>"));
@@ -157,11 +175,32 @@ fn escaping_and_css() {
         "rgb(1, 2, 3)",
         "#ffeecc",
         "border-spacing: 4px",
+        "color: #222222;",
     ] {
         assert!(doc.contains(token));
     }
     assert!(!doc.contains("nth-child"));
     assert!(!doc.contains("tr:hover"));
+
+    // Default style has body, zebra and hover text colors specified with accessible contrast
+    let default_doc = html::document(&table, &Style::default(), None, &|| false).unwrap();
+    assert!(default_doc.contains("background: #ffffff;\n      color: #222222;"));
+    assert!(default_doc.contains("background: #fbfbfb;\n      color: #222222;"));
+    assert!(default_doc.contains("background: #f2f8ff;\n      color: #222222;"));
+
+    // Dark body background selects light accessible text color
+    let dark_styled = Style {
+        body_bg: "#111111".into(),
+        zebra_enabled: true,
+        zebra_bg: "#222222".into(),
+        hover_enabled: true,
+        hover_bg: "#333333".into(),
+        ..Default::default()
+    };
+    let dark_doc = html::document(&table, &dark_styled, None, &|| false).unwrap();
+    assert!(dark_doc.contains("background: #111111;\n      color: #ffffff;"));
+    assert!(dark_doc.contains("background: #222222;\n      color: #ffffff;"));
+    assert!(dark_doc.contains("background: #333333;\n      color: #ffffff;"));
 }
 #[test]
 fn preview_and_complete_exports() {

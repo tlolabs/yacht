@@ -39,7 +39,10 @@ CONTROL
 dpkg-deb --build --root-owner-group "$stage" "release/YACHT-$version-linux-$label.deb"
 tar -czf "release/YACHT-$version-linux-$label.tar.gz" -C "$stage/usr" .
 (cd release && sha256sum "YACHT-$version-linux-$label.deb" "YACHT-$version-linux-$label.tar.gz" > "SHA256SUMS-linux-$label")
-if [[ -n "${YACHT_GPG_KEY:-}" ]]; then gpg --batch --yes --local-user "$YACHT_GPG_KEY" --armor --detach-sign "release/SHA256SUMS-linux-$label"; fi
+if [[ -n "${YACHT_GPG_KEY:-}" ]]; then
+  python3 script/check_release_tag.py --stable-only --require-clean
+  gpg --batch --yes --local-user "$YACHT_GPG_KEY" --armor --detach-sign "release/SHA256SUMS-linux-$label"
+fi
 # Verify the staged runtime, permissions, metadata and actual CLI before upload.
 "$stage/usr/bin/yacht" --help >/dev/null
 YACHT_LIBRARY="$stage/usr/lib/yacht/libyacht_ffi.so" python3 script/test_native_binding.py "$stage/usr/lib/yacht/libyacht_ffi.so"
