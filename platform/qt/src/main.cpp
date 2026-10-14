@@ -29,6 +29,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    QStringList initialFiles = Yacht::SingleInstance::normalizeArguments(args);
+
     Yacht::SingleInstance singleInstance;
     if (!singleInstance.init(args)) {
         return 0; // Forwarded to running primary instance
@@ -39,7 +41,9 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(&singleInstance, &Yacht::SingleInstance::filesReceived, &window,
                      [&window](const QStringList &files) {
-                         window.receive(files);
+                         if (!files.isEmpty()) {
+                             window.receive(files);
+                         }
                          window.setWindowState((window.windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
                          window.raise();
                          window.activateWindow();
@@ -47,12 +51,6 @@ int main(int argc, char *argv[]) {
 
     window.show();
 
-    QStringList initialFiles;
-    for (int i = 1; i < args.size(); ++i) {
-        if (!args[i].startsWith(QLatin1Char('-'))) {
-            initialFiles.append(args[i]);
-        }
-    }
     if (!initialFiles.isEmpty()) {
         window.receive(initialFiles);
     }

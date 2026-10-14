@@ -1,5 +1,6 @@
 #include "UpdateClient.h"
 #include "AppIdentity.h"
+#include "YachtCore.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -7,44 +8,59 @@
 #include <QJsonDocument>
 #include <QProcess>
 #include <QProcessEnvironment>
+#include <chrono>
 #include <stdexcept>
+#include <thread>
 
 namespace Yacht {
 
-namespace {
-
-QString findUpdaterBinary() {
+QString UpdateClient::findUpdaterBinary() {
     QString binName = QStringLiteral("yacht-update");
 #if defined(Q_OS_WIN)
     binName += QStringLiteral(".exe");
 #endif
 
-    QString candidate = QCoreApplication::applicationDirPath() + QLatin1Char('/') + binName;
-    if (QFile::exists(candidate)) {
-        return candidate;
+    // Explicit developer override via environment variable only
+    QString devOverride = qEnvironmentVariable("YACHT_DEV_UPDATER_PATH");
+    if (!devOverride.isEmpty()) {
+        if (QFile::exists(devOverride)) {
+            return devOverride;
+        }
+        return QString();
     }
 
-    // Development locations
-    candidate = QDir::currentPath() + QStringLiteral("/target/release/") + binName;
-    if (QFile::exists(candidate)) {
-        return candidate;
-    }
-    candidate = QDir::currentPath() + QStringLiteral("/target/debug/") + binName;
-    if (QFile::exists(candidate)) {
-        return candidate;
+    if (qEnvironmentVariable("YACHT_ALLOW_DEV_UPDATER") == QStringLiteral("1")) {
+        QString candidate = QDir::currentPath() + QStringLiteral("/target/release/") + binName;
+        if (QFile::exists(candidate)) {
+            return candidate;
+        }
+        candidate = QDir::currentPath() + QStringLiteral("/target/debug/") + binName;
+        if (QFile::exists(candidate)) {
+            return candidate;
+        }
     }
 
-    return binName;
+    // In production, resolve ONLY the absolute bundled updater in applicationDirPath()
+    QString bundled = QCoreApplication::applicationDirPath() + QLatin1Char('/') + binName;
+    if (QFile::exists(bundled)) {
+        return bundled;
+    }
+
+    // Fail closed: do NOT search CWD or PATH in production
+    return QString();
 }
 
-} // namespace
-
-QJsonObject UpdateClient::run(const QString &command, const QStringList &arguments) {
+QJsonObject UpdateClient::run(const QString &command, const QStringList &arguments,
+                              std::function<bool()> cancel) {
     if (AppIdentity::isInternal()) {
         throw std::runtime_error("Production updater unavailable in the internal reference host.");
     }
 
     QString program = findUpdaterBinary();
+    if (program.isEmpty()) {
+        throw std::runtime_error("The bundled update helper is missing. Updates cannot be verified or installed.");
+    }
+
     QStringList args;
     args.append(command);
     args.append(arguments);
@@ -55,10 +71,24 @@ QJsonObject UpdateClient::run(const QString &command, const QStringList &argumen
         throw std::runtime_error("Cannot start update checker: " + process.errorString().toStdString());
     }
 
-    if (!process.waitForFinished(300000)) { // 5 minutes timeout
-        process.kill();
-        process.waitForFinished(5000);
-        throw std::runtime_error("The update helper timed out. Retry the update check later.");
+    // Coordinate timeouts: 910s for download (matching Rust's 900s timeout), 30s for checks
+    int timeoutMs = (command == QStringLiteral("download")) ? 910000 : 30000;
+    auto startTime = std::chrono::steady_clock::now();
+
+    while (process.state() == QProcess::Running) {
+        if (cancel && cancel()) {
+            process.kill();
+            process.waitForFinished(3000);
+            throw YachtCancelledException();
+        }
+        process.waitForFinished(100);
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - startTime).count();
+        if (elapsed > timeoutMs) {
+            process.kill();
+            process.waitForFinished(5000);
+            throw std::runtime_error("The update helper timed out. Retry the update check later.");
+        }
     }
 
     if (process.exitCode() != 0) {

@@ -945,6 +945,7 @@ void MainWindow::onCancel() {
 
 void MainWindow::cancelActiveWork() {
     m_cancelled = true;
+    m_updateCancelled = true;
     m_previewDebounceTimer.stop();
     m_statusLabel->setText(QStringLiteral("Cancellation requested"));
 }
@@ -1208,7 +1209,7 @@ void MainWindow::batchConvert(const QStringList &paths) {
 }
 
 void MainWindow::checkUpdates(bool automatic) {
-    if (m_busy) return;
+    if (m_updateCheckInProgress) return;
     if (AppIdentity::isInternal()) {
         if (!automatic) {
             m_desktop->showMessage(QStringLiteral("Internal reference build"),
@@ -1217,56 +1218,133 @@ void MainWindow::checkUpdates(bool automatic) {
         return;
     }
 
-    try {
-        QJsonObject update = UpdateClient::run(automatic ? QStringLiteral("check-auto")
-                                                         : QStringLiteral("check"));
-        QString status = update.value(QStringLiteral("status")).toString();
-        if (status != QStringLiteral("available")) {
-            if (!automatic) {
-                m_desktop->showMessage(QStringLiteral("Updates"),
-                                       QStringLiteral("No compatible newer update was found. Production updates may not yet be configured; published packages are available from Help → Download Releases."));
-            }
-            return;
-        }
+    m_updateCheckInProgress = true;
+    m_updateCancelled = false;
+    if (!automatic) {
+        m_statusLabel->setText(QStringLiteral("Checking for updates…"));
+    }
 
-        QString ver = update.value(QStringLiteral("version")).toString();
-        if (automatic) {
-            if (!m_busy) {
-                m_statusLabel->setText(QStringLiteral("YACHT %1 is available. Use Help → Check for Updates…").arg(ver));
-            }
-            return;
-        }
+    std::thread([this, automatic]() {
+        try {
+            QJsonObject update = UpdateClient::run(
+                automatic ? QStringLiteral("check-auto") : QStringLiteral("check"),
+                QStringList(),
+                [this]() { return m_updateCancelled.load(); }
+            );
+
+            QMetaObject::invokeMethod(this, [this, automatic, update]() {
+                m_updateCheckInProgress = false;
+                QString status = update.value(QStringLiteral("status")).toString();
+                if (status != QStringLiteral("available")) {
+                    if (!automatic) {
+                        m_statusLabel->setText(QStringLiteral("Ready"));
+                        m_desktop->showMessage(
+                            QStringLiteral("Updates"),
+                            QStringLiteral("No compatible newer update was found. Production updates may not yet be configured; published packages are available from Help → Download Releases."));
+                    }
+                    return;
+                }
+
+                QString ver = update.value(QStringLiteral("version")).toString();
+                if (automatic) {
+                    if (!m_busy) {
+                        m_statusLabel->setText(QStringLiteral("YACHT %1 is available. Use Help → Check for Updates…").arg(ver));
+                    }
+                    return;
+                }
 
 #if !defined(Q_OS_WIN)
-        m_desktop->showMessage(
-            QStringLiteral("Update available"),
-            QStringLiteral("YACHT %1 is available. Install the published package using your distribution's package manager. Export your work first.").arg(ver));
+                m_statusLabel->setText(QStringLiteral("Ready"));
+                m_desktop->showMessage(
+                    QStringLiteral("Update available"),
+                    QStringLiteral("YACHT %1 is available. Install the published package using your distribution's package manager. Export your work first.").arg(ver));
 #else
-        if (!m_desktop->confirm(
-            QStringLiteral("Update available"),
-            QStringLiteral("Download YACHT %1? Export your work before closing YACHT to install.").arg(ver),
-            QStringLiteral("Download"))) {
-            return;
-        }
+                if (!m_desktop->confirm(
+                    QStringLiteral("Update available"),
+                    QStringLiteral("Download YACHT %1? Export your work before closing YACHT to install.").arg(ver),
+                    QStringLiteral("Download"))) {
+                    m_statusLabel->setText(QStringLiteral("Ready"));
+                    return;
+                }
 
-        QJsonObject download = UpdateClient::run(QStringLiteral("download"),
-                                                 {ver, update.value(QStringLiteral("sha256")).toString()});
-        if (download.value(QStringLiteral("migration")).toString() != QStringLiteral("none")) {
-            throw std::runtime_error("This release requires manual migration; see the release notes.");
-        }
-
-        UpdateClient::verifyInstaller(download);
-        m_desktop->showMessage(
-            QStringLiteral("Verified installer ready"),
-            QStringLiteral("Signature, publisher and checksum verified. Export your work, close YACHT, then run the installer from the folder that opens next."));
-        m_lastExport = download.value(QStringLiteral("path")).toString();
-        onRevealLastExport();
+                downloadAndVerifyUpdate(ver, update.value(QStringLiteral("sha256")).toString());
 #endif
-    } catch (const std::exception &e) {
-        if (!automatic) {
-            m_desktop->showMessage(QStringLiteral("Updates"), QString::fromUtf8(e.what()));
+            });
+        } catch (const YachtCancelledException &) {
+            QMetaObject::invokeMethod(this, [this, automatic]() {
+                m_updateCheckInProgress = false;
+                if (!automatic) {
+                    m_statusLabel->setText(QStringLiteral("Update check cancelled."));
+                }
+            });
+        } catch (const std::exception &e) {
+            QString err = QString::fromUtf8(e.what());
+            QMetaObject::invokeMethod(this, [this, automatic, err]() {
+                m_updateCheckInProgress = false;
+                if (!automatic) {
+                    m_statusLabel->setText(QStringLiteral("Ready"));
+                    m_desktop->showMessage(QStringLiteral("Updates"), err);
+                }
+            });
         }
-    }
+    }).detach();
+}
+
+void MainWindow::downloadAndVerifyUpdate(const QString &ver, const QString &sha256) {
+    m_updateCheckInProgress = true;
+    m_updateCancelled = false;
+    m_statusLabel->setText(QStringLiteral("Downloading YACHT %1…").arg(ver));
+
+    std::thread([this, ver, sha256]() {
+        QString downloadedPath;
+        try {
+            QJsonObject download = UpdateClient::run(
+                QStringLiteral("download"),
+                {ver, sha256},
+                [this]() { return m_updateCancelled.load(); }
+            );
+
+            downloadedPath = download.value(QStringLiteral("path")).toString();
+
+            if (download.value(QStringLiteral("migration")).toString() != QStringLiteral("none")) {
+                throw std::runtime_error("This release requires manual migration; see the release notes.");
+            }
+
+            QMetaObject::invokeMethod(this, [this]() {
+                m_statusLabel->setText(QStringLiteral("Verifying installer…"));
+            });
+
+            UpdateClient::verifyInstaller(download);
+
+            QMetaObject::invokeMethod(this, [this, download]() {
+                m_updateCheckInProgress = false;
+                m_statusLabel->setText(QStringLiteral("Ready"));
+                m_desktop->showMessage(
+                    QStringLiteral("Verified installer ready"),
+                    QStringLiteral("Signature, publisher and checksum verified. Export your work, close YACHT, then run the installer from the folder that opens next."));
+                m_lastExport = download.value(QStringLiteral("path")).toString();
+                onRevealLastExport();
+            });
+        } catch (const YachtCancelledException &) {
+            if (!downloadedPath.isEmpty() && QFile::exists(downloadedPath)) {
+                QFile::remove(downloadedPath);
+            }
+            QMetaObject::invokeMethod(this, [this]() {
+                m_updateCheckInProgress = false;
+                m_statusLabel->setText(QStringLiteral("Download cancelled."));
+            });
+        } catch (const std::exception &e) {
+            if (!downloadedPath.isEmpty() && QFile::exists(downloadedPath)) {
+                QFile::remove(downloadedPath);
+            }
+            QString err = QString::fromUtf8(e.what());
+            QMetaObject::invokeMethod(this, [this, err]() {
+                m_updateCheckInProgress = false;
+                m_statusLabel->setText(QStringLiteral("Update failed."));
+                m_desktop->showMessage(QStringLiteral("Updates"), err);
+            });
+        }
+    }).detach();
 }
 
 bool MainWindow::mayClose() {

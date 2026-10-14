@@ -148,11 +148,15 @@ impl Parser {
                     i += 1;
                 } else {
                     let start = i;
-                    while i < len && !is_special_quoted[bytes[i] as usize] {
+                    let end_bound = (i + 65536).min(len);
+                    while i < end_bound && !is_special_quoted[bytes[i] as usize] {
                         i += 1;
                     }
-                    self.field.extend_from_slice(&bytes[start..i]);
-                    self.previous_cr = false;
+                    if i > start {
+                        check(cancel)?;
+                        self.field.extend_from_slice(&bytes[start..i]);
+                        self.previous_cr = false;
+                    }
                 }
             } else if b == self.delimiter {
                 self.field()?;
@@ -176,11 +180,15 @@ impl Parser {
                         } else {
                             self.state = State::Unquoted;
                             let start = i;
-                            while i < len && !is_special_unquoted[bytes[i] as usize] {
+                            let end_bound = (i + 65536).min(len);
+                            while i < end_bound && !is_special_unquoted[bytes[i] as usize] {
                                 i += 1;
                             }
-                            self.field.extend_from_slice(&bytes[start..i]);
-                            self.previous_cr = false;
+                            if i > start {
+                                check(cancel)?;
+                                self.field.extend_from_slice(&bytes[start..i]);
+                                self.previous_cr = false;
+                            }
                         }
                     }
                     State::Unquoted => {
@@ -188,11 +196,15 @@ impl Parser {
                             return Err(self.fail("quote inside an unquoted field; enclose the whole field in quotes."));
                         }
                         let start = i;
-                        while i < len && !is_special_unquoted[bytes[i] as usize] {
+                        let end_bound = (i + 65536).min(len);
+                        while i < end_bound && !is_special_unquoted[bytes[i] as usize] {
                             i += 1;
                         }
-                        self.field.extend_from_slice(&bytes[start..i]);
-                        self.previous_cr = false;
+                        if i > start {
+                            check(cancel)?;
+                            self.field.extend_from_slice(&bytes[start..i]);
+                            self.previous_cr = false;
+                        }
                     }
                     State::AfterQuote => {
                         if b != b'"' {
@@ -211,7 +223,8 @@ impl Parser {
         }
         Ok(())
     }
-    fn finish(mut self) -> Result<Table> {
+    fn finish(mut self, cancel: Cancel<'_>) -> Result<Table> {
+        check(cancel)?;
         if self.state == State::Quoted {
             return Err(self.fail("unterminated quoted field."));
         }
@@ -221,6 +234,7 @@ impl Parser {
         let Some(header) = self.header else {
             return Err(invalid("CSV file is empty."));
         };
+        check(cancel)?;
         Table::from_parts(header, self.records)
     }
 }
@@ -229,7 +243,7 @@ pub fn parse(bytes: &[u8], delimiter: Delimiter, cancel: Cancel<'_>) -> Result<T
     let row_cap_hint = (unbom.len() / 32).clamp(16, 500_000);
     let mut parser = Parser::new(delimiter, row_cap_hint);
     parser.consume(unbom, cancel)?;
-    parser.finish()
+    parser.finish(cancel)
 }
 pub fn read(
     path: &Path,
@@ -242,18 +256,52 @@ pub fn read(
         return Err(invalid("CSV read buffer must be positive."));
     }
     // Reject special files before opening: opening a FIFO can block indefinitely.
-    // Check the opened descriptor again to cover an ordinary path replacement.
+    // Check the opened descriptor again with O_NONBLOCK protection against TOCTOU path replacement.
     if !std::fs::metadata(path)?.is_file() {
         return Err(invalid("Choose a regular CSV or TSV file."));
     }
+    let file = open_regular_file(path)?;
+    let metadata = file.metadata()?;
+    let hint = (metadata.len() / 32).clamp(16, 500_000) as usize;
+    read_stream_with_hint(file, delimiter, chunk_size, hint, cancel)
+}
+
+#[cfg(unix)]
+fn open_regular_file(path: &Path) -> Result<std::fs::File> {
+    use std::os::unix::fs::OpenOptionsExt;
+    use std::os::unix::io::AsRawFd;
+
+    // On Unix, opening a FIFO in read-only mode blocks until a writer connects.
+    // Opening with O_NONBLOCK prevents hanging if the path is replaced with a FIFO.
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    options.custom_flags(libc::O_NONBLOCK);
+    let file = options.open(path)?;
+    let metadata = file.metadata()?;
+    if !metadata.is_file() {
+        return Err(invalid("Choose a regular CSV or TSV file."));
+    }
+    // Restore blocking mode so downstream operations behave normally
+    unsafe {
+        let fd = file.as_raw_fd();
+        let flags = libc::fcntl(fd, libc::F_GETFL);
+        if flags != -1 {
+            libc::fcntl(fd, libc::F_SETFL, flags & !libc::O_NONBLOCK);
+        }
+    }
+    Ok(file)
+}
+
+#[cfg(not(unix))]
+fn open_regular_file(path: &Path) -> Result<std::fs::File> {
     let file = std::fs::File::open(path)?;
     let metadata = file.metadata()?;
     if !metadata.is_file() {
         return Err(invalid("Choose a regular CSV or TSV file."));
     }
-    let hint = (metadata.len() / 32).clamp(16, 500_000) as usize;
-    read_stream_with_hint(file, delimiter, chunk_size, hint, cancel)
+    Ok(file)
 }
+
 pub fn read_stream(
     reader: impl Read,
     delimiter: Delimiter,
@@ -294,5 +342,5 @@ fn read_stream_with_hint(
         }
         parser.consume(&buffer[..n], cancel)?;
     }
-    parser.finish()
+    parser.finish(cancel)
 }

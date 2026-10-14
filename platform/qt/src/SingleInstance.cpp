@@ -20,18 +20,33 @@ SingleInstance::~SingleInstance() {
     }
 }
 
-bool SingleInstance::init(const QStringList &arguments) {
+QStringList SingleInstance::normalizeArguments(const QStringList &arguments) {
     QStringList files;
-    for (const QString &arg : arguments) {
-        if (!arg.startsWith(QLatin1Char('-'))) {
+    bool endOfOptions = false;
+    // Exclude argv[0] by starting at index 1
+    for (int i = 1; i < arguments.size(); ++i) {
+        const QString &arg = arguments[i];
+        if (arg == QStringLiteral("--")) {
+            endOfOptions = true;
+        } else if (!endOfOptions && arg.startsWith(QLatin1Char('-'))) {
+            // Option flag: skip option and any option argument if applicable
+            if (arg == QStringLiteral("--ui-smoke-test")) {
+                ++i; // skip smoke test json path
+            }
+        } else {
             files.append(arg);
         }
     }
+    return files;
+}
+
+bool SingleInstance::init(const QStringList &arguments) {
+    QStringList files = normalizeArguments(arguments);
 
     QLocalSocket socket;
     socket.connectToServer(m_channel);
     if (socket.waitForConnected(500)) {
-        // Connected to an existing primary instance. Forward files and exit.
+        // Connected to an existing primary instance. Forward files (or empty list for activation) and exit.
         QJsonArray arr;
         for (const QString &f : files) {
             arr.append(f);
@@ -83,9 +98,10 @@ void SingleInstance::onNewConnection() {
 
             QJsonDocument doc = QJsonDocument::fromJson(payload);
             if (doc.isArray()) {
+                m_activationRequested = true;
                 for (const auto &v : doc.array()) {
                     QString path = v.toString();
-                    if (!path.isEmpty() && !path.startsWith(QLatin1Char('-'))) {
+                    if (!path.isEmpty()) {
                         m_queuedFiles.append(path);
                     }
                 }
@@ -99,9 +115,10 @@ void SingleInstance::onNewConnection() {
 }
 
 void SingleInstance::onFlushQueue() {
-    if (!m_queuedFiles.isEmpty()) {
+    if (m_activationRequested || !m_queuedFiles.isEmpty()) {
         QStringList batch = m_queuedFiles;
         m_queuedFiles.clear();
+        m_activationRequested = false;
         emit filesReceived(batch);
     }
 }

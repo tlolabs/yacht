@@ -5,6 +5,8 @@
 #include "../src/Preferences.h"
 #include "../src/Presets.h"
 #include "../src/SettingsDialog.h"
+#include "../src/SingleInstance.h"
+#include "../src/UpdateClient.h"
 #include "../src/YachtCore.h"
 
 #include <QAction>
@@ -590,12 +592,108 @@ void testAccessibilityAndPlatformSupport() {
     std::cout << "Accessibility and platform support: all assertions passed." << std::endl;
 }
 
+void testSingleInstanceArgumentHandling() {
+    std::cout << "Testing SingleInstance argument handling (QLT-03)..." << std::endl;
+
+    // 1. argv[0] only -> empty list (activation)
+    QStringList noFiles{QStringLiteral("/usr/local/bin/yacht")};
+    QStringList normalized = SingleInstance::normalizeArguments(noFiles);
+    check(normalized.isEmpty(), "No-file invocation normalizes to empty list (activation)");
+
+    // 2. Single CSV file -> 1 file (excludes argv[0])
+    QStringList oneFile{QStringLiteral("/usr/local/bin/yacht"), QStringLiteral("data.csv")};
+    normalized = SingleInstance::normalizeArguments(oneFile);
+    check(normalized.size() == 1 && normalized[0] == QStringLiteral("data.csv"),
+          "Single file excludes argv[0] and contains only the CSV");
+
+    // 3. Multiple files with spaces and Unicode
+    QStringList multiFiles{QStringLiteral("yacht"), QStringLiteral("path with spaces.csv"),
+                           QStringLiteral("Unicode 🛥.tsv")};
+    normalized = SingleInstance::normalizeArguments(multiFiles);
+    check(normalized.size() == 2 &&
+          normalized[0] == QStringLiteral("path with spaces.csv") &&
+          normalized[1] == QStringLiteral("Unicode 🛥.tsv"),
+          "Multiple files preserve spaces and Unicode characters");
+
+    // 4. Options and smoke test args are excluded
+    QStringList smokeArgs{QStringLiteral("yacht"), QStringLiteral("--ui-smoke-test"),
+                          QStringLiteral("smoke.json"), QStringLiteral("target.csv")};
+    normalized = SingleInstance::normalizeArguments(smokeArgs);
+    check(normalized.size() == 1 && normalized[0] == QStringLiteral("target.csv"),
+          "Option flags and their arguments are excluded");
+
+    // 5. Dash-prefixed file after '--' is preserved as file
+    QStringList dashFiles{QStringLiteral("yacht"), QStringLiteral("--"), QStringLiteral("-my-file.csv")};
+    normalized = SingleInstance::normalizeArguments(dashFiles);
+    check(normalized.size() == 1 && normalized[0] == QStringLiteral("-my-file.csv"),
+          "Dash-prefixed filename after '--' is preserved as a file argument");
+
+    std::cout << "SingleInstance argument handling: all assertions passed." << std::endl;
+}
+
+void testSecureUpdaterResolution() {
+    std::cout << "Testing secure updater executable resolution (SEC-02)..." << std::endl;
+
+    // Ensure dev overrides are unset
+    qunsetenv("YACHT_DEV_UPDATER_PATH");
+    qunsetenv("YACHT_ALLOW_DEV_UPDATER");
+
+    // In production without bundled binary, resolution fails closed
+    QString resolved = UpdateClient::findUpdaterBinary();
+    // In test environment, the bundled binary is not present in build dir
+    if (!QFile::exists(QCoreApplication::applicationDirPath() + QStringLiteral("/yacht-update"))) {
+        check(resolved.isEmpty(), "Fails closed when bundled updater is absent");
+    }
+
+    // Create a fake replacement executable in a separate directory and switch CWD there
+    QString originalCwd = QDir::currentPath();
+    QTemporaryDir fakeCwdDir;
+    check(fakeCwdDir.isValid(), "Created temp dir for CWD test");
+    QString fakeCwd = fakeCwdDir.path() + QStringLiteral("/yacht-update");
+    QFile fakeCwdFile(fakeCwd);
+    if (fakeCwdFile.open(QIODevice::WriteOnly)) {
+        fakeCwdFile.write("#!/bin/sh\nexit 1\n");
+        fakeCwdFile.close();
+        fakeCwdFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
+
+        // Change current directory to fakeCwdDir
+        QDir::setCurrent(fakeCwdDir.path());
+
+        // findUpdaterBinary MUST NOT resolve the fake CWD executable in production
+        QString cwdResolved = UpdateClient::findUpdaterBinary();
+        check(cwdResolved != fakeCwd && cwdResolved.isEmpty(),
+              "Never executes replacement helper from current working directory");
+
+        QDir::setCurrent(originalCwd);
+    }
+
+    // Test explicit developer override via environment variable
+    QString tempDevHelper = QDir::tempPath() + QStringLiteral("/fake-yacht-update");
+    QFile devFile(tempDevHelper);
+    if (devFile.open(QIODevice::WriteOnly)) {
+        devFile.write("#!/bin/sh\nexit 0\n");
+        devFile.close();
+        devFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
+
+        qputenv("YACHT_DEV_UPDATER_PATH", tempDevHelper.toUtf8());
+        QString devResolved = UpdateClient::findUpdaterBinary();
+        check(devResolved == tempDevHelper, "Explicit developer override resolves specified helper path");
+
+        qunsetenv("YACHT_DEV_UPDATER_PATH");
+        devFile.remove();
+    }
+
+    std::cout << "Secure updater executable resolution: all assertions passed." << std::endl;
+}
+
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     std::cout << "Running Qt Rust binding and integration tests..." << std::endl;
     testRustBinding();
     testViewModelAndPresentation();
     testAccessibilityAndPlatformSupport();
+    testSingleInstanceArgumentHandling();
+    testSecureUpdaterResolution();
     std::cout << "All integration tests passed successfully!" << std::endl;
     return 0;
 }

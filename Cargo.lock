@@ -1417,6 +1417,7 @@ dependencies = [
 name = "yacht-core"
 version = "2.1.2"
 dependencies = [
+ "libc",
  "regex",
  "serde",
  "serde_json",

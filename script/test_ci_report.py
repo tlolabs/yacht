@@ -114,6 +114,41 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(len(writes), 1)
         self.assertIn("update:v2.1.2", writes[0][2]["body"])
 
+    def test_nonblocking_accessibility_step_failure_recorded_and_retained(self):
+        calls = []
+
+        # Job overall succeeded, but nonblocking accessibility step failed
+        def api(method, path, payload=None):
+            calls.append((method, path, payload))
+            if "/jobs?" in path:
+                return {
+                    "jobs": [
+                        {
+                            "name": "Repository compliance",
+                            "conclusion": "success",
+                            "html_url": "https://github.com/tlolabs/yacht/actions/runs/123/job/1",
+                            "steps": [
+                                {"name": "Check platform and dependency metadata", "conclusion": "success"},
+                                {
+                                    "name": "Automated accessibility and platform support checks (nonblocking)",
+                                    "conclusion": "failure",
+                                },
+                            ],
+                        }
+                    ]
+                }
+            if method == "GET":
+                return []
+            return {"number": 7}
+
+        with patch.dict(os.environ, ENV), patch.object(report_ci_failures, "api", side_effect=api):
+            report_ci_failures.main()
+        writes = [call for call in calls if call[0] != "GET"]
+        self.assertEqual(len(writes), 1)
+        self.assertEqual(writes[0][0], "POST")
+        self.assertIn("Automated accessibility and platform support checks (nonblocking)", writes[0][2]["body"])
+        self.assertIn("failure (nonblocking)", writes[0][2]["body"])
+
 
 if __name__ == "__main__":
     unittest.main()

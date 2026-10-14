@@ -13,6 +13,8 @@ serde_json.workspace = true
 regex.workspace = true
 tempfile.workspace = true
 thiserror.workspace = true
+[target.'cfg(unix)'.dependencies]
+libc = { workspace = true }
 [[bench]]
 name = "conversion"
 harness = false

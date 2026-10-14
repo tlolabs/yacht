@@ -110,6 +110,7 @@ private:
     void setBusy(bool busy);
     void applyAppearance(const QString &appearance);
     bool mayClose();
+    void downloadAndVerifyUpdate(const QString &ver, const QString &sha256);
 
     std::shared_ptr<IDesktopServices> m_desktop;
     Preferences m_preferences;
@@ -123,6 +124,9 @@ private:
     bool m_busy{false};
     std::atomic<bool> m_cancelled{false};
     bool m_closeConfirmed{false};
+
+    bool m_updateCheckInProgress{false};
+    std::atomic<bool> m_updateCancelled{false};
 
     QTimer m_previewDebounceTimer;
     QTimer m_updateTimer;

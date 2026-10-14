@@ -12,7 +12,24 @@ STATE_MARKER = "<!-- yacht-ci-state:"
 
 
 def failed_jobs(jobs):
-    return [job for job in jobs if job.get("conclusion") in BAD_RESULTS]
+    failures = []
+    for job in jobs:
+        if job.get("conclusion") in BAD_RESULTS:
+            failures.append({
+                "name": job.get("name", "Unknown job"),
+                "html_url": job.get("html_url", ""),
+                "conclusion": job.get("conclusion"),
+            })
+        else:
+            for step in job.get("steps") or []:
+                if step.get("conclusion") in BAD_RESULTS:
+                    step_name = step.get("name", "step")
+                    failures.append({
+                        "name": f"{job.get('name', 'Job')} → {step_name}",
+                        "html_url": job.get("html_url", ""),
+                        "conclusion": f"{step.get('conclusion')} (nonblocking)",
+                    })
+    return failures
 
 
 def read_state(issue):

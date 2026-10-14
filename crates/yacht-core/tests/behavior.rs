@@ -339,4 +339,70 @@ fn regular_file_and_invalid_style_safeguards() {
     assert!(files::export(&Table::sample(), &invalid, &output, true, &|| false).is_err());
     assert_eq!(std::fs::read_to_string(&output).unwrap(), "KEEP");
     assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 1);
+
+    // Symlink to a regular file is supported
+    let regular = directory.path().join("valid.csv");
+    std::fs::write(&regular, "h1,h2\nv1,v2\n").unwrap();
+    #[cfg(unix)]
+    {
+        let symlink_path = directory.path().join("symlink_valid.csv");
+        std::os::unix::fs::symlink(&regular, &symlink_path).unwrap();
+        let table = csv::read(&symlink_path, Delimiter::Comma, 65536, &|| false).unwrap();
+        assert_eq!(table.rows.len(), 1);
+        assert_eq!(table.header, vec!["h1", "h2"]);
+
+        // FIFO is rejected immediately without hanging
+        let fifo_path = directory.path().join("test.fifo");
+        let c_path = std::ffi::CString::new(fifo_path.to_str().unwrap()).unwrap();
+        let ret = unsafe { libc::mkfifo(c_path.as_ptr(), 0o600) };
+        assert_eq!(ret, 0);
+
+        let err = csv::read(&fifo_path, Delimiter::Comma, 65536, &|| false);
+        assert!(err.is_err(), "Opening FIFO must fail");
+        assert!(
+            err.unwrap_err().to_string().contains("Choose a regular CSV or TSV file."),
+            "Must reject FIFO with regular file message"
+        );
+
+        // Symlink to FIFO is also rejected without hanging
+        let symlink_fifo = directory.path().join("symlink.fifo");
+        std::os::unix::fs::symlink(&fifo_path, &symlink_fifo).unwrap();
+        let err2 = csv::read(&symlink_fifo, Delimiter::Comma, 65536, &|| false);
+        assert!(err2.is_err(), "Opening symlink to FIFO must fail");
+    }
+}
+
+#[test]
+fn cancellation_across_long_ordinary_byte_run() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    // Construct a long unquoted and long quoted field (> 150 KB)
+    let long_unquoted = "a".repeat(180_000);
+    let long_quoted = "b".repeat(180_000);
+    let csv_content = format!("H1,H2\n{},\"{}\"\n", long_unquoted, long_quoted);
+
+    // Verify uncancelled parse succeeds and preserves full content
+    let table = csv::parse(csv_content.as_bytes(), Delimiter::Comma, &|| false).unwrap();
+    assert_eq!(table.rows[0][0].len(), 180_000);
+    assert_eq!(table.rows[0][1].len(), 180_000);
+
+    // Verify cancellation during long unquoted run halts quickly
+    let counter = AtomicUsize::new(0);
+    let res = csv::parse(csv_content.as_bytes(), Delimiter::Comma, &|| {
+        let count = counter.fetch_add(1, Ordering::SeqCst);
+        count >= 2 // cancel after at most 2 checkpoints
+    });
+    assert!(matches!(res, Err(Error::Cancelled)));
+
+    // Verify prompt cancellation via read() from disk as well
+    let dir = tempfile::tempdir().unwrap();
+    let file_path = dir.path().join("long.csv");
+    std::fs::write(&file_path, &csv_content).unwrap();
+
+    let counter2 = AtomicUsize::new(0);
+    let res2 = csv::read(&file_path, Delimiter::Comma, 65536, &|| {
+        let count = counter2.fetch_add(1, Ordering::SeqCst);
+        count >= 2
+    });
+    assert!(matches!(res2, Err(Error::Cancelled)));
 }
