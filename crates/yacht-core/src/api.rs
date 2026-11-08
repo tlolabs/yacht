@@ -42,6 +42,12 @@ fn delimiter(v: &mut Value) -> Result<Delimiter> {
         val => Ok(serde_json::from_value(val)?),
     }
 }
+fn output_mode(v: &Value) -> Result<html::OutputMode> {
+    match v.get("output_mode") {
+        None | Some(Value::Null) => Ok(html::OutputMode::default()),
+        Some(value) => Ok(serde_json::from_value(value.clone())?),
+    }
+}
 fn count(v: &Value, key: &str, default: usize) -> Result<usize> {
     match v.get(key) {
         None | Some(Value::Null) => Ok(default),
@@ -91,6 +97,7 @@ impl Engine {
             }
             "defaults" => json!(Style::default()),
             "unstyled" => json!(Style::unstyled()),
+            "builtin_presets" => json!(style::builtin_presets()),
             "normalize_style" => json!(style(&mut v)?),
             "validate_style" => {
                 style(&mut v)?.validate()?;
@@ -125,30 +132,34 @@ impl Engine {
             "rows" => json!(self.table(&v)?.rows),
             "preview" => {
                 let s = style(&mut v)?;
-                json!(preview::generate(
+                json!(preview::generate_with_renderer(
                     self.table(&v)?.as_ref(),
                     &s,
                     count(&v, "limit", 200)?,
+                    output_mode(&v)?,
+                    v["inline_preview"].as_bool().unwrap_or(false),
                     cancel
                 )?)
             }
             "html" => {
                 let s = style(&mut v)?;
-                json!(html::document(
+                json!(html::output(
                     self.table(&v)?.as_ref(),
                     &s,
                     Some(count(&v, "limit", usize::MAX)?),
+                    output_mode(&v)?,
                     cancel
                 )?)
             }
             "default_output" => json!(files::default_output(Path::new(text(&v, "path")?))),
             "export" => {
                 let s = style(&mut v)?;
-                files::export(
+                files::export_with_mode(
                     self.table(&v)?.as_ref(),
                     &s,
                     Path::new(text(&v, "path")?),
                     v["overwrite"].as_bool().unwrap_or(false),
+                    output_mode(&v)?,
                     cancel,
                 )?;
                 Value::Null
@@ -156,12 +167,13 @@ impl Engine {
             "convert" => {
                 let s = style(&mut v)?;
                 let d = delimiter(&mut v)?;
-                files::convert(
+                files::convert_with_mode(
                     Path::new(text(&v, "input")?),
                     Path::new(text(&v, "output")?),
                     &s,
                     d,
                     v["overwrite"].as_bool().unwrap_or(false),
+                    output_mode(&v)?,
                     cancel,
                 )?;
                 Value::Null
@@ -171,12 +183,15 @@ impl Engine {
                     serde_json::from_value(take_field(&mut v, "inputs"))?;
                 let s = style(&mut v)?;
                 let d = delimiter(&mut v)?;
-                json!(files::batch(
+                json!(files::batch_with_options(
                     &inputs,
                     &s,
-                    d,
-                    v["infer_tsv"].as_bool().unwrap_or(true),
-                    v["overwrite"].as_bool().unwrap_or(false),
+                    files::BatchOptions {
+                        delimiter: d,
+                        infer_tsv: v["infer_tsv"].as_bool().unwrap_or(true),
+                        overwrite: v["overwrite"].as_bool().unwrap_or(false),
+                        output_mode: output_mode(&v)?,
+                    },
                     cancel,
                     |_| {}
                 )?)

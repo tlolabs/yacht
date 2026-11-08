@@ -11,6 +11,7 @@ public:
     bool rememberStyle{true};
     int previewRows{200};
     QString appearance{QStringLiteral("System")};
+    QString outputMode{QStringLiteral("table")};
     QStringList recent;
     QJsonObject lastStyle;
     bool readable{true};

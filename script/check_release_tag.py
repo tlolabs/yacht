@@ -47,17 +47,20 @@ def main():
             tracked_diff = subprocess.check_output(["git", "diff", "--name-only", "HEAD"], cwd=ROOT, text=True).strip()
             if tracked_diff:
                 raise SystemExit(f"Working tree has uncommitted modifications; production signing requires a clean, source-bound build:\n{tracked_diff}")
-        except FileNotFoundError:
-            pass
+        except (subprocess.CalledProcessError, FileNotFoundError) as error:
+            raise SystemExit("Cannot verify a clean source tree for production signing") from error
 
-    # Local commit verification if git is available
+    # Stable signing always requires actual local source provenance. RELEASE_TAG
+    # selects a tag; it is never evidence that the tag exists or matches HEAD.
     try:
-        tag_commit = subprocess.check_output(["git", "rev-list", "-n", "1", tag], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).strip()
+        tag_commit = subprocess.check_output(["git", "rev-parse", "--verify", f"refs/tags/{tag}^{{commit}}"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).strip()
         head_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-        if tag_commit and tag_commit != head_commit:
+        if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", tag_commit) or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", head_commit):
+            raise SystemExit("Cannot verify stable release tag and checked-out commit")
+        if tag_commit != head_commit:
             raise SystemExit(f"Stable release tag target ({tag_commit}) differs from checked-out commit ({head_commit})")
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        pass
+    except (subprocess.CalledProcessError, FileNotFoundError) as error:
+        raise SystemExit("Cannot verify stable release tag against the checked-out commit") from error
 
     repo = os.environ.get("GH_REPO")
     token = os.environ.get("GH_TOKEN")

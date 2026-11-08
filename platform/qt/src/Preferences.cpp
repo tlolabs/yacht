@@ -42,6 +42,9 @@ void sanitize(Preferences &prefs) {
         prefs.appearance != QStringLiteral("Dark")) {
         prefs.appearance = QStringLiteral("System");
     }
+    if (prefs.outputMode != QStringLiteral("table") && prefs.outputMode != QStringLiteral("document")) {
+        prefs.outputMode = QStringLiteral("table");
+    }
 
     QStringList cleanRecent;
     for (const QString &item : prefs.recent) {
@@ -86,6 +89,8 @@ Preferences Preferences::importLinuxPreferences(const QString &path) {
             if (ok) prefs.previewRows = rows;
         } else if (key == QStringLiteral("appearance")) {
             prefs.appearance = val;
+        } else if (key == QStringLiteral("output_mode")) {
+            prefs.outputMode = val;
         } else if (key == QStringLiteral("recent_files")) {
             QJsonDocument doc = QJsonDocument::fromJson(val.toUtf8());
             if (doc.isArray()) {
@@ -146,6 +151,12 @@ Preferences Preferences::load() {
             prefs.appearance = obj.value(QStringLiteral("appearance")).toString(QStringLiteral("System"));
         }
 
+        if (obj.contains(QStringLiteral("output_mode"))) {
+            prefs.outputMode = obj.value(QStringLiteral("output_mode")).toString(QStringLiteral("table"));
+        } else if (obj.contains(QStringLiteral("OutputMode"))) {
+            prefs.outputMode = obj.value(QStringLiteral("OutputMode")).toString(QStringLiteral("table"));
+        }
+
         QJsonArray recArr;
         if (obj.contains(QStringLiteral("Recent"))) {
             recArr = obj.value(QStringLiteral("Recent")).toArray();
@@ -191,6 +202,7 @@ bool Preferences::save() const {
     obj[QStringLiteral("RememberStyle")] = rememberStyle;
     obj[QStringLiteral("PreviewRows")] = previewRows;
     obj[QStringLiteral("Appearance")] = appearance;
+    obj[QStringLiteral("output_mode")] = outputMode;
 
     QJsonArray recArr;
     for (const QString &path : recent) {

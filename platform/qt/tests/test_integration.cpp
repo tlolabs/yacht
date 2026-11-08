@@ -16,6 +16,8 @@
 #include <QPushButton>
 #include <QStyle>
 #include <QTextBrowser>
+#include <QTextDocument>
+#include <QTextTable>
 #include <QDir>
 #include <QFile>
 #include <QJsonArray>
@@ -34,6 +36,31 @@ void check(bool condition, const std::string &message) {
     if (!condition) {
         std::cerr << "Assertion failed: " << message << std::endl;
         std::exit(1);
+    }
+}
+
+QTextTable *renderedTable(QTextDocument *document) {
+    for (auto it = document->rootFrame()->begin(); !it.atEnd(); ++it) {
+        if (auto *table = qobject_cast<QTextTable *>(it.currentFrame())) return table;
+    }
+    return nullptr;
+}
+
+void checkRenderedColors(QTextTable *table, const QJsonObject &style, const QString &name) {
+    check(table && table->rows() >= 4 && table->columns() >= 2,
+          "Rendered preview contains sample cells: " + name.toStdString());
+    check(table->cellAt(0, 0).format().background().color() == QColor(style.value(QStringLiteral("header_bg")).toString()),
+          "Rendered header color: " + name.toStdString());
+    for (int row = 1; row <= 3; ++row) {
+        for (int column = 0; column <= 1; ++column) {
+            QString key = column == 0 && style.value(QStringLiteral("first_column_enabled")).toBool()
+                              ? QStringLiteral("first_column_bg")
+                          : row % 2 == 0 && style.value(QStringLiteral("zebra_enabled")).toBool()
+                              ? QStringLiteral("zebra_bg")
+                              : QStringLiteral("body_bg");
+            check(table->cellAt(row, column).format().background().color() == QColor(style.value(key).toString()),
+                  "Rendered body color: " + name.toStdString() + " row=" + std::to_string(row) + " column=" + std::to_string(column));
+        }
     }
 }
 
@@ -60,7 +87,8 @@ public:
     std::optional<bool> reviewBatch(const QStringList &) override {
         return false;
     }
-    bool settings(Preferences &) override { return false; }
+    std::function<bool(Preferences &)> settingsFunc;
+    bool settings(Preferences &prefs) override { return settingsFunc ? settingsFunc(prefs) : false; }
     void setClipboard(const QString &text) override { clipboardText = text; }
     QString clipboard() const override { return clipboardText; }
     void reveal(const QString &) override {}
@@ -91,6 +119,10 @@ void testRustBinding() {
     check(prev.value(QStringLiteral("html")).toString().contains(QStringLiteral("&lt;script&gt;")),
           "Preview escaping");
     check(prev.value(QStringLiteral("row_count")).toInt() == 1, "Preview row count limit");
+    check(prev.value(QStringLiteral("html")).toString().contains(QStringLiteral("<!doctype html>")),
+          "Preview renderer always receives a complete document");
+    check(prev.value(QStringLiteral("source")).toString().trimmed().startsWith(QStringLiteral("<table")),
+          "Default source contains only table markup");
 
     QString output = dir + QStringLiteral("/out.html");
     QJsonObject expArgs;
@@ -107,6 +139,8 @@ void testRustBinding() {
     htmlArgs[QStringLiteral("style")] = style;
     QString htmlDoc = table->call(QStringLiteral("html"), htmlArgs).toString();
     check(exportedText == htmlDoc, "Export matches html call");
+    check(htmlDoc.trimmed().startsWith(QStringLiteral("<table")) && !htmlDoc.contains(QStringLiteral("<html")),
+          "Default HTML and export contain only the table");
 
     // Prevent overwrite without overwrite flag
     bool overwriteThrew = false;
@@ -192,7 +226,7 @@ void testViewModelAndPresentation() {
     MainWindow window(desktop);
     window.initialize();
 
-    check(window.styleFields().size() == 16, "All 16 style fields initialized");
+    check(window.styleFields().size() == 18, "All 18 style fields initialized");
     check(window.sourceEdit()->toPlainText().contains(QStringLiteral("<table")), "Sample source contains table");
 
     QString input = dataDir + QStringLiteral("/Unicode 🛥.csv");
@@ -310,6 +344,7 @@ void testViewModelAndPresentation() {
           "Linux recent files migration");
     check(migrated.lastStyle.value(QStringLiteral("font_size_px")).toInt() == 18,
           "Linux last style migration");
+    check(migrated.outputMode == QStringLiteral("table"), "Legacy Linux preferences default to table HTML");
     check(QFile::exists(legacyIni), "Legacy ini preserved");
 
     // Huge CSV cancellation
@@ -473,6 +508,165 @@ void testViewModelAndPresentation() {
 
     qunsetenv("YACHT_TEST_DATA");
     std::cout << "Shared Qt presentation: all assertions passed." << std::endl;
+}
+
+void testOutputModesAndBuiltins() {
+    QTemporaryDir tempDir;
+    check(tempDir.isValid(), "Output modes temporary directory");
+    qputenv("YACHT_TEST_DATA", tempDir.path().toUtf8());
+
+    {
+        check(Preferences::load().outputMode == QStringLiteral("table"), "New preferences default to table HTML");
+        QFile preferenceFile(tempDir.path() + QStringLiteral("/ui.json"));
+        check(preferenceFile.open(QIODevice::WriteOnly), "Write older preferences");
+        preferenceFile.write("{\"RememberStyle\":true,\"PreviewRows\":50}");
+        preferenceFile.close();
+        check(Preferences::load().outputMode == QStringLiteral("table"), "Older JSON preferences default to table HTML");
+
+        check(preferenceFile.open(QIODevice::WriteOnly | QIODevice::Truncate), "Write invalid HTML mode preference");
+        preferenceFile.write("{\"output_mode\":\"unknown\"}");
+        preferenceFile.close();
+        check(Preferences::load().outputMode == QStringLiteral("table"), "Invalid HTML mode falls back to table HTML");
+
+        QJsonObject custom;
+        custom[QStringLiteral("N-Blue")] = YachtCore::style(QStringLiteral("unstyled"));
+        custom[QStringLiteral("G-Cyan")] = YachtCore::style(QStringLiteral("unstyled"));
+        Presets::save(custom);
+
+        auto desktop = std::make_shared<TestDesktopServices>();
+        MainWindow window(desktop);
+        window.initialize();
+        QJsonObject builtins = YachtCore::call(QStringLiteral("builtin_presets")).toObject();
+        check(builtins.size() == 19, "Nineteen built-in presets available");
+        check(window.presetNames().size() == builtins.size() + custom.size(), "Preset picker includes every shared built-in and custom preset");
+        const QStringList googleNames{
+            QStringLiteral("G-Gray"), QStringLiteral("G-Cyan"), QStringLiteral("G-Green"),
+            QStringLiteral("G-Yellow"), QStringLiteral("G-Orange"), QStringLiteral("G-Blue"),
+            QStringLiteral("G-Teal"), QStringLiteral("G-Blue Gray"), QStringLiteral("G-Brown"),
+            QStringLiteral("G-Light Green"), QStringLiteral("G-Purple")};
+        for (const auto &name : googleNames) {
+            check(builtins.contains(name), "Google built-in preset is available: " + name.toStdString());
+            auto style = builtins.value(name).toObject();
+            check(style.value(QStringLiteral("zebra_enabled")).toBool(), "Google preset alternates row colors: " + name.toStdString());
+            check(!style.value(QStringLiteral("first_column_enabled")).toBool(), "Google preset colors the whole row: " + name.toStdString());
+        }
+        check(!window.presetNames().contains(QStringLiteral("Default (Styled)")), "Original built-in is renamed");
+        check(window.presetNames().contains(QStringLiteral("Y-Default")), "Original style remains as Y-Default");
+        check(window.presetNames().contains(QStringLiteral("N-Blue (Custom)")), "Existing custom name collision is preserved");
+        check(window.presetNames().contains(QStringLiteral("G-Cyan (Custom)")), "Existing custom Google preset name collision is preserved");
+        window.selectPreset(QStringLiteral("G-Cyan (Custom)"));
+        window.loadSelectedPreset();
+        check(window.currentStyle() == YachtCore::style(QStringLiteral("unstyled")), "Custom preset with Google built-in name remains loadable");
+        window.selectPreset(QStringLiteral("N-Blue (Custom)"));
+        window.loadSelectedPreset();
+        check(window.currentStyle() == YachtCore::style(QStringLiteral("unstyled")), "Custom preset with new built-in name remains loadable");
+        window.setStyle(builtins.value(QStringLiteral("Y-Default")).toObject());
+        window.setPresetNameInput(QStringLiteral("N-Blue"));
+        desktop->accept = false;
+        window.saveCurrentPreset();
+        check(Presets::load().value(QStringLiteral("N-Blue")).toObject() == YachtCore::style(QStringLiteral("unstyled")),
+              "Replacing an existing custom collision requires confirmation");
+        desktop->accept = true;
+        window.saveCurrentPreset();
+        check(window.currentPresetName() == QStringLiteral("N-Blue (Custom)"), "Saving custom collision selects the custom preset");
+        check(Presets::load().value(QStringLiteral("N-Blue")) == builtins.value(QStringLiteral("Y-Default")),
+              "Existing custom collision can be replaced");
+        window.loadSelectedPreset();
+        check(window.currentStyle() == builtins.value(QStringLiteral("Y-Default")).toObject(), "Updated custom collision remains loadable");
+        window.selectPreset(QStringLiteral("N-Blue"));
+        window.loadSelectedPreset();
+        check(window.currentStyle() == builtins.value(QStringLiteral("N-Blue")).toObject(), "Replacing custom collision preserves the built-in");
+
+        for (auto it = builtins.constBegin(); it != builtins.constEnd(); ++it) {
+            check(window.presetNames().contains(it.key()), "Built-in preset appears: " + it.key().toStdString());
+            window.selectPreset(it.key());
+            window.loadSelectedPreset();
+            check(window.currentStyle() == it.value().toObject(), "Built-in style applied: " + it.key().toStdString());
+            window.onPerformRender();
+            if (it.key() != QStringLiteral("Unstyled")) {
+                checkRenderedColors(renderedTable(window.previewWidget()->findChild<QTextBrowser *>()->document()),
+                                    it.value().toObject(), it.key());
+            }
+            window.deleteSelectedPreset();
+            check(window.presetNames().contains(it.key()), "Built-in preset cannot be deleted");
+        }
+        window.selectPreset(QStringLiteral("N-Gray"));
+        window.loadSelectedPreset();
+        check(window.currentStyle().value(QStringLiteral("first_column_enabled")).toBool(), "N-Gray fills the first column");
+        window.setStyle(QJsonObject{{QStringLiteral("font_size_px"), 18}});
+        check(!window.currentStyle().value(QStringLiteral("first_column_enabled")).toBool(),
+              "Legacy partial style does not inherit first-column fill");
+        window.setPresetNameInput(QStringLiteral("N-Orange"));
+        window.saveCurrentPreset();
+        check(!desktop->messages.isEmpty() && desktop->messages.last().contains(QStringLiteral("built-in")),
+              "Saving over a built-in is rejected");
+
+        window.onResetStyled();
+        window.onPerformRender();
+        check(window.sourceEdit()->toPlainText().trimmed().startsWith(QStringLiteral("<table")), "Initial source uses table HTML");
+        check(!window.previewWidget()->findChild<QTextBrowser *>()->toPlainText().trimmed().isEmpty(), "Table mode has a rendered preview");
+
+        auto sample = YachtCore::sample();
+        for (const QString &mode : {QStringLiteral("table"), QStringLiteral("document")}) {
+            QJsonObject args{{QStringLiteral("style"), builtins.value(QStringLiteral("N-Gray"))},
+                             {QStringLiteral("limit"), 2},
+                             {QStringLiteral("inline_preview"), true},
+                             {QStringLiteral("output_mode"), mode}};
+            auto preview = sample->call(QStringLiteral("preview"), args).toObject();
+            QTextDocument document;
+            document.setHtml(preview.value(QStringLiteral("html")).toString());
+            auto *table = renderedTable(&document);
+            check(table && table->rows() == 3, "Inline preview respects row limit including one header row");
+            check(preview.value(QStringLiteral("row_count")).toInt() == 2, "Inline preview reports limited row count");
+            check(table->cellAt(1, 0).format().background().color() == QColor(QStringLiteral("#dcdcdc")),
+                  "Limited inline preview preserves gray first-column fill");
+            QString source = preview.value(QStringLiteral("source")).toString();
+            check(source.count(QStringLiteral("<tr>")) == sample->metadata().value(QStringLiteral("row_count")).toInt() + 1,
+                  "Inline renderer keeps all rows in source");
+            check(mode == QStringLiteral("document") ? source.startsWith(QStringLiteral("<!doctype html>")) : source.startsWith(QStringLiteral("<table")),
+                  "Inline renderer leaves selected source format independent");
+        }
+
+        for (const QString &mode : {QStringLiteral("document"), QStringLiteral("table")}) {
+            desktop->settingsFunc = [mode](Preferences &prefs) {
+                SettingsDialog dialog(prefs);
+                auto *combo = dialog.findChild<QComboBox *>(QStringLiteral("outputModeCombo"));
+                check(combo != nullptr, "Settings exposes HTML output choice");
+                check(combo->currentData().toString() == prefs.outputMode, "Settings restores HTML output choice");
+                combo->setCurrentIndex(combo->findData(mode));
+                check(QMetaObject::invokeMethod(&dialog, "onSave", Qt::DirectConnection), "Save HTML output settings");
+                return dialog.result() == QDialog::Accepted;
+            };
+            window.onSettings();
+            bool document = mode == QStringLiteral("document");
+            check(Preferences::load().outputMode == mode, "HTML output choice persists");
+            QString source = window.sourceEdit()->toPlainText().trimmed();
+            check(document ? source.startsWith(QStringLiteral("<!doctype html>")) : source.startsWith(QStringLiteral("<table")),
+                  "Source follows selected output format");
+            window.copyHtmlToClipboard();
+            check(document ? desktop->clipboardText.contains(QStringLiteral("<!doctype html>")) : !desktop->clipboardText.contains(QStringLiteral("<html")),
+                  "Clipboard follows selected output format");
+            QString output = tempDir.path() + QLatin1Char('/') + mode + QStringLiteral(".html");
+            window.exportTo(output, false);
+            QFile exported(output);
+            check(exported.open(QIODevice::ReadOnly), "Read format-specific export");
+            check(QString::fromUtf8(exported.readAll()) == desktop->clipboardText, "Export matches selected clipboard format");
+
+            QString csvPath = tempDir.path() + QLatin1Char('/') + mode + QStringLiteral("-batch.csv");
+            QFile csv(csvPath);
+            check(csv.open(QIODevice::WriteOnly), "Write batch input for output format");
+            csv.write("A,B\n1,2\n");
+            csv.close();
+            window.batchConvert({csvPath});
+            QFile batched(tempDir.path() + QLatin1Char('/') + mode + QStringLiteral("-batch.html"));
+            check(batched.open(QIODevice::ReadOnly), "Read batch HTML output");
+            QString batchHtml = QString::fromUtf8(batched.readAll()).trimmed();
+            check(document ? batchHtml.startsWith(QStringLiteral("<!doctype html>")) : batchHtml.startsWith(QStringLiteral("<table")),
+                  "Batch conversion follows selected output format");
+        }
+    }
+    qunsetenv("YACHT_TEST_DATA");
+    std::cout << "HTML output settings and built-in styles: all assertions passed." << std::endl;
 }
 
 void testAccessibilityAndPlatformSupport() {
@@ -691,6 +885,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Running Qt Rust binding and integration tests..." << std::endl;
     testRustBinding();
     testViewModelAndPresentation();
+    testOutputModesAndBuiltins();
     testAccessibilityAndPlatformSupport();
     testSingleInstanceArgumentHandling();
     testSecureUpdaterResolution();

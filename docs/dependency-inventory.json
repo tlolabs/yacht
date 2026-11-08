@@ -584,7 +584,7 @@
     {
       "ecosystem": "cargo",
       "name": "rustls",
-      "version": "0.23.45",
+      "version": "0.23.46",
       "source": "crates.io",
       "license": "Apache-2.0 OR ISC OR MIT"
     },
@@ -598,7 +598,7 @@
     {
       "ecosystem": "cargo",
       "name": "rustls-webpki",
-      "version": "0.103.15",
+      "version": "0.103.16",
       "source": "crates.io",
       "license": "ISC"
     },
@@ -773,7 +773,7 @@
     {
       "ecosystem": "cargo",
       "name": "tokio",
-      "version": "1.53.1",
+      "version": "1.53.3",
       "source": "crates.io",
       "license": "MIT"
     },
@@ -934,7 +934,7 @@
     {
       "ecosystem": "cargo",
       "name": "webpki-roots",
-      "version": "1.0.9",
+      "version": "1.0.10",
       "source": "crates.io",
       "license": "CDLA-Permissive-2.0"
     },

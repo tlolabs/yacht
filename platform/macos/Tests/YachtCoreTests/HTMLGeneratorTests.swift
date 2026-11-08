@@ -2,6 +2,48 @@ import XCTest
 @testable import YachtCore
 
 final class HTMLGeneratorTests: XCTestCase {
+    func testTableOutputDefaultsToPortableMarkupWithoutPageWrapper() throws {
+        let html = try HTMLGenerator.output(.sample, style: .init())
+        XCTAssertTrue(html.hasPrefix("<table"))
+        XCTAssertTrue(html.contains("style="))
+        XCTAssertFalse(html.contains("<!doctype"))
+        XCTAssertFalse(html.contains("<html"))
+        XCTAssertFalse(html.contains("<head"))
+        XCTAssertFalse(html.contains("<body"))
+        XCTAssertFalse(html.contains("<style"))
+        XCTAssertTrue(html.contains("Friction, Baby"))
+        XCTAssertEqual(try HTMLGenerator.output(.sample, style: .init(), outputMode: .document), try HTMLGenerator.document(.sample, style: .init()))
+    }
+
+    func testBuiltInStylesIncludeOriginalNumbersAndGoogleStyles() throws {
+        let presets = PresetRepository.builtInPresets
+        let googleNames: Set<String> = [
+            "G-Gray", "G-Cyan", "G-Green", "G-Yellow", "G-Orange", "G-Blue",
+            "G-Teal", "G-Blue Gray", "G-Brown", "G-Light Green", "G-Purple"
+        ]
+        XCTAssertEqual(Set(presets.keys), googleNames.union([
+            "Y-Default", "Unstyled", "N-Blue", "N-Orange", "N-Green", "N-Red", "N-Gray", "N-White"
+        ]))
+        XCTAssertEqual(presets["Y-Default"], .init())
+        XCTAssertEqual(presets["Unstyled"], .unstyled)
+        for (name, style) in presets {
+            try style.validate()
+            let html = try HTMLGenerator.output(.sample, style: style)
+            XCTAssertTrue(html.hasPrefix("<table"), name)
+        }
+        XCTAssertTrue(try XCTUnwrap(presets["N-Blue"]).zebraEnabled)
+        XCTAssertFalse(try XCTUnwrap(presets["N-Gray"]).zebraEnabled)
+        XCTAssertTrue(try XCTUnwrap(presets["N-Gray"]).firstColumnEnabled)
+        for name in googleNames {
+            let style = try XCTUnwrap(presets[name], name)
+            XCTAssertTrue(style.zebraEnabled, name)
+            XCTAssertFalse(style.firstColumnEnabled, name)
+            let html = try HTMLGenerator.output(.sample, style: style)
+            XCTAssertTrue(html.contains(style.headerBg), name)
+            XCTAssertTrue(html.contains(style.zebraBg), name)
+        }
+    }
+
     func testCurrentDocumentContract() throws {
         let table = try CSVParser.parse(Data("Item,Count,Notes\nCompass,12,\nCafé,3,\"north & south\"\n".utf8))
         for style in [StyleOptions(), .unstyled] {

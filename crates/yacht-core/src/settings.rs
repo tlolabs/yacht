@@ -1,11 +1,12 @@
 //! Behavior preferences; storage location and appearance/layout remain native.
-use crate::{invalid, style::Style, Result};
+use crate::{html::OutputMode, invalid, style::Style, Result};
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
     pub remember_style: bool,
     pub preview_rows: usize,
+    pub output_mode: OutputMode,
     pub last_style: Style,
 }
 impl Default for Settings {
@@ -13,6 +14,7 @@ impl Default for Settings {
         Self {
             remember_style: true,
             preview_rows: 200,
+            output_mode: OutputMode::Table,
             last_style: Style::default(),
         }
     }

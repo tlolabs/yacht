@@ -50,21 +50,24 @@ import AppKit
         app.typeKey("2", modifierFlags: .command)
         XCTAssertTrue(app.staticTexts["htmlSource"].waitForExistence(timeout: 5))
         app.buttons["copyHTML"].firstMatch.click()
-        XCTAssertTrue(app.staticTexts["Copied complete HTML document"].waitForExistence(timeout: 10))
-        XCTAssertTrue(NSPasteboard.general.string(forType: .string)?.contains("scope=\"col\"") == true)
+        XCTAssertTrue(app.staticTexts["Copied table HTML"].waitForExistence(timeout: 10))
+        let html = NSPasteboard.general.string(forType: .string) ?? ""
+        XCTAssertTrue(html.contains("scope=\"col\""))
+        XCTAssertTrue(html.hasPrefix("<table"))
+        XCTAssertFalse(html.contains("<html"))
         app.buttons["Reset Unstyled"].click()
         app.buttons["copyHTML"].firstMatch.click()
         let copied = NSPredicate { _, _ in !(NSPasteboard.general.string(forType: .string) ?? "<style>").contains("<style>") }
         expectation(for: copied, evaluatedWith: nil)
         waitForExpectations(timeout: 10)
-        app.buttons["Reset Styled"].click()
+        app.buttons["Reset Y-Default"].click()
     }
     func testImportEscapingAndExtraColumnWarning() throws {
         try launch(csv: "Name,Value\n<script>alert(1)</script>,17%\nCafé,🛥️,extra\n")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "additional columns are preserved", "additional columns are preserved")).firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(app.webViews.staticTexts["<script>alert(1)</script>"].waitForExistence(timeout: 10))
         app.buttons["copyHTML"].firstMatch.click()
-        XCTAssertTrue(app.staticTexts["Copied complete HTML document"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Copied table HTML"].waitForExistence(timeout: 10))
         let html = NSPasteboard.general.string(forType: .string) ?? ""
         XCTAssertTrue(html.contains("&lt;script&gt;")); XCTAssertFalse(html.contains("<script>"))
         XCTAssertTrue(html.contains("Column 3")); XCTAssertTrue(html.contains("extra</td>"))
@@ -164,12 +167,12 @@ import AppKit
         name.click(); name.typeText("Classroom")
         app.buttons["Save Current"].click()
         XCTAssertTrue(app.staticTexts["Saved preset “Classroom”"].waitForExistence(timeout: 5))
-        app.buttons["Reset Styled"].click()
+        app.buttons["Reset Y-Default"].click()
         let picker = app.descendants(matching: .any).matching(identifier: "presetPicker").firstMatch
         picker.click(); app.menuItems["Classroom"].click()
         app.buttons["loadPreset"].click()
         app.buttons["copyHTML"].firstMatch.click()
-        XCTAssertTrue(app.staticTexts["Copied complete HTML document"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Copied table HTML"].waitForExistence(timeout: 5))
         XCTAssertFalse((NSPasteboard.general.string(forType: .string) ?? "<style>").contains("<style>"))
         app.windows.firstMatch.buttons["Delete"].click()
         let confirmation = app.sheets["alert"]
@@ -190,6 +193,78 @@ import AppKit
         appearance.click(); app.menuItems["System"].click()
     }
 
+    func testHTMLSettingsToggleChangesCopyAndSourceFormat() throws {
+        try launch()
+        app.buttons["copyHTML"].firstMatch.click()
+        XCTAssertTrue(app.staticTexts["Copied table HTML"].waitForExistence(timeout: 10))
+        XCTAssertTrue(NSPasteboard.general.string(forType: .string)?.hasPrefix("<table") == true)
+        app.typeKey(",", modifierFlags: .command)
+        let complete = app.switches["completeHTMLDocument"]
+        XCTAssertTrue(complete.waitForExistence(timeout: 10))
+        complete.click()
+        app.windows["YACHT Settings"].buttons[XCUIIdentifierCloseWindow].click()
+        app.typeKey("2", modifierFlags: .command)
+        let source = app.staticTexts["htmlSource"]
+        XCTAssertTrue(source.waitForExistence(timeout: 10))
+        let completeSource = NSPredicate { _, _ in (source.value as? String ?? source.label).hasPrefix("<!doctype html>") }
+        expectation(for: completeSource, evaluatedWith: nil)
+        waitForExpectations(timeout: 10)
+        app.buttons["copyHTML"].firstMatch.click()
+        XCTAssertTrue(app.staticTexts["Copied complete HTML document"].waitForExistence(timeout: 10))
+        XCTAssertTrue(NSPasteboard.general.string(forType: .string)?.hasPrefix("<!doctype html>") == true)
+        app.typeKey(",", modifierFlags: .command)
+        XCTAssertTrue(complete.waitForExistence(timeout: 10))
+        complete.click()
+        app.windows["YACHT Settings"].buttons[XCUIIdentifierCloseWindow].click()
+        app.buttons["copyHTML"].firstMatch.click()
+        XCTAssertTrue(app.staticTexts["Copied table HTML"].waitForExistence(timeout: 10))
+        XCTAssertTrue(NSPasteboard.general.string(forType: .string)?.hasPrefix("<table") == true)
+    }
+
+    func testBuiltInPresetNameCannotBeOverwritten() throws {
+        try launch()
+        let name = app.textFields["presetName"]
+        name.click(); name.typeText("N-Blue")
+        app.buttons["Save Current"].click()
+        let alert = app.sheets["alert"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        XCTAssertTrue(alert.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "is a built-in preset", "is a built-in preset")).firstMatch.exists)
+        alert.buttons["OK"].click()
+    }
+
+    func testScreenshotPresetsAreAvailableWithNumbersAndGoogleColors() throws {
+        try launch()
+        let picker = app.descendants(matching: .any).matching(identifier: "presetPicker").firstMatch
+        picker.click()
+        for name in [
+            "Y-Default", "N-Blue", "N-Orange", "N-Green", "N-Red", "N-Gray", "N-White", "Unstyled",
+            "G-Gray", "G-Cyan", "G-Green", "G-Yellow", "G-Orange", "G-Blue",
+            "G-Teal", "G-Blue Gray", "G-Brown", "G-Light Green", "G-Purple"
+        ] {
+            XCTAssertTrue(app.menuItems[name].exists, name)
+        }
+        app.menuItems["N-Gray"].click()
+        app.buttons["loadPreset"].click()
+        app.buttons["copyHTML"].firstMatch.click()
+        XCTAssertTrue(app.staticTexts["Copied table HTML"].waitForExistence(timeout: 10))
+        let html = NSPasteboard.general.string(forType: .string) ?? ""
+        XCTAssertTrue(html.hasPrefix("<table"))
+        XCTAssertFalse(html.contains("<html"))
+        XCTAssertTrue(html.contains("#bfc1c1"))
+        XCTAssertTrue(html.contains("#dcdcdc"))
+
+        picker.click()
+        app.menuItems["G-Cyan"].click()
+        app.buttons["loadPreset"].click()
+        app.buttons["copyHTML"].firstMatch.click()
+        let copiedGoogleColors = NSPredicate { _, _ in
+            let copied = NSPasteboard.general.string(forType: .string) ?? ""
+            return copied.hasPrefix("<table") && copied.contains("#4dd0e1") && copied.contains("#e0f7fa")
+        }
+        expectation(for: copiedGoogleColors, evaluatedWith: nil)
+        waitForExpectations(timeout: 10)
+    }
+
     func testUnconfiguredUpdateCheckPreservesUsableApplication() throws {
         try launch()
         app.menuBars.menuBarItems["YACHT"].click()
@@ -198,7 +273,7 @@ import AppKit
         XCTAssertTrue(message.waitForExistence(timeout: 5))
         app.buttons["OK"].firstMatch.click()
         app.buttons["copyHTML"].firstMatch.click()
-        XCTAssertTrue(app.staticTexts["Copied complete HTML document"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Copied table HTML"].waitForExistence(timeout: 10))
         XCTAssertTrue(NSPasteboard.general.string(forType: .string)?.contains("Friction, Baby") == true)
     }
 

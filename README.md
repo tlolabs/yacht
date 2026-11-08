@@ -54,12 +54,21 @@ keep their original identity and location.
 2. Adjust font family/size, cell padding, border width/style/spacing/collapse,
    header/body/border/zebra/hover colors, zebra/hover toggles and table CSS classes.
    Text color fields accept safe CSS values; native color pickers supply hex colors.
-3. Load **Default (Styled)** or **Unstyled**, or save a named preset. Load, replace
+3. Load one of 19 built-in presets: **Y-Default** (the original style), **Unstyled**,
+   six N styles, or eleven Google Sheets-inspired G styles. **N-Blue**, **N-Orange**,
+   **N-Green**, **N-Red**, **N-Gray**, and **N-White** use a separate first-column
+   fill; N-Gray has solid rows and the others alternate row colors. **G-Gray**,
+   **G-Cyan**, **G-Green**, **G-Yellow**, **G-Orange**, **G-Blue**, **G-Teal**,
+   **G-Blue Gray**, **G-Brown**, **G-Light Green**, and **G-Purple** have colored
+   headers and alternating white/tinted rows across every column. The N and G
+   styles disable hover. You can also save a named preset. Load, replace
    and delete controls preserve the existing workflow, with destructive confirmations.
    Presets are portable JSON; copy `presets.json` between native stores while the
    apps are closed. There is no separate preset import/export dialog in the reference app.
 4. Switch between **Table Preview** and read-only **HTML Source**. Preview renders
-   the actual generated HTML/CSS. Copy HTML copies the complete document.
+   the generated HTML/CSS. **Copy HTML** defaults to table markup with inline
+   styling, ready to paste into Canvas. Settings can switch HTML output to a
+   complete document; HTML Source, Copy, Export, and Batch use that choice.
 5. **Export HTML** opens the native Save dialog and its replacement confirmation.
    Reveal locates the saved output in the file manager; Browser opens it normally.
 
@@ -69,7 +78,7 @@ confirm replacement. Individual failures are listed and remaining inputs continu
 Multiple opened/dropped files also enter batch review. Cancel stops remaining work.
 
 **Refresh** rereads the source with the current delimiter. Settings controls
-remembered valid style, maximum preview rows, recent-file clearing and appearance.
+remembered valid style, HTML output format, maximum preview rows, recent-file clearing and appearance.
 Recent files retains ten successfully imported paths. The Mac uses native Settings
 and menus; Windows/Linux expose the equivalent controls in the shared Qt window.
 
@@ -81,8 +90,11 @@ render blank; extra cells are preserved under `Column N` headers and reported.
 Malformed quoting, NUL and invalid UTF-8 are errors. Save spreadsheet data as UTF-8
 CSV when encoding errors occur. No raw HTML mode exists: all cell data is escaped.
 
-Output is a full document with embedded CSS, semantic headers, and numeric right
-alignment. Percentages remain left aligned. Exact Unstyled removes CSS/classes.
+The apps default to a single `<table>` with inline styling, semantic headers, and
+numeric right alignment. Complete-document output adds the page structure and
+embedded CSS, including optional hover highlighting. Hover effects require
+complete-document output; static formatting is included in both modes.
+Percentages remain left aligned. Exact Unstyled removes CSS/classes.
 The HTML title is now `YACHT Table`; other deliberate historical corrections are
 in [compatibility notes](docs/COMPATIBILITY.md).
 
@@ -98,7 +110,7 @@ existing output intact. A completed export cannot be undone by later cancellatio
 |---|---|---|
 | Open | Command+O | Ctrl+O |
 | Export | Command+S | Ctrl+S |
-| Copy complete HTML | Command+Shift+C | Ctrl+Shift+C |
+| Copy HTML | Command+Shift+C | Ctrl+Shift+C |
 | Batch convert | Command+Shift+B | Ctrl+Shift+B |
 | Refresh | Command+R | Ctrl+R or F5 |
 | Table preview / HTML source | Command+1 / 2 | Ctrl+1 / 2 |
@@ -118,9 +130,12 @@ yacht input.csv --output output.html --cell-padding 10 --border-style dashed
 yacht one.csv two.csv three.csv
 yacht input.tsv --delimiter tab --unstyled
 yacht input.csv --overwrite
+yacht input.csv --html-output table
 yacht --help
 ```
 
+The CLI keeps complete-document output by default; use `--html-output table` for
+an inline-styled table fragment or `--html-output document` for a page.
 All existing style flags are retained. `--output` accepts one input only; otherwise
 outputs are beside inputs. CLI delimiter defaults to comma regardless of filename.
 Existing output requires `--overwrite`. Errors go to stderr, successes to stdout;

@@ -1,3 +1,22 @@
+# G-color preset validation — 2026-10-19
+
+Local macOS ARM64 checks for eleven Google Sheets-inspired presets (nineteen
+built-ins total), including both native menus displaying the shared catalog:
+
+- Rust workspace tests, workspace build, rustfmt, and Clippy with warnings denied passed.
+  Palette tests cover the reference colors and full-row banding in table and document output.
+- Independent ctypes binding tests and sixty seeded CLI round trips/safety checks passed.
+- Swift tests passed: thirty core binding tests and five app update-safety tests.
+- Shared Qt offscreen integration passed, including all nineteen presets' rendered
+  colors, picker completeness, and preservation of custom names colliding with G-Cyan.
+- The focused macOS preset UI test passed (one passed, zero failed/skipped), checking
+  every preset in the menu and loading/copying G-Cyan's expected header and stripe
+  colors. Result bundle: `build/GPresets-20261019-UI.xcresult`.
+
+The two gray screenshots use identical colors and share G-Gray. This local check
+does not establish native Windows/Linux or Intel macOS execution, package qualification,
+or release signing.
+
 # Current Qt migration validation — 2026-10-07
 
 The tracked active presentation layer uses Qt 6 Widgets in place of Avalonia/.NET.

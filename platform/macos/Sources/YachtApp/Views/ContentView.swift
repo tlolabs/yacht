@@ -45,7 +45,8 @@ struct ContentView: View {
         } isTargeted: { dropTargeted = $0 }
         .overlay { if dropTargeted { RoundedRectangle(cornerRadius: 8).stroke(.tint, lineWidth: 3).padding(4).allowsHitTesting(false) } }
         .onChange(of: workspace.preferences.previewRows) { workspace.schedulePreview() }
-        .onChange(of: workspace.status) { newStatus in
+        .onChange(of: workspace.preferences.outputMode) { workspace.schedulePreview() }
+        .onChange(of: workspace.status) { _, newStatus in
             if !newStatus.isEmpty && !newStatus.contains("Reading") && !newStatus.contains("Rendering") {
                 NSAccessibility.post(element: NSApp.mainWindow as Any, notification: .announcementRequested, userInfo: [.announcement: newStatus])
             }
@@ -105,7 +106,7 @@ struct ContentView: View {
                         Text(preview.source).font(.system(size: 12, design: .monospaced)).textSelection(.enabled)
                             .fixedSize(horizontal: true, vertical: true).padding(16).accessibilityIdentifier("htmlSource")
                     }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    if preview.sourceTruncated { note("Source shows the first 1 MB. Copy HTML and Export include the complete document.") }
+                    if preview.sourceTruncated { note("Source shows the first 1 MB. Copy HTML and Export include all HTML in the selected output format.") }
                 } else if preview.previewUnavailable {
                     ContentUnavailableView("Cells Too Large to Preview", systemImage: "tablecells", description: Text("The table is ready to export. Preview is limited to keep the app responsive."))
                 } else {
@@ -169,14 +170,14 @@ struct ContentView: View {
             Button { workspace.copyHTML() } label: {
                 Label("Copy HTML Code", systemImage: "doc.on.doc")
             }
-            .help("Copy complete HTML document to clipboard (⇧⌘C)")
+            .help("Copy HTML in the format selected in Settings (⇧⌘C)")
             .disabled(!workspace.canExport)
             .accessibilityIdentifier("copyHTML")
             .accessibilityLabel("Copy HTML Code")
             Button { workspace.prepareExport() } label: {
                 Label("Export HTML", systemImage: "square.and.arrow.up")
             }
-            .help("Export complete HTML document (⌘S)")
+            .help("Export HTML in the format selected in Settings (⌘S)")
             .disabled(!workspace.canExport)
             .accessibilityIdentifier("exportHTML")
             .accessibilityLabel("Export HTML")

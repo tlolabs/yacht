@@ -81,7 +81,7 @@ fn main() {
     // 9. Style validation (10,000 runs)
     measure("validate style (10,000 runs)", 2, 7, || {
         for _ in 0..10_000 {
-            black_box(style.validate().unwrap());
+            black_box(&style).validate().unwrap();
         }
     });
 

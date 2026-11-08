@@ -25,6 +25,9 @@ final class Preferences {
     var previewRows: Int {
         didSet { defaults.set(previewRows, forKey: "previewRows") }
     }
+    var outputMode: HTMLOutputMode {
+        didSet { defaults.set(outputMode.rawValue, forKey: "outputMode") }
+    }
 
     init() {
         let testing = ProcessInfo.processInfo.arguments.contains("--ui-testing")
@@ -33,6 +36,7 @@ final class Preferences {
         appearance = defaults.string(forKey: "appearance") ?? "System"
         rememberStyle = defaults.object(forKey: "rememberStyle") as? Bool ?? BehaviorSettings.defaults.rememberStyle
         previewRows = defaults.object(forKey: "previewRows") as? Int ?? BehaviorSettings.defaults.previewRows
+        outputMode = defaults.string(forKey: "outputMode").flatMap(HTMLOutputMode.init(rawValue:)) ?? .table
         let base = testing ? FileManager.default.temporaryDirectory.appendingPathComponent("yacht-ui-\(ProcessInfo.processInfo.processIdentifier)") :
             FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Y.A.C.H.T.")
         repository = PresetRepository(url: base.appendingPathComponent("presets.json"))
@@ -72,6 +76,7 @@ final class Preferences {
         var settings = BehaviorSettings.defaults
         settings.rememberStyle = rememberStyle
         settings.previewRows = previewRows
+        settings.outputMode = outputMode
         if let data = defaults.data(forKey: "lastStyle"), let style = try? JSONDecoder().decode(StyleOptions.self, from: data) { settings.lastStyle = style }
         return (try? settings.initialStyle()) ?? .init()
     }
@@ -89,6 +94,9 @@ final class Preferences {
         guard presetsReadable else {
             throw PresetStoreError.unreadableStore(presetLoadError ?? "decoding error")
         }
+        guard PresetRepository.builtInPresets[name] == nil || presets[name] != nil else {
+            throw PresetStoreError.builtInName(name)
+        }
         var next = presets; next[name] = style
         try repository.save(next); presets = next
     }
@@ -100,24 +108,23 @@ final class Preferences {
         try repository.save(next); presets = next
     }
     func recoverPresetsWithBackup() throws {
-        if FileManager.default.fileExists(atPath: repository.url.path) {
-            let backupUrl = repository.url.deletingLastPathComponent().appendingPathComponent("presets.json.corrupt-\(Int(Date().timeIntervalSince1970))")
-            try? FileManager.default.copyItem(at: repository.url, to: backupUrl)
-        }
+        try repository.recoverWithBackup()
         presets = [:]
         presetsReadable = true
         presetLoadError = nil
         problem = nil
-        try repository.save([:])
     }
 }
 
 enum PresetStoreError: LocalizedError {
     case unreadableStore(String)
+    case builtInName(String)
     var errorDescription: String? {
         switch self {
         case .unreadableStore(let reason):
             return "Cannot modify presets: the existing preset store could not be read safely (\(reason)). The original file is preserved to prevent data loss. Repair or recover the preset store before saving or deleting presets."
+        case .builtInName(let name):
+            return "“\(name)” is a built-in preset. Choose a different name for your custom style."
         }
     }
 }

@@ -42,6 +42,28 @@ impl Excerpt {
     }
 }
 pub fn generate(table: &Table, style: &Style, limit: usize, cancel: Cancel<'_>) -> Result<Preview> {
+    generate_with_mode(table, style, limit, html::OutputMode::Document, cancel)
+}
+pub fn generate_with_mode(
+    table: &Table,
+    style: &Style,
+    limit: usize,
+    mode: html::OutputMode,
+    cancel: Cancel<'_>,
+) -> Result<Preview> {
+    generate_with_renderer(table, style, limit, mode, false, cancel)
+}
+
+/// Static native renderers can request inline cell styles instead of CSS selectors.
+/// The source excerpt continues to use the user's independently selected output mode.
+pub fn generate_with_renderer(
+    table: &Table,
+    style: &Style,
+    limit: usize,
+    mode: html::OutputMode,
+    inline: bool,
+    cancel: Cancel<'_>,
+) -> Result<Preview> {
     style.validate()?;
     check(cancel)?;
     let header_overhead = table.header.len().saturating_mul(100);
@@ -65,13 +87,21 @@ pub fn generate(table: &Table, style: &Style, limit: usize, cancel: Cancel<'_>) 
     }
     let mut unavailable = cost > PREVIEW_BUDGET || (count == 0 && !table.rows.is_empty());
     let mut html = String::new();
+    let render_mode = if inline {
+        html::OutputMode::Table
+    } else {
+        html::OutputMode::Document
+    };
     if !unavailable {
         let mut sink = Excerpt {
-            bytes: Vec::with_capacity(cost.min(PREVIEW_BUDGET).max(1024)),
+            bytes: Vec::with_capacity(cost.clamp(1024, PREVIEW_BUDGET)),
             truncated: false,
             budget: PREVIEW_BUDGET,
         };
-        let result = html::write(table, style, Some(count), &mut sink, cancel);
+        let result = html::write_output(table, style, Some(count), render_mode, &mut sink, cancel);
+        if let Err(crate::Error::Cancelled) = result {
+            return Err(crate::Error::Cancelled);
+        }
         if sink.truncated {
             unavailable = true;
         } else {
@@ -79,30 +109,36 @@ pub fn generate(table: &Table, style: &Style, limit: usize, cancel: Cancel<'_>) 
             html = sink.text();
         }
     }
-    let (source, truncated) =
-        if !unavailable && (table.rows.len() <= count || html.len() >= SOURCE_BUDGET) {
-            if html.len() <= SOURCE_BUDGET {
-                (html.clone(), false)
-            } else {
-                let mut bytes = html.as_bytes()[..SOURCE_BUDGET].to_vec();
-                if let Err(e) = std::str::from_utf8(&bytes) {
-                    bytes.truncate(e.valid_up_to());
-                }
-                (unsafe { String::from_utf8_unchecked(bytes) }, true)
-            }
+    let (source, truncated) = if mode == render_mode
+        && !unavailable
+        && (table.rows.len() <= count || html.len() >= SOURCE_BUDGET)
+    {
+        if html.len() <= SOURCE_BUDGET {
+            (html.clone(), false)
         } else {
-            let mut sink = Excerpt {
-                bytes: Vec::with_capacity(SOURCE_BUDGET.min(cost.saturating_mul(4)).max(65536)),
-                truncated: false,
-                budget: SOURCE_BUDGET,
-            };
-            let result = html::write(table, style, None, &mut sink, cancel);
-            let truncated = sink.truncated;
-            if !truncated {
-                result?;
+            let mut bytes = html.as_bytes()[..SOURCE_BUDGET].to_vec();
+            if let Err(e) = std::str::from_utf8(&bytes) {
+                bytes.truncate(e.valid_up_to());
             }
-            (sink.text(), truncated)
+            (unsafe { String::from_utf8_unchecked(bytes) }, true)
+        }
+    } else {
+        let mut sink = Excerpt {
+            bytes: Vec::with_capacity(SOURCE_BUDGET.min(cost.saturating_mul(4)).max(65536)),
+            truncated: false,
+            budget: SOURCE_BUDGET,
         };
+        let result = html::write_output(table, style, None, mode, &mut sink, cancel);
+        if let Err(crate::Error::Cancelled) = result {
+            return Err(crate::Error::Cancelled);
+        }
+        let truncated = sink.truncated;
+        if !truncated {
+            result?;
+        }
+        (sink.text(), truncated)
+    };
+    check(cancel)?;
     Ok(Preview {
         html,
         source,

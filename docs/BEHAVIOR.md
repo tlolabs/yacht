@@ -5,7 +5,7 @@ User-facing changes must be evaluated for implementation across all supported na
 
 ## Inputs and tables
 
-YACHT converts local UTF-8 CSV/TSV into complete HTML documents. UTF-8 BOM is
+YACHT converts local UTF-8 CSV/TSV into HTML tables or complete documents. UTF-8 BOM is
 optional. Delimiters are comma, tab, semicolon and pipe. GUI opening/batch chooses
 tab for a `.tsv` extension; explicit refresh respects the selected delimiter.
 CLI uses its explicit delimiter (comma by default), including for TSV filenames.
@@ -23,7 +23,7 @@ original header. No cell is silently discarded or interpreted as HTML.
 
 ## Style and output
 
-Sixteen snake_case properties use the defaults defined by `Style::default()` in
+Eighteen snake_case properties use the defaults defined by `Style::default()` in
 `crates/yacht-core/src/style.rs`. Partial/null properties receive
 Rust defaults; unknown properties are ignored for legacy compatibility. Wrong
 property types fail. Pixel values are integers: font size 1–10000, other sizes
@@ -32,20 +32,28 @@ inset, outset. Collapse: collapse or separate. Font lists and CSS colors exclude
 markup, declarations and URL expressions. Color names may be browser-dependent.
 
 Exact equality with the built-in Unstyled configuration omits CSS and classes.
-Otherwise output includes embedded CSS, the existing wrapper/table classes,
-optional extra classes, 100% width, header left alignment and top cell alignment.
+The apps default to table-only output: a single table with inline formatting and
+no div, style, or page wrapper. Complete-document mode uses embedded CSS and the
+existing wrapper/table classes. Both modes include optional extra table classes,
+100% width, header left alignment and top cell alignment. The optional first-column
+fill overrides body/zebra fills. Hover highlighting uses CSS selectors and is
+available in complete documents and the browser preview, not inline fragments.
 Numeric alignment accepts signed ASCII integers/decimals and correctly grouped
 thousands; percentages and scientific notation stay left aligned.
 
-Output is UTF-8 with LF formatting, title `YACHT Table`, language en, viewport
-metadata, a table with thead/tbody and scope=col headers. Text and attributes
+Output is UTF-8 with LF formatting and a table with thead/tbody and scope=col
+headers. Complete documents add title `YACHT Table`, language en, and viewport
+metadata. Text and attributes
 escape &, <, >, double quotes and apostrophes, including adjacent combining marks.
-Equivalent tables/styles produce byte-identical documents across operating systems.
+Equivalent tables/styles/modes produce byte-identical output across operating systems.
 
 ## Preview, source, copy and export
 
 The startup sample has three columns and nine album rows. Preview uses the same
-HTML/CSS generator as full export. Default preview is 200 rows; Settings offers
+HTML/CSS generator as full export. macOS renders a complete document; the static
+Windows/Linux renderer uses inline cell styles so it reproduces banding and first-column
+fills without CSS selector support. Source uses the selected output mode independently.
+Default preview is 200 rows; Settings offers
 50/200/1000. Row and estimated 2 MB budgets apply, with a hard 2 MB HTML sink cap
 as a final guard for huge styling strings. A table whose first row/header is too
 large remains exportable with an explicit preview-unavailable message. Source is
@@ -60,13 +68,27 @@ and immediately before publication. Full table/copy storage remains RAM-limited.
 
 ## Presets, preferences and batch
 
-Portable presets are a JSON object mapping names to the sixteen style fields.
-Save validates every style; blank names and the two built-in names are reserved.
+Portable presets are a JSON object mapping names to the eighteen style fields.
+Built-in styles are shared across native hosts: Y-Default preserves the original
+Style defaults; Unstyled omits formatting. N-Blue, N-Orange, N-Green, N-Red, and
+N-White use alternating rows with an unstriped white first column. N-Gray uses a
+gray header/first column and solid white body rows. All six N styles disable hover.
+G-Gray, G-Cyan, G-Green, G-Yellow, G-Orange, G-Blue, G-Teal, G-Blue Gray,
+G-Brown, G-Light Green, and G-Purple use colored headers and alternating white/tinted
+rows across every column, with no separate first-column fill or hover. These eleven
+Google Sheets-inspired styles bring the built-in preset count to nineteen.
+The added fields are `first_column_enabled` (default false) and `first_column_bg`
+(default #ffffff); older styles retain their existing appearance.
+Save validates every style; blank names and the legacy names Default (Styled) and
+Unstyled are reserved by the core. Native built-in entries cannot be replaced or
+deleted; existing custom names colliding with new built-ins remain accessible.
 Load preserves legacy partial/default behavior, and never rewrites the source.
 Preset replacement/deletion requires an explicit native confirmation.
 First use imports `~/.yacht_presets.json` when no native store exists; original
 remains unchanged. Behavior preferences are remember-style, last valid style and
-preview rows; Rust owns their defaults/validation. Native storage and recent files
+preview rows, and `output_mode` (`table` by default, or `document`); Rust owns their
+defaults/validation. Existing settings without an output mode migrate to table-only.
+Native storage and recent files
 are platform responsibilities. Window/layout/view/appearance are presentation state.
 
 Batch reviews all inputs, defaults to no replacement, explicitly confirms overwrite,
@@ -84,6 +106,8 @@ is allowed only for one input; batch failures continue and exit 1. Cancellation
 exits 130. Boolean values: true/false, yes/no, y/n, on/off, 1/0 (case insensitive).
 Errors go to stderr; each successful conversion goes to stdout. Paths are never
 shell commands. Ordinary current-user `~/` paths are expanded by the CLI.
+CLI output retains the complete-document default for automation compatibility;
+`--html-output table|document` selects the format explicitly.
 
 ## Native interaction and acceptance
 

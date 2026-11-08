@@ -130,13 +130,13 @@ void MainWindow::setupUi() {
 
     auto *copyBtn = new QPushButton(QStringLiteral("Copy HTML"), this);
     copyBtn->setAccessibleName(QStringLiteral("Copy HTML Code"));
-    copyBtn->setAccessibleDescription(QStringLiteral("Copy complete HTML document to clipboard (Ctrl+Shift+C)"));
-    copyBtn->setToolTip(QStringLiteral("Copy complete HTML document to clipboard (Ctrl+Shift+C)"));
+    copyBtn->setAccessibleDescription(QStringLiteral("Copy HTML using the output format selected in Settings (Ctrl+Shift+C)"));
+    copyBtn->setToolTip(QStringLiteral("Copy HTML using the output format selected in Settings (Ctrl+Shift+C)"));
 
     auto *exportBtn = new QPushButton(QStringLiteral("Export…"), this);
     exportBtn->setAccessibleName(QStringLiteral("Export HTML…"));
-    exportBtn->setAccessibleDescription(QStringLiteral("Export complete HTML document to file (Ctrl+S)"));
-    exportBtn->setToolTip(QStringLiteral("Export complete HTML document to file (Ctrl+S)"));
+    exportBtn->setAccessibleDescription(QStringLiteral("Export HTML using the output format selected in Settings (Ctrl+S)"));
+    exportBtn->setToolTip(QStringLiteral("Export HTML using the output format selected in Settings (Ctrl+S)"));
 
     m_cancelButton = new QPushButton(QStringLiteral("Cancel"), this);
     m_cancelButton->setEnabled(false);
@@ -226,10 +226,10 @@ void MainWindow::setupUi() {
     sidebarLayout->addWidget(savePresetBtn);
 
     auto *resetButtonsLayout = new QHBoxLayout();
-    auto *styledBtn = new QPushButton(QStringLiteral("Reset Styled"), m_sidebarWidget);
-    styledBtn->setAccessibleName(QStringLiteral("Reset Styled"));
-    styledBtn->setAccessibleDescription(QStringLiteral("Reset style to built-in default styled settings"));
-    styledBtn->setToolTip(QStringLiteral("Reset style to built-in default styled settings"));
+    auto *styledBtn = new QPushButton(QStringLiteral("Reset Y-Default"), m_sidebarWidget);
+    styledBtn->setAccessibleName(QStringLiteral("Reset Y-Default"));
+    styledBtn->setAccessibleDescription(QStringLiteral("Reset style to the built-in Y-Default table style"));
+    styledBtn->setToolTip(QStringLiteral("Reset style to the built-in Y-Default table style"));
 
     auto *unstyledBtn = new QPushButton(QStringLiteral("Reset Unstyled"), m_sidebarWidget);
     unstyledBtn->setAccessibleName(QStringLiteral("Reset Unstyled"));
@@ -249,6 +249,7 @@ void MainWindow::setupUi() {
         QStringLiteral("Border width"),      QStringLiteral("Border style"),
         QStringLiteral("Border color"),      QStringLiteral("Header background"),
         QStringLiteral("Header text color"), QStringLiteral("Body background"),
+        QStringLiteral("First column fill"), QStringLiteral("First column background"),
         QStringLiteral("Zebra striping"),    QStringLiteral("Zebra color"),
         QStringLiteral("Hover highlight"),   QStringLiteral("Hover color"),
         QStringLiteral("Border collapse"),   QStringLiteral("Border spacing")};
@@ -259,6 +260,7 @@ void MainWindow::setupUi() {
         QStringLiteral("border_width_px"),   QStringLiteral("border_style"),
         QStringLiteral("border_color"),      QStringLiteral("header_bg"),
         QStringLiteral("header_text_color"), QStringLiteral("body_bg"),
+        QStringLiteral("first_column_enabled"), QStringLiteral("first_column_bg"),
         QStringLiteral("zebra_enabled"),     QStringLiteral("zebra_bg"),
         QStringLiteral("hover_enabled"),     QStringLiteral("hover_bg"),
         QStringLiteral("border_collapse"),   QStringLiteral("border_spacing_px")};
@@ -452,13 +454,13 @@ void MainWindow::setupActions() {
     m_exportAction = fileMenu->addAction(QStringLiteral("&Export HTML…"), QKeySequence::Save, this,
                                          &MainWindow::onExport);
     m_exportAction->setToolTip(QStringLiteral("Export HTML (Ctrl+S)"));
-    m_exportAction->setStatusTip(QStringLiteral("Export complete HTML table to file"));
+    m_exportAction->setStatusTip(QStringLiteral("Export HTML using the output format selected in Settings"));
 
     m_copyAction = fileMenu->addAction(QStringLiteral("&Copy HTML"),
                                        QKeySequence(QStringLiteral("Ctrl+Shift+C")), this,
                                        &MainWindow::onCopy);
     m_copyAction->setToolTip(QStringLiteral("Copy HTML Code (Ctrl+Shift+C)"));
-    m_copyAction->setStatusTip(QStringLiteral("Copy complete HTML document to clipboard"));
+    m_copyAction->setStatusTip(QStringLiteral("Copy HTML using the output format selected in Settings"));
 
     fileMenu->addSeparator();
     auto *exitAction = fileMenu->addAction(QStringLiteral("E&xit"), QKeySequence::Quit, this, &QWidget::close);
@@ -542,6 +544,8 @@ void MainWindow::initialize() {
     applyAppearance(m_preferences.appearance);
     syncRecent();
 
+    m_builtinPresets = YachtCore::call(QStringLiteral("builtin_presets")).toObject();
+
     QJsonObject initStyle = YachtCore::style(QStringLiteral("defaults"));
     if (m_preferences.rememberStyle && !m_preferences.lastStyle.isEmpty()) {
         try {
@@ -611,12 +615,25 @@ void MainWindow::applyAppearance(const QString &appearance) {
 
 void MainWindow::syncPresets() {
     m_presetsCombo->clear();
-    m_presetsCombo->addItem(QStringLiteral("Default (Styled)"));
-    m_presetsCombo->addItem(QStringLiteral("Unstyled"));
+    QStringList builtins = {
+        QStringLiteral("Y-Default"), QStringLiteral("Unstyled"),
+        QStringLiteral("N-Blue"), QStringLiteral("N-Orange"), QStringLiteral("N-Green"),
+        QStringLiteral("N-Red"), QStringLiteral("N-Gray"), QStringLiteral("N-White")};
+    // Retain the original menu order and include every additional shared preset.
+    QStringList additionalBuiltins = m_builtinPresets.keys();
+    additionalBuiltins.sort(Qt::CaseInsensitive);
+    for (const QString &name : additionalBuiltins) {
+        if (!builtins.contains(name)) builtins.append(name);
+    }
+    for (const QString &name : builtins) {
+        if (m_builtinPresets.contains(name)) m_presetsCombo->addItem(name);
+    }
     QStringList custom = m_presets.keys();
     custom.sort(Qt::CaseInsensitive);
     for (const QString &p : custom) {
-        m_presetsCombo->addItem(p);
+        // Keep older custom presets accessible even if their name is now built in.
+        QString displayName = m_builtinPresets.contains(p) ? p + QStringLiteral(" (Custom)") : p;
+        m_presetsCombo->addItem(displayName, p);
     }
     m_presetsCombo->setCurrentIndex(0);
 }
@@ -640,9 +657,12 @@ void MainWindow::savePreferences() {
 }
 
 void MainWindow::setStyle(const QJsonObject &style) {
+    QJsonObject args;
+    args[QStringLiteral("style")] = style;
+    QJsonObject normalized = YachtCore::call(QStringLiteral("normalize_style"), args).toObject();
     for (StyleField *field : m_styleFields) {
-        if (style.contains(field->key())) {
-            field->setValue(style.value(field->key()));
+        if (normalized.contains(field->key())) {
+            field->setValue(normalized.value(field->key()));
         }
     }
     m_previewDebounceTimer.start();
@@ -732,6 +752,9 @@ void MainWindow::onPerformRender() {
         QJsonObject args;
         args[QStringLiteral("style")] = styleObj;
         args[QStringLiteral("limit")] = limit;
+        args[QStringLiteral("output_mode")] = m_preferences.outputMode;
+        // QTextBrowser does not implement CSS row/first-child selectors.
+        args[QStringLiteral("inline_preview")] = true;
 
         m_cancelled = false;
         setBusy(true);
@@ -884,6 +907,7 @@ void MainWindow::copyHtmlToClipboard() {
     try {
         QJsonObject args;
         args[QStringLiteral("style")] = currentStyle();
+        args[QStringLiteral("output_mode")] = m_preferences.outputMode;
         TablePtr table = m_table;
         QJsonValue htmlVal = runCoreResponsive([this, table, args] {
             return table->call(QStringLiteral("html"), args,
@@ -891,7 +915,9 @@ void MainWindow::copyHtmlToClipboard() {
         });
         QString html = htmlVal.toString();
         m_desktop->setClipboard(html);
-        announceStatus(QStringLiteral("Copied complete HTML document"));
+        announceStatus(m_preferences.outputMode == QStringLiteral("document")
+                           ? QStringLiteral("Copied complete HTML document")
+                           : QStringLiteral("Copied table HTML"));
     } catch (const YachtCancelledException &) {
         announceStatus(QStringLiteral("Cancelled"), true);
     } catch (const std::exception &e) {
@@ -927,6 +953,7 @@ void MainWindow::exportTo(const QString &path, bool overwrite) {
         QJsonObject args;
         args[QStringLiteral("style")] = currentStyle();
         args[QStringLiteral("path")] = path;
+        args[QStringLiteral("output_mode")] = m_preferences.outputMode;
         args[QStringLiteral("overwrite")] = overwrite;
         TablePtr table = m_table;
         runCoreResponsive([this, table, args] {
@@ -994,12 +1021,11 @@ void MainWindow::onLoadPreset() {
 
 void MainWindow::loadSelectedPreset() {
     QString sel = m_presetsCombo->currentText();
-    if (sel == QStringLiteral("Unstyled")) {
-        setStyle(YachtCore::style(QStringLiteral("unstyled")));
-    } else if (sel == QStringLiteral("Default (Styled)")) {
-        setStyle(YachtCore::style(QStringLiteral("defaults")));
-    } else if (m_presets.contains(sel)) {
-        setStyle(m_presets.value(sel).toObject());
+    QString customName = m_presetsCombo->currentData().toString();
+    if (!customName.isEmpty() && m_presets.contains(customName)) {
+        setStyle(m_presets.value(customName).toObject());
+    } else if (m_builtinPresets.contains(sel)) {
+        setStyle(m_builtinPresets.value(sel).toObject());
     } else {
         setStyle(YachtCore::style(QStringLiteral("defaults")));
     }
@@ -1044,7 +1070,8 @@ void MainWindow::saveCurrentPreset() {
         }
     }
     QString name = m_savePresetEdit->text().trimmed();
-    if (name.isEmpty() || name == QStringLiteral("Unstyled") || name == QStringLiteral("Default (Styled)")) {
+    if (name.isEmpty() || (m_builtinPresets.contains(name) && !m_presets.contains(name)) ||
+        name == QStringLiteral("Default (Styled)")) {
         m_desktop->showMessage(QStringLiteral("YACHT"),
                                QStringLiteral("Choose a preset name other than a built-in preset name."));
         return;
@@ -1062,7 +1089,7 @@ void MainWindow::saveCurrentPreset() {
         Presets::save(nextPresets);
         m_presets = nextPresets;
         syncPresets();
-        selectPreset(name);
+        m_presetsCombo->setCurrentIndex(m_presetsCombo->findData(name));
         m_statusLabel->setText(QStringLiteral("Saved preset ") + name);
     } catch (const std::exception &e) {
         m_statusLabel->setText(QString::fromUtf8(e.what()));
@@ -1080,8 +1107,8 @@ void MainWindow::deleteSelectedPreset() {
                                QStringLiteral("Cannot delete presets because the preset store could not be read safely. The original file has been preserved."));
         return;
     }
-    QString name = m_presetsCombo->currentText();
-    if (name.isEmpty() || name == QStringLiteral("Unstyled") || name == QStringLiteral("Default (Styled)")) {
+    QString name = m_presetsCombo->currentData().toString();
+    if (name.isEmpty()) {
         return;
     }
     if (!m_presets.contains(name)) {
@@ -1189,6 +1216,7 @@ void MainWindow::batchConvert(const QStringList &paths) {
             inArr.append(p);
             args[QStringLiteral("inputs")] = inArr;
             args[QStringLiteral("style")] = styleObj;
+            args[QStringLiteral("output_mode")] = m_preferences.outputMode;
             args[QStringLiteral("delimiter")] = separator;
             args[QStringLiteral("overwrite")] = overwrite;
 

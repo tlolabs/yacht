@@ -10,6 +10,17 @@ use yacht_core::{
 fn parse(s: &str) -> Table {
     csv::parse(s.as_bytes(), Delimiter::Comma, &|| false).unwrap()
 }
+fn api(engine: &Engine, op: &str, mut args: serde_json::Value) -> serde_json::Value {
+    args["version"] = serde_json::json!(1);
+    args["op"] = serde_json::json!(op);
+    engine.request(args, &|| false).unwrap()
+}
+fn cell_attributes(html: &str) -> Vec<&str> {
+    html.split("<td")
+        .skip(1)
+        .map(|cell| cell.split_once('>').unwrap().0)
+        .collect()
+}
 #[test]
 fn csv_record_rules() {
     assert_eq!(
@@ -146,7 +157,10 @@ fn escaping_and_css() {
         "\u{2003}Café",
         "\u{00a0}",
     ] {
-        assert!(!html::is_numeric(value), "expected {value:?} to not be numeric");
+        assert!(
+            !html::is_numeric(value),
+            "expected {value:?} to not be numeric"
+        );
     }
     let bare = html::document(&table, &Style::unstyled(), None, &|| false).unwrap();
     assert!(!bare.contains("<style>"));
@@ -201,6 +215,37 @@ fn escaping_and_css() {
     assert!(dark_doc.contains("background: #111111;\n      color: #ffffff;"));
     assert!(dark_doc.contains("background: #222222;\n      color: #ffffff;"));
     assert!(dark_doc.contains("background: #333333;\n      color: #ffffff;"));
+
+    // 8-character and 4-character hex colors, rgb/rgba, and dark color names select white accessible text color
+    assert_eq!(html::accessible_text_color("#000000ff"), "#ffffff");
+    assert_eq!(html::accessible_text_color("#000f"), "#ffffff");
+    assert_eq!(html::accessible_text_color("black"), "#ffffff");
+    assert_eq!(html::accessible_text_color("navy"), "#ffffff");
+    assert_eq!(html::accessible_text_color("rgb(0, 0, 0)"), "#ffffff");
+    assert_eq!(html::accessible_text_color("rgb(10, 10, 10)"), "#ffffff");
+    assert_eq!(html::accessible_text_color("rgba(0, 0, 0, 1)"), "#ffffff");
+    assert_eq!(
+        html::accessible_text_color("rgb(100%, 100%, 100%)"),
+        "#222222"
+    );
+    assert_eq!(html::accessible_text_color("rgb(255, 255, 255)"), "#222222");
+    assert_eq!(html::accessible_text_color("#ffffffcc"), "#222222");
+
+    // First column rule precedes hover rule so hover highlights the entire row
+    let first_and_hover = Style {
+        first_column_enabled: true,
+        first_column_bg: "#dcdcdc".into(),
+        hover_enabled: true,
+        hover_bg: "#ffff99".into(),
+        ..Default::default()
+    };
+    let hover_doc = html::document(&table, &first_and_hover, None, &|| false).unwrap();
+    let first_idx = hover_doc.find("td:first-child").unwrap();
+    let hover_idx = hover_doc.find("tr:hover td").unwrap();
+    assert!(
+        first_idx < hover_idx,
+        "first-column rule must precede hover rule in CSS"
+    );
 }
 #[test]
 fn preview_and_complete_exports() {
@@ -327,6 +372,444 @@ fn bindings_handle_lifetime_and_cancellation() {
 }
 
 #[test]
+fn binding_html_defaults_to_a_self_contained_table_fragment() {
+    let engine = Engine::default();
+    let table = api(
+        &engine,
+        "records",
+        serde_json::json!({"records":[["<Item>","Count"],["north & south","12"],["Café",""]]}),
+    );
+    let handle = &table["handle"];
+    let output = api(&engine, "html", serde_json::json!({"handle":handle}));
+    let fragment = output.as_str().unwrap();
+    assert!(fragment.trim_start().starts_with("<table"));
+    assert!(fragment.trim_end().ends_with("</table>"));
+    for wrapper in ["<!doctype", "<html", "<head", "<body", "<div", "<style"] {
+        assert!(!fragment.contains(wrapper), "unexpected {wrapper}");
+    }
+    assert!(fragment.split_once('>').unwrap().0.contains("style="));
+    assert_eq!(fragment.matches("scope=\"col\"").count(), 2);
+    assert!(fragment.contains("&lt;Item&gt;</th>"));
+    assert!(fragment.contains("north &amp; south</td>"));
+    assert!(fragment.contains("Café</td>"));
+    let cells = cell_attributes(fragment);
+    assert_eq!(cells.len(), 4);
+    assert!(cells.iter().all(|attrs| attrs.contains("style=")));
+    assert!(!cells[0].contains("text-align: right"));
+    assert!(cells[1].contains("text-align: right"));
+    assert!(!cells[2].contains("text-align: right"));
+    assert!(!cells[3].contains("text-align: right"));
+
+    let preview = api(
+        &engine,
+        "preview",
+        serde_json::json!({"handle":handle,"limit":1}),
+    );
+    assert_eq!(preview["source"], output);
+    assert_eq!(preview["row_count"], 1);
+    assert!(!preview["html"].as_str().unwrap().contains("Café"));
+
+    let full = api(
+        &engine,
+        "html",
+        serde_json::json!({"handle":handle,"output_mode":"document"}),
+    );
+    assert!(full.as_str().unwrap().starts_with("<!doctype html>"));
+    assert!(full.as_str().unwrap().contains("<style>"));
+    assert_eq!(
+        api(
+            &engine,
+            "preview",
+            serde_json::json!({"handle":handle,"limit":1,"output_mode":"document"}),
+        )["source"],
+        full
+    );
+
+    let unstyled = api(&engine, "unstyled", serde_json::json!({}));
+    let bare = api(
+        &engine,
+        "html",
+        serde_json::json!({"handle":handle,"style":unstyled}),
+    );
+    let bare = bare.as_str().unwrap();
+    assert!(bare.trim_start().starts_with("<table>"));
+    assert!(bare.trim_end().ends_with("</table>"));
+    assert!(!bare.contains("style="));
+    assert!(!bare.contains("class="));
+    assert!(bare.contains("north &amp; south</td>"));
+}
+
+#[test]
+fn table_fragment_keeps_quoted_fonts_and_untrusted_classes_in_their_attributes() {
+    let engine = Engine::default();
+    let table = api(&engine, "sample", serde_json::json!({}));
+    let html = api(
+        &engine,
+        "html",
+        serde_json::json!({
+            "handle":table["handle"],
+            "style":{
+                "table_class":"\" onmouseover=\"alert(1)\"><script>alert(1)</script>&",
+                "font_family":"\"Times New Roman\", serif"
+            }
+        }),
+    );
+    let html = html.as_str().unwrap();
+    let opening = html.split_once('>').unwrap().0;
+    assert!(opening.contains("class=\"csv-table &quot; onmouseover=&quot;alert(1)&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;&amp;\""));
+    assert!(opening.contains("style=\"font-family: &quot;Times New Roman&quot;, serif;"));
+    // Only class and style delimiters remain as literal quotes in the tag.
+    assert_eq!(opening.matches('"').count(), 4);
+    assert_eq!(html.matches("<table").count(), 1);
+    assert!(!html.contains("<script"));
+    assert!(!html.contains(" onmouseover=\""));
+}
+
+#[test]
+fn table_mode_bounds_utf8_source_and_cancels_during_a_large_field() {
+    let engine = Engine::default();
+    let table = api(
+        &engine,
+        "records",
+        serde_json::json!({"records":[["A"],["🛥️".repeat(200_000)]]}),
+    );
+    let args = serde_json::json!({"handle":table["handle"],"output_mode":"table"});
+    let full = api(&engine, "html", args.clone());
+    let full = full.as_str().unwrap();
+    let p = api(&engine, "preview", args.clone());
+    let source = p["source"].as_str().unwrap();
+    assert!(p["source_truncated"].as_bool().unwrap());
+    assert!(p["preview_unavailable"].as_bool().unwrap());
+    assert!(source.starts_with("<table"));
+    assert!(full.len() > preview::SOURCE_BUDGET);
+    assert!(source.len() <= preview::SOURCE_BUDGET);
+    assert!(full.starts_with(source));
+    assert!(!source.contains('\u{fffd}'));
+    // The omitted suffix begins at a scalar boundary and includes actual cell data.
+    assert!(full[source.len()..].contains('🛥'));
+    for op in ["html", "preview"] {
+        let mut request = args.clone();
+        request["version"] = serde_json::json!(1);
+        request["op"] = serde_json::json!(op);
+        let checks = Cell::new(0);
+        let result = engine.request(request, &|| {
+            checks.set(checks.get() + 1);
+            checks.get() >= 8
+        });
+        assert!(matches!(result, Err(Error::Cancelled)), "{op}");
+        assert_eq!(checks.get(), 8);
+    }
+    // Cancellation during preview HTML rendering (where count > 0) aborts immediately
+    let normal_table = api(
+        &engine,
+        "records",
+        serde_json::json!({"records":[["A"],["B"],["C"],["D"],["E"]]}),
+    );
+    let req = serde_json::json!({"version":1,"op":"preview","handle":normal_table["handle"]});
+    let checks = Cell::new(0);
+    let result = engine.request(req, &|| {
+        checks.set(checks.get() + 1);
+        checks.get() >= 2
+    });
+    assert!(matches!(result, Err(Error::Cancelled)));
+}
+
+#[test]
+fn binding_output_modes_apply_to_all_file_exports() {
+    let engine = Engine::default();
+    let dir = tempfile::tempdir().unwrap();
+    let input = dir.path().join("source.csv");
+    std::fs::write(&input, "Item,Count\nCompass,12\nCafé,3\n").unwrap();
+    let table = api(&engine, "read", serde_json::json!({"path":input}));
+    for mode in ["table", "document"] {
+        let expected = api(
+            &engine,
+            "html",
+            serde_json::json!({"handle":table["handle"],"output_mode":mode}),
+        );
+        let export = dir.path().join(format!("export-{mode}.html"));
+        api(
+            &engine,
+            "export",
+            serde_json::json!({"handle":table["handle"],"path":export,"output_mode":mode}),
+        );
+        assert_eq!(
+            std::fs::read_to_string(export).unwrap(),
+            expected.as_str().unwrap()
+        );
+        let convert = dir.path().join(format!("convert-{mode}.html"));
+        api(
+            &engine,
+            "convert",
+            serde_json::json!({"input":input,"output":convert,"output_mode":mode}),
+        );
+        assert_eq!(
+            std::fs::read_to_string(convert).unwrap(),
+            expected.as_str().unwrap()
+        );
+        let batch = api(
+            &engine,
+            "batch",
+            serde_json::json!({"inputs":[input],"output_mode":mode,"overwrite":true}),
+        );
+        assert!(batch[0]["error"].is_null());
+        assert_eq!(
+            std::fs::read_to_string(batch[0]["output"].as_str().unwrap()).unwrap(),
+            expected.as_str().unwrap()
+        );
+    }
+    let default_export = dir.path().join("default.html");
+    api(
+        &engine,
+        "export",
+        serde_json::json!({"handle":table["handle"],"path":default_export}),
+    );
+    assert!(std::fs::read_to_string(&default_export)
+        .unwrap()
+        .trim_start()
+        .starts_with("<table"));
+    let before = std::fs::read(&default_export).unwrap();
+    assert!(engine.request(serde_json::json!({"version":1,"op":"export","handle":table["handle"],"path":default_export,"overwrite":true,"output_mode":"invalid"}), &|| false).is_err());
+    assert_eq!(std::fs::read(&default_export).unwrap(), before);
+    assert_eq!(
+        std::fs::read_to_string(input).unwrap(),
+        "Item,Count\nCompass,12\nCafé,3\n"
+    );
+}
+
+#[test]
+fn named_styles_preserve_the_default_and_reference_column_treatments() {
+    let engine = Engine::default();
+    let presets = api(&engine, "builtin_presets", serde_json::json!({}));
+    let names: Vec<_> = presets
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "G-Blue",
+            "G-Blue Gray",
+            "G-Brown",
+            "G-Cyan",
+            "G-Gray",
+            "G-Green",
+            "G-Light Green",
+            "G-Orange",
+            "G-Purple",
+            "G-Teal",
+            "G-Yellow",
+            "N-Blue",
+            "N-Gray",
+            "N-Green",
+            "N-Orange",
+            "N-Red",
+            "N-White",
+            "Unstyled",
+            "Y-Default"
+        ]
+    );
+    assert_eq!(
+        presets["Y-Default"],
+        api(&engine, "defaults", serde_json::json!({}))
+    );
+    assert_eq!(
+        presets["Unstyled"],
+        api(&engine, "unstyled", serde_json::json!({}))
+    );
+    let table = api(
+        &engine,
+        "records",
+        serde_json::json!({"records":[["Item","Count"],["One","1"],["Two","2"]]}),
+    );
+    for name in [
+        "N-Blue", "N-Orange", "N-Green", "N-Red", "N-Gray", "N-White",
+    ] {
+        let style = &presets[name];
+        api(
+            &engine,
+            "validate_style",
+            serde_json::json!({"style":style}),
+        );
+        assert_eq!(style["first_column_enabled"], true, "{name}");
+        assert_eq!(style["zebra_enabled"], name != "N-Gray", "{name}");
+        let rendered = api(
+            &engine,
+            "html",
+            serde_json::json!({"handle":table["handle"],"style":style}),
+        );
+        let cells = cell_attributes(rendered.as_str().unwrap());
+        let first_column_bg = style["first_column_bg"].as_str().unwrap();
+        assert!(cells[0].contains(first_column_bg), "{name}");
+        assert!(
+            cells[2].contains(first_column_bg),
+            "{name}: stripe overrides first column"
+        );
+        assert!(
+            cells[1].contains(style["body_bg"].as_str().unwrap()),
+            "{name}"
+        );
+        let second_row_bg = if name == "N-Gray" {
+            "body_bg"
+        } else {
+            "zebra_bg"
+        };
+        assert!(
+            cells[3].contains(style[second_row_bg].as_str().unwrap()),
+            "{name}"
+        );
+        if name == "N-Gray" {
+            assert_ne!(style["first_column_bg"], style["body_bg"]);
+        } else {
+            assert_ne!(style["zebra_bg"], style["body_bg"]);
+        }
+    }
+}
+
+#[test]
+fn google_presets_keep_reference_colors_and_stripe_the_entire_row() {
+    let engine = Engine::default();
+    let presets = api(&engine, "builtin_presets", serde_json::json!({}));
+    let table = api(
+        &engine,
+        "records",
+        serde_json::json!({"records":[["Item","Count"],["One","1"],["Two","2"]]}),
+    );
+    for (name, header, stripe) in [
+        ("G-Gray", "#bdbdbd", "#f3f3f3"),
+        ("G-Cyan", "#4dd0e1", "#e0f7fa"),
+        ("G-Green", "#63d297", "#e7f9ef"),
+        ("G-Yellow", "#f7cb4c", "#fef8e3"),
+        ("G-Orange", "#f46524", "#ffe6dd"),
+        ("G-Blue", "#5c95f9", "#e8f0fe"),
+        ("G-Teal", "#26a69a", "#ddf2f0"),
+        ("G-Blue Gray", "#78909c", "#ebeff1"),
+        ("G-Brown", "#cca677", "#f8f2eb"),
+        ("G-Light Green", "#8bc34a", "#eef7e3"),
+        ("G-Purple", "#8989eb", "#e8e7fc"),
+    ] {
+        let style = &presets[name];
+        api(
+            &engine,
+            "validate_style",
+            serde_json::json!({"style":style}),
+        );
+        assert_eq!(style["header_bg"], header, "{name}");
+        assert_eq!(style["body_bg"], "#ffffff", "{name}");
+        assert_eq!(style["zebra_bg"], stripe, "{name}");
+        assert_eq!(style["first_column_enabled"], false, "{name}");
+        assert_eq!(style["zebra_enabled"], true, "{name}");
+        assert_eq!(style["hover_enabled"], false, "{name}");
+        for output_mode in ["table", "document"] {
+            let rendered = api(
+                &engine,
+                "html",
+                serde_json::json!({"handle":table["handle"],"style":style,"output_mode":output_mode}),
+            );
+            let rendered = rendered.as_str().unwrap();
+            assert!(rendered.contains(header), "{name}: {output_mode}");
+            if output_mode == "table" {
+                let cells = cell_attributes(rendered);
+                assert_eq!(cells.len(), 4, "{name}");
+                for cell in &cells[..2] {
+                    assert!(cell.contains("background: #ffffff;"), "{name}");
+                }
+                for cell in &cells[2..] {
+                    assert!(cell.contains(&format!("background: {stripe};")), "{name}");
+                }
+            } else {
+                assert!(
+                    rendered.contains(&format!(
+                        ".csv-table tbody tr:nth-child(even) td {{\n      background: {stripe};"
+                    )),
+                    "{name}"
+                );
+                assert!(!rendered.contains("td:first-child"), "{name}");
+                assert!(!rendered.contains("tr:hover"), "{name}");
+            }
+        }
+    }
+}
+
+#[test]
+fn legacy_preferences_and_presets_get_safe_new_defaults() {
+    let engine = Engine::default();
+    let legacy = serde_json::json!({"font_size_px":22,"header_bg":"#123456"});
+    let normalized = api(
+        &engine,
+        "normalize_style",
+        serde_json::json!({"style":legacy}),
+    );
+    assert_eq!(normalized["font_size_px"], 22);
+    assert_eq!(normalized["header_bg"], "#123456");
+    assert_eq!(normalized["first_column_enabled"], false);
+    assert_eq!(normalized["first_column_bg"], "#ffffff");
+    let unstyled = api(&engine, "unstyled", serde_json::json!({}));
+    let mut legacy_unstyled = unstyled.clone();
+    let fields = legacy_unstyled.as_object_mut().unwrap();
+    fields.remove("first_column_enabled");
+    fields.remove("first_column_bg");
+    assert_eq!(
+        api(
+            &engine,
+            "normalize_style",
+            serde_json::json!({"style":legacy_unstyled}),
+        ),
+        unstyled
+    );
+    assert_eq!(
+        api(
+            &engine,
+            "is_unstyled",
+            serde_json::json!({"style":legacy_unstyled}),
+        ),
+        true
+    );
+    let settings = api(
+        &engine,
+        "settings",
+        serde_json::json!({"settings":{"preview_rows":50,"last_style":legacy}}),
+    );
+    assert_eq!(settings["settings"]["output_mode"], "table");
+    assert_eq!(settings["initial_style"], normalized);
+    let document_settings = api(
+        &engine,
+        "settings",
+        serde_json::json!({"settings":{"output_mode":"document"}}),
+    );
+    assert_eq!(document_settings["settings"]["output_mode"], "document");
+    for invalid in [
+        serde_json::json!("complete"),
+        serde_json::json!(false),
+        serde_json::json!(0),
+    ] {
+        assert!(engine
+            .request(
+                serde_json::json!({"version":1,"op":"settings","settings":{"output_mode":invalid}}),
+                &|| false
+            )
+            .is_err());
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("legacy-presets.json");
+    std::fs::write(
+        &path,
+        serde_json::to_vec(&serde_json::json!({"Teaching":legacy})).unwrap(),
+    )
+    .unwrap();
+    let loaded = api(&engine, "load_presets", serde_json::json!({"path":path}));
+    assert_eq!(loaded["Teaching"], normalized);
+    for attack in [
+        "</style><script>alert(1)</script>",
+        "red; background:url(x)",
+    ] {
+        assert!(engine.request(serde_json::json!({"version":1,"op":"validate_style","style":{"first_column_enabled":true,"first_column_bg":attack}}), &|| false).is_err());
+    }
+}
+
+#[test]
 fn regular_file_and_invalid_style_safeguards() {
     let directory = tempfile::tempdir().unwrap();
     assert!(csv::read(directory.path(), Delimiter::Comma, 65536, &|| false).is_err());
@@ -360,7 +843,9 @@ fn regular_file_and_invalid_style_safeguards() {
         let err = csv::read(&fifo_path, Delimiter::Comma, 65536, &|| false);
         assert!(err.is_err(), "Opening FIFO must fail");
         assert!(
-            err.unwrap_err().to_string().contains("Choose a regular CSV or TSV file."),
+            err.unwrap_err()
+                .to_string()
+                .contains("Choose a regular CSV or TSV file."),
             "Must reject FIFO with regular file message"
         );
 

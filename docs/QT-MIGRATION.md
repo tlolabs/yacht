@@ -56,19 +56,19 @@ still require the acceptance work described below.
 
 | Avalonia feature | Qt 6 Widgets implementation | Status |
 |---|---|---|
-| 16 Style fields | `StyleField.h/.cpp` with text, integer, flag, choice and color dialogs | Complete |
-| HTML table preview | `HtmlPreviewWidget.h/.cpp` uses `QTextBrowser` for a static table | Partial: browser CSS interactions such as hover are not reproduced |
+| 18 Style fields | `StyleField.h/.cpp` with text, integer, flag, choice and color dialogs, including first-column fill | Complete |
+| HTML table preview | `HtmlPreviewWidget.h/.cpp` uses `QTextBrowser` with Rust-generated inline cell styles for row banding and first-column fills | Partial: browser CSS interactions such as hover are not reproduced |
 | HTML source viewer | `QPlainTextEdit` read-only source tab | Complete |
 | Bounded preview | Debounced (180ms) Rust preview call with 200/50/1000 row limits | Complete |
-| Presets management | Save, load, select, and delete presets with overwrite confirmation | Complete |
+| Presets management | Y-Default, Unstyled, six N-color built-ins, and custom save/load/delete with overwrite confirmation | Complete |
 | File open / drag & drop | Native file dialogs + `dragEnterEvent`/`dropEvent` handling | Complete |
 | Built-in sample | "Load Sample" toolbar button and menu action | Complete |
 | Refresh | Re-reads active file or re-renders sample | Complete |
-| Copy complete HTML | Copies full un-truncated HTML document to clipboard | Complete |
+| Copy HTML | Copies all rows as table HTML by default, or a complete document using Settings | Complete |
 | Export HTML | Native save dialog with overwrite protection | Complete |
 | Batch conversion | Review dialog showing inputs, overwrite option, and error reporting | Complete |
 | Responsive cancel | Core calls run on a worker while the Qt event loop services Escape and Cancel; an in-flight read test verifies cancellation and retry | Automated test passed locally; native Windows/Linux UI acceptance pending |
-| Settings dialog | `SettingsDialog.h/.cpp` for remember style, preview rows, appearance, clear recent | Complete |
+| Settings dialog | `SettingsDialog.h/.cpp` for HTML output mode, remember style, preview rows, appearance, clear recent | Complete |
 | Recent files | Up to 10 recent files, stored in `ui.json`, synced to menu and toolbar combo | Complete |
 | Appearance themes | System, Light, and Dark via Qt color-scheme hints where available, with a Fusion fallback | Automated palette transitions passed locally; native contrast and display acceptance pending |
 | Single instance IPC | `SingleInstance.h/.cpp` via `QLocalServer` / `QLocalSocket` | Complete |

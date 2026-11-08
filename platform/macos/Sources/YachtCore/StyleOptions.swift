@@ -63,6 +63,14 @@ public struct StyleOptions: Codable, Equatable, Sendable {
         get { guard case .string(let value) = values["zebra_bg"] else { preconditionFailure("Rust style schema mismatch") }; return value }
         set { values["zebra_bg"] = .string(newValue) }
     }
+    public var firstColumnEnabled: Bool {
+        get { guard case .boolean(let value) = values["first_column_enabled"] else { preconditionFailure("Rust style schema mismatch") }; return value }
+        set { values["first_column_enabled"] = .boolean(newValue) }
+    }
+    public var firstColumnBg: String {
+        get { guard case .string(let value) = values["first_column_bg"] else { preconditionFailure("Rust style schema mismatch") }; return value }
+        set { values["first_column_bg"] = .string(newValue) }
+    }
     public var hoverEnabled: Bool {
         get { guard case .boolean(let value) = values["hover_enabled"] else { preconditionFailure("Rust style schema mismatch") }; return value }
         set { values["hover_enabled"] = .boolean(newValue) }

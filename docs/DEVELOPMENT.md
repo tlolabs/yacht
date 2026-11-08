@@ -38,6 +38,7 @@ All operations include version=1 and op. Native errors expose a stable code
 |---|---|---|
 | info | — | app version and protocol |
 | defaults / unstyled | — | full portable style object |
+| builtin_presets | — | map of built-in names to portable styles |
 | normalize_style / validate_style / is_unstyled | style | normalized style / null / bool |
 | settings | settings (optional) | validated settings and effective initial_style |
 | safe_color / escape / numeric | text | bool / string / bool |
@@ -47,13 +48,20 @@ All operations include version=1 and op. Native errors expose a stable code
 | records | records (array of arrays of strings) | retained table metadata |
 | rows | handle | full rows, compatibility/test use only |
 | release | handle | null; one release per acquired handle |
-| preview | handle, style, limit | HTML/source and visible bounds metadata |
-| html | handle, style, limit (optional) | complete HTML unless explicitly limited |
-| export | handle, style, path, overwrite | null after atomic publication |
-| convert | input, output, style, delimiter, overwrite | null |
-| batch | inputs, style, delimiter, infer_tsv, overwrite | per-input outcomes |
+| preview | handle, style, limit, output_mode, inline_preview (optional) | HTML/source and visible bounds metadata |
+| html | handle, style, output_mode, limit (optional) | selected HTML format, all rows unless explicitly limited |
+| export | handle, style, path, overwrite, output_mode | null after atomic publication |
+| convert | input, output, style, delimiter, overwrite, output_mode | null |
+| batch | inputs, style, delimiter, infer_tsv, overwrite, output_mode | per-input outcomes |
 | default_output | path | output path |
 | load_presets / save_presets | path; presets for save | map / null |
+
+`output_mode` is optional and defaults to `table`; `document` requests the full
+page. The preview's source follows this mode. Its renderer defaults to document
+HTML, or inline table markup when `inline_preview: true` is requested by a static
+native renderer. Both render paths retain row/byte limits. The explicitly named
+Rust `html::document`/`write` and legacy file helpers keep their document behavior;
+mode-aware helpers serve the binding operations and the CLI's output selection.
 
 Required style fields/defaults are defined in Rust; frontend properties are editable
 projections, never independent serialization defaults. Never persist a table handle.

@@ -41,8 +41,27 @@ with tempfile.TemporaryDirectory(prefix='yacht-regression-') as tmp:
     complete=output.read_text(encoding='utf-8')
     for token in ['csv-table teaching',"'Times New Roman', serif",'20px','12px','3px dotted rebeccapurple','rgb(1, 2, 3)','color: white','#ffeecc','#abcdef','#fedcba','border-collapse: separate','border-spacing: 4px']:
         assert token in complete, token
-    subprocess.run([str(binary),str(source),'--overwrite','--font-size','23','--unstyled'],check=True,capture_output=True)
+    assert complete.startswith('<!doctype html>')  # CLI automation retains its page default.
+    subprocess.run([str(binary),str(source),'--overwrite','--first-column=true','--first-column-bg=#dcdcdc'],check=True,capture_output=True)
+    assert '#dcdcdc' in output.read_text(encoding='utf-8') and 'first-child' in output.read_text(encoding='utf-8')
+    subprocess.run([str(binary),str(source),'--overwrite','--html-output=table',*all_flags],check=True,capture_output=True)
+    fragment=output.read_text(encoding='utf-8')
+    assert fragment.startswith('<table ') and fragment.rstrip().endswith('</table>')
+    for tag in ['<!doctype', '<html', '<head', '<body', '<style', '<div']:
+        assert tag not in fragment, tag
+    assert 'style=' in fragment and '#abcdef' in fragment
+    page_cells=Cells();page_cells.feed(complete)
+    fragment_cells=Cells();fragment_cells.feed(fragment)
+    assert page_cells.cells == fragment_cells.cells
+    subprocess.run([str(binary),str(source),'--overwrite','--html-output','document',*all_flags],check=True,capture_output=True)
+    assert output.read_text(encoding='utf-8') == complete
+    assert subprocess.run([str(binary),str(source),'--overwrite','--html-output','invalid'],capture_output=True).returncode != 0
+    assert output.read_text(encoding='utf-8') == complete
+    subprocess.run([str(binary),str(source),'--overwrite=true','--font-size','23','--unstyled=true'],check=True,capture_output=True)
     assert '<style>' not in output.read_text(encoding='utf-8')
+    assert subprocess.run([str(binary),str(source),'--overwrite=false'],capture_output=True).returncode != 0
+    subprocess.run([str(binary),str(source),'--overwrite','--html-output=TABLE'],check=True,capture_output=True)
+    assert output.read_text(encoding='utf-8').startswith('<table ')
     positional=base/'-input.csv';positional.write_text('A\n1',encoding='utf-8')
     subprocess.run([str(binary),'--','-input.csv'],cwd=base,check=True,capture_output=True)
     assert positional.with_suffix('.html').exists()

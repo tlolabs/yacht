@@ -3,17 +3,27 @@ import YachtCore
 
 struct StyleInspector: View {
     @Bindable var workspace: Workspace
-    @State private var selectedPreset = "Default (Styled)"
+    @State private var selectedPreset = "builtin:Y-Default"
     @State private var presetName = ""
     @State private var confirmReplace = false
     @State private var confirmDelete = false
+    private var builtInNames: [String] {
+        let original = ["Y-Default", "N-Blue", "N-Orange", "N-Green", "N-Red", "N-Gray", "N-White"]
+        let additional = PresetRepository.builtInPresets.keys
+            .filter { !original.contains($0) && $0 != "Unstyled" }.sorted()
+        return original + additional + ["Unstyled"]
+    }
+    private var customPresetName: String? {
+        selectedPreset.hasPrefix("custom:") ? String(selectedPreset.dropFirst("custom:".count)) : nil
+    }
     var body: some View {
         Form {
             Section("Presets") {
                 Picker("Preset", selection: $selectedPreset) {
-                    Text("Default (Styled)").tag("Default (Styled)")
-                    Text("Unstyled").tag("Unstyled")
-                    ForEach(workspace.preferences.presets.keys.sorted(), id: \.self) { Text($0).tag($0) }
+                    ForEach(builtInNames, id: \.self) { Text($0).tag("builtin:\($0)") }
+                    ForEach(workspace.preferences.presets.keys.sorted(), id: \.self) { name in
+                        Text(builtInNames.contains(name) ? "\(name) (Custom)" : name).tag("custom:\(name)")
+                    }
                 }
                 .accessibilityIdentifier("presetPicker")
                 .accessibilityLabel("Style preset")
@@ -23,7 +33,7 @@ struct StyleInspector: View {
                         .accessibilityIdentifier("loadPreset")
                         .help("Apply the selected preset to the current table")
                     Button("Delete", role: .destructive) { confirmDelete = true }
-                        .disabled(workspace.preferences.presets[selectedPreset] == nil)
+                        .disabled(customPresetName == nil)
                         .help("Permanently delete the selected custom preset")
                 }
                 TextField("Save as", text: $presetName)
@@ -37,9 +47,9 @@ struct StyleInspector: View {
                 .disabled(presetName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .help("Save the current style under the specified name")
                 HStack {
-                    Button("Reset Styled") { workspace.style = .init(); selectedPreset = "Default (Styled)" }
-                        .help("Reset table styles to default styled appearance")
-                    Button("Reset Unstyled") { workspace.style = .unstyled; selectedPreset = "Unstyled" }
+                    Button("Reset Y-Default") { workspace.style = .init(); selectedPreset = "builtin:Y-Default" }
+                        .help("Reset table styles to the Y-Default appearance")
+                    Button("Reset Unstyled") { workspace.style = .unstyled; selectedPreset = "builtin:Unstyled" }
                         .help("Reset table styles to unstyled plain HTML")
                 }
             }
@@ -84,6 +94,10 @@ struct StyleInspector: View {
                 Toggle("Zebra striping", isOn: $workspace.style.zebraEnabled)
                     .help("Alternate row background colors for improved scanning")
                 ColorSetting(title: "Zebra color", value: $workspace.style.zebraBg)
+                Toggle("First column background", isOn: $workspace.style.firstColumnEnabled)
+                    .accessibilityLabel("First column background")
+                    .help("Use a separate background for the first column of table body cells")
+                ColorSetting(title: "First column color", value: $workspace.style.firstColumnBg)
                 Toggle("Hover highlight", isOn: $workspace.style.hoverEnabled)
                     .help("Highlight table row under cursor for tracking")
                 ColorSetting(title: "Hover color", value: $workspace.style.hoverBg)
@@ -97,21 +111,21 @@ struct StyleInspector: View {
         }
         .formStyle(.grouped)
         .confirmationDialog("Replace preset “\(presetName)” ?", isPresented: $confirmReplace) { Button("Replace", role: .destructive) { savePreset() } }
-        .confirmationDialog("Delete preset “\(selectedPreset)” ?", isPresented: $confirmDelete) {
+        .confirmationDialog("Delete preset “\(customPresetName ?? "")” ?", isPresented: $confirmDelete) {
             Button("Delete", role: .destructive) {
-                do { try workspace.preferences.deletePreset(selectedPreset); selectedPreset = "Default (Styled)" }
+                guard let name = customPresetName else { return }
+                do { try workspace.preferences.deletePreset(name); selectedPreset = "builtin:Y-Default" }
                 catch { workspace.errorMessage = error.localizedDescription }
             }
         }
     }
     private func loadPreset() {
-        if selectedPreset == "Default (Styled)" { workspace.style = .init() }
-        else if selectedPreset == "Unstyled" { workspace.style = .unstyled }
-        else if let style = workspace.preferences.presets[selectedPreset] { workspace.style = style }
+        if let name = customPresetName, let style = workspace.preferences.presets[name] { workspace.style = style }
+        else if selectedPreset.hasPrefix("builtin:"), let style = PresetRepository.builtInPresets[String(selectedPreset.dropFirst("builtin:".count))] { workspace.style = style }
     }
     private func savePreset() {
         let name = presetName.trimmingCharacters(in: .whitespacesAndNewlines)
-        do { try workspace.preferences.savePreset(name: name, style: workspace.style); selectedPreset = name; presetName = ""; workspace.status = "Saved preset “\(name)”" }
+        do { try workspace.preferences.savePreset(name: name, style: workspace.style); selectedPreset = "custom:\(name)"; presetName = ""; workspace.status = "Saved preset “\(name)”" }
         catch { workspace.errorMessage = error.localizedDescription }
     }
 }

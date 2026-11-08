@@ -760,9 +760,9 @@
       "filesAnalyzed": false
     },
     {
-      "SPDXID": "SPDXRef-Package-cargo-rustls-0.23.45",
+      "SPDXID": "SPDXRef-Package-cargo-rustls-0.23.46",
       "name": "rustls",
-      "versionInfo": "0.23.45",
+      "versionInfo": "0.23.46",
       "downloadLocation": "crates.io",
       "licenseConcluded": "Apache-2.0 OR ISC OR MIT",
       "licenseDeclared": "Apache-2.0 OR ISC OR MIT",
@@ -778,9 +778,9 @@
       "filesAnalyzed": false
     },
     {
-      "SPDXID": "SPDXRef-Package-cargo-rustls-webpki-0.103.15",
+      "SPDXID": "SPDXRef-Package-cargo-rustls-webpki-0.103.16",
       "name": "rustls-webpki",
-      "versionInfo": "0.103.15",
+      "versionInfo": "0.103.16",
       "downloadLocation": "crates.io",
       "licenseConcluded": "ISC",
       "licenseDeclared": "ISC",
@@ -1003,9 +1003,9 @@
       "filesAnalyzed": false
     },
     {
-      "SPDXID": "SPDXRef-Package-cargo-tokio-1.53.1",
+      "SPDXID": "SPDXRef-Package-cargo-tokio-1.53.3",
       "name": "tokio",
-      "versionInfo": "1.53.1",
+      "versionInfo": "1.53.3",
       "downloadLocation": "crates.io",
       "licenseConcluded": "MIT",
       "licenseDeclared": "MIT",
@@ -1210,9 +1210,9 @@
       "filesAnalyzed": false
     },
     {
-      "SPDXID": "SPDXRef-Package-cargo-webpki-roots-1.0.9",
+      "SPDXID": "SPDXRef-Package-cargo-webpki-roots-1.0.10",
       "name": "webpki-roots",
-      "versionInfo": "1.0.9",
+      "versionInfo": "1.0.10",
       "downloadLocation": "crates.io",
       "licenseConcluded": "CDLA-Permissive-2.0",
       "licenseDeclared": "CDLA-Permissive-2.0",
@@ -1840,7 +1840,7 @@
     {
       "spdxElementId": "SPDXRef-Package-YACHT",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-cargo-rustls-0.23.45"
+      "relatedSpdxElement": "SPDXRef-Package-cargo-rustls-0.23.46"
     },
     {
       "spdxElementId": "SPDXRef-Package-YACHT",
@@ -1850,7 +1850,7 @@
     {
       "spdxElementId": "SPDXRef-Package-YACHT",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-cargo-rustls-webpki-0.103.15"
+      "relatedSpdxElement": "SPDXRef-Package-cargo-rustls-webpki-0.103.16"
     },
     {
       "spdxElementId": "SPDXRef-Package-YACHT",
@@ -1975,7 +1975,7 @@
     {
       "spdxElementId": "SPDXRef-Package-YACHT",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-cargo-tokio-1.53.1"
+      "relatedSpdxElement": "SPDXRef-Package-cargo-tokio-1.53.3"
     },
     {
       "spdxElementId": "SPDXRef-Package-YACHT",
@@ -2090,7 +2090,7 @@
     {
       "spdxElementId": "SPDXRef-Package-YACHT",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-Package-cargo-webpki-roots-1.0.9"
+      "relatedSpdxElement": "SPDXRef-Package-cargo-webpki-roots-1.0.10"
     },
     {
       "spdxElementId": "SPDXRef-Package-YACHT",

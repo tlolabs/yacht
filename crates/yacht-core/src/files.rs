@@ -65,9 +65,26 @@ pub fn export(
     overwrite: bool,
     cancel: Cancel<'_>,
 ) -> Result<()> {
+    export_with_mode(
+        table,
+        style,
+        path,
+        overwrite,
+        html::OutputMode::Document,
+        cancel,
+    )
+}
+pub fn export_with_mode(
+    table: &Table,
+    style: &Style,
+    path: &Path,
+    overwrite: bool,
+    mode: html::OutputMode,
+    cancel: Cancel<'_>,
+) -> Result<()> {
     style.validate()?;
     atomic(path, overwrite, cancel, |sink| {
-        html::write(table, style, None, sink, cancel)
+        html::write_output(table, style, None, mode, sink, cancel)
     })
 }
 pub fn convert(
@@ -78,12 +95,32 @@ pub fn convert(
     overwrite: bool,
     cancel: Cancel<'_>,
 ) -> Result<()> {
+    convert_with_mode(
+        input,
+        output,
+        style,
+        delimiter,
+        overwrite,
+        html::OutputMode::Document,
+        cancel,
+    )
+}
+pub fn convert_with_mode(
+    input: &Path,
+    output: &Path,
+    style: &Style,
+    delimiter: Delimiter,
+    overwrite: bool,
+    mode: html::OutputMode,
+    cancel: Cancel<'_>,
+) -> Result<()> {
     // Canonicalization follows symlinks; hard-link replacement changes only the
     // destination directory entry and therefore never truncates the source inode.
     let source = input.canonicalize()?;
     let target = output.canonicalize().ok().or_else(|| {
         output
             .parent()
+            .filter(|p| !p.as_os_str().is_empty())
             .unwrap_or(Path::new("."))
             .canonicalize()
             .ok()
@@ -93,13 +130,19 @@ pub fn convert(
         return Err(invalid("The output must not replace the input CSV."));
     }
     let table = csv::read(input, delimiter, 65536, cancel)?;
-    export(&table, style, output, overwrite, cancel)
+    export_with_mode(&table, style, output, overwrite, mode, cancel)
 }
 #[derive(Serialize, Debug)]
 pub struct BatchResult {
     pub input: PathBuf,
     pub output: PathBuf,
     pub error: Option<String>,
+}
+pub struct BatchOptions {
+    pub delimiter: Delimiter,
+    pub infer_tsv: bool,
+    pub overwrite: bool,
+    pub output_mode: html::OutputMode,
 }
 pub fn batch(
     inputs: &[PathBuf],
@@ -108,6 +151,26 @@ pub fn batch(
     infer_tsv: bool,
     overwrite: bool,
     cancel: Cancel<'_>,
+    progress: impl FnMut(&BatchResult),
+) -> Result<Vec<BatchResult>> {
+    batch_with_options(
+        inputs,
+        style,
+        BatchOptions {
+            delimiter,
+            infer_tsv,
+            overwrite,
+            output_mode: html::OutputMode::Document,
+        },
+        cancel,
+        progress,
+    )
+}
+pub fn batch_with_options(
+    inputs: &[PathBuf],
+    style: &Style,
+    options: BatchOptions,
+    cancel: Cancel<'_>,
     mut progress: impl FnMut(&BatchResult),
 ) -> Result<Vec<BatchResult>> {
     style.validate()?;
@@ -115,16 +178,17 @@ pub fn batch(
     for input in inputs {
         check(cancel)?;
         let output = default_output(input);
-        let result = convert(
+        let result = convert_with_mode(
             input,
             &output,
             style,
-            if infer_tsv {
-                delimiter.for_path(input)
+            if options.infer_tsv {
+                options.delimiter.for_path(input)
             } else {
-                delimiter
+                options.delimiter
             },
-            overwrite,
+            options.overwrite,
+            options.output_mode,
             cancel,
         );
         if matches!(result, Err(crate::Error::Cancelled)) {

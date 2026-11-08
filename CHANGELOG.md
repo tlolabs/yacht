@@ -4,6 +4,17 @@ All notable changes are recorded here. Earlier releases remain in Git history.
 
 ## [Unreleased]
 
+### Added
+
+- Add an HTML output setting on macOS, Windows, and Linux, defaulting to a single table with inline styles for pasting into Canvas. Complete-page output remains available; source, copy, export, and batch follow the setting.
+- Add N-Blue, N-Orange, N-Green, N-Red, N-Gray, and N-White table styles, with screenshot-inspired row banding and first-column fills.
+- Add eleven Google Sheets-inspired table presets: G-Gray, G-Cyan, G-Green, G-Yellow, G-Orange, G-Blue, G-Teal, G-Blue Gray, G-Brown, G-Light Green, and G-Purple, with colored headers and alternating white/tinted full rows.
+- Add `--html-output table|document` to the CLI, retaining its complete-document default.
+
+### Changed
+
+- Name the original built-in table style Y-Default. Existing custom presets and remembered styles remain compatible.
+
 ## [2.1.2-rc.2] — 2026-10-08
 
 ### Added

@@ -119,6 +119,7 @@ private:
     Preferences m_preferences;
     TablePtr m_table;
     QJsonObject m_presets;
+    QJsonObject m_builtinPresets;
     bool m_presetsReadable{true};
     QString m_presetLoadError;
     QString m_sourcePath;

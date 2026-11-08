@@ -12,13 +12,32 @@ final class FileServiceTests: XCTestCase {
         try withDirectory { directory in
             let url = directory.appendingPathComponent("table.html")
             try FileService.export(.sample, style: .init(), to: url)
-            let expected = try HTMLGenerator.document(.sample, style: .init())
+            let expected = try HTMLGenerator.output(.sample, style: .init())
             XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), expected)
             XCTAssertThrowsError(try FileService.export(.sample, style: .unstyled, to: url))
             XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), expected)
             try FileService.export(.sample, style: .unstyled, to: url, overwrite: true)
-            XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), try HTMLGenerator.document(.sample, style: .unstyled))
+            XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), try HTMLGenerator.output(.sample, style: .unstyled))
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory.path), ["table.html"])
+        }
+    }
+    func testOutputModeReachesExportConvertAndBatch() throws {
+        try withDirectory { directory in
+            let input = directory.appendingPathComponent("source.csv")
+            try Data("Name,Count\nCompass,12\n".utf8).write(to: input)
+            for mode in HTMLOutputMode.allCases {
+                let url = directory.appendingPathComponent("export-\(mode.rawValue).html")
+                try FileService.export(.sample, style: .init(), to: url, outputMode: mode)
+                XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), try HTMLGenerator.output(.sample, style: .init(), outputMode: mode))
+                let converted = directory.appendingPathComponent("converted-\(mode.rawValue).html")
+                try FileService.convert(input, to: converted, style: .unstyled, outputMode: mode)
+                let batch = try FileService.batchItem(input, style: .unstyled, delimiter: .comma, overwrite: true, outputMode: mode)
+                for output in [converted, batch] {
+                    let html = try String(contentsOf: output, encoding: .utf8)
+                    XCTAssertEqual(html.hasPrefix("<!doctype html>"), mode == .document)
+                    XCTAssertTrue(html.contains("Compass</td>"))
+                }
+            }
         }
     }
     func testMalformedImportDoesNotCreateOrTruncateOutput() throws {
@@ -46,6 +65,31 @@ final class FileServiceTests: XCTestCase {
             XCTAssertEqual(try JSONDecoder().decode(StyleOptions.self, from: encoded), decoded)
         }
     }
+    func testRecoveryPreservesEachUnreadableStoreBeforeReplacement() throws {
+        try withDirectory { directory in
+            let repo = PresetRepository(url: directory.appendingPathComponent("presets.json"))
+            var backups: [URL] = []
+            for original in ["broken first store", "broken second store"] {
+                try Data(original.utf8).write(to: repo.url)
+                let backup = try XCTUnwrap(repo.recoverWithBackup())
+                XCTAssertEqual(try String(contentsOf: backup, encoding: .utf8), original)
+                XCTAssertEqual(try repo.load(), [:])
+                backups.append(backup)
+            }
+            XCTAssertNotEqual(backups[0], backups[1])
+            XCTAssertEqual(try String(contentsOf: backups[0], encoding: .utf8), "broken first store")
+        }
+    }
+    func testRecoveryFailureDoesNotRemoveOriginalStore() throws {
+        try withDirectory { directory in
+            let repo = PresetRepository(url: directory.appendingPathComponent("presets.json"))
+            try FileManager.default.createDirectory(at: repo.url, withIntermediateDirectories: false)
+            let original = repo.url.appendingPathComponent("preserved")
+            try Data("KEEP".utf8).write(to: original)
+            XCTAssertThrowsError(try repo.recoverWithBackup())
+            XCTAssertEqual(try String(contentsOf: original, encoding: .utf8), "KEEP")
+        }
+    }
     func testCancelledExportLeavesExistingFile() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -66,12 +110,21 @@ final class RustSettingsTests: XCTestCase {
         var settings = BehaviorSettings.defaults
         XCTAssertTrue(settings.rememberStyle)
         XCTAssertEqual(settings.previewRows, 200)
+        XCTAssertEqual(settings.outputMode, .table)
         settings.lastStyle = .unstyled
         XCTAssertEqual(try settings.initialStyle(), .unstyled)
         settings.rememberStyle = false
         XCTAssertEqual(try settings.initialStyle(), StyleOptions())
         settings.previewRows = 0
         XCTAssertThrowsError(try settings.initialStyle())
+    }
+    func testExistingSettingsDefaultToTableOutputAndPersistMode() throws {
+        let old = Data("{\"remember_style\":true,\"preview_rows\":200,\"last_style\":{}}".utf8)
+        var settings = try JSONDecoder().decode(BehaviorSettings.self, from: old)
+        XCTAssertEqual(settings.outputMode, .table)
+        settings.outputMode = .document
+        let encoded = try JSONEncoder().encode(settings)
+        XCTAssertEqual(try JSONDecoder().decode(BehaviorSettings.self, from: encoded).outputMode, .document)
     }
     func testSharedBatchInfersTSVAndReportsCollision() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

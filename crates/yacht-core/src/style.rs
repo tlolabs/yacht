@@ -15,6 +15,8 @@ pub struct Style {
     pub header_bg: String,
     pub header_text_color: String,
     pub body_bg: String,
+    pub first_column_enabled: bool,
+    pub first_column_bg: String,
     pub zebra_enabled: bool,
     pub zebra_bg: String,
     pub hover_enabled: bool,
@@ -35,6 +37,8 @@ impl Default for Style {
             header_bg: "#f5f5f5".into(),
             header_text_color: "#222222".into(),
             body_bg: "#ffffff".into(),
+            first_column_enabled: false,
+            first_column_bg: "#ffffff".into(),
             zebra_enabled: true,
             zebra_bg: "#fbfbfb".into(),
             hover_enabled: true,
@@ -57,6 +61,8 @@ impl Style {
             header_bg: "transparent".into(),
             header_text_color: "#000000".into(),
             body_bg: "transparent".into(),
+            first_column_enabled: false,
+            first_column_bg: "#ffffff".into(),
             zebra_enabled: false,
             zebra_bg: "transparent".into(),
             hover_enabled: false,
@@ -105,6 +111,7 @@ impl Style {
             &self.header_bg,
             &self.header_text_color,
             &self.body_bg,
+            &self.first_column_bg,
             &self.zebra_bg,
             &self.hover_bg,
         ] {
@@ -116,6 +123,67 @@ impl Style {
         }
         Ok(())
     }
+}
+/// Built-in styles live in the shared engine so every native host uses the same palette.
+pub fn builtin_presets() -> std::collections::BTreeMap<String, Style> {
+    let mut presets = std::collections::BTreeMap::from([
+        ("Y-Default".into(), Style::default()),
+        ("Unstyled".into(), Style::unstyled()),
+    ]);
+    for (name, header, first, zebra, striped) in [
+        ("N-Blue", "#00a2ff", "#ffffff", "#f7f7f7", true),
+        ("N-Orange", "#ffb000", "#ffffff", "#f7f7f7", true),
+        ("N-Green", "#18b000", "#ffffff", "#f7f7f7", true),
+        ("N-Red", "#ff2600", "#ffffff", "#f7f7f7", true),
+        ("N-Gray", "#bfc1c1", "#dcdcdc", "#ffffff", false),
+        ("N-White", "#ffffff", "#ffffff", "#f3f8f7", true),
+    ] {
+        presets.insert(
+            name.into(),
+            Style {
+                table_class: String::new(),
+                font_family: "Helvetica, Arial, sans-serif".into(),
+                border_color: "#d9d9d9".into(),
+                header_bg: header.into(),
+                header_text_color: "#222222".into(),
+                first_column_enabled: true,
+                first_column_bg: first.into(),
+                zebra_enabled: striped,
+                zebra_bg: zebra.into(),
+                hover_enabled: false,
+                ..Style::default()
+            },
+        );
+    }
+    // Google Sheets alternating-color references, converted from the screenshots'
+    // embedded display profile to sRGB. The two gray references share a palette.
+    for (name, header, zebra) in [
+        ("G-Gray", "#bdbdbd", "#f3f3f3"),
+        ("G-Cyan", "#4dd0e1", "#e0f7fa"),
+        ("G-Green", "#63d297", "#e7f9ef"),
+        ("G-Yellow", "#f7cb4c", "#fef8e3"),
+        ("G-Orange", "#f46524", "#ffe6dd"),
+        ("G-Blue", "#5c95f9", "#e8f0fe"),
+        ("G-Teal", "#26a69a", "#ddf2f0"),
+        ("G-Blue Gray", "#78909c", "#ebeff1"),
+        ("G-Brown", "#cca677", "#f8f2eb"),
+        ("G-Light Green", "#8bc34a", "#eef7e3"),
+        ("G-Purple", "#8989eb", "#e8e7fc"),
+    ] {
+        presets.insert(
+            name.into(),
+            Style {
+                table_class: String::new(),
+                font_family: "Arial, sans-serif".into(),
+                border_color: "#c4c7c5".into(),
+                header_bg: header.into(),
+                zebra_bg: zebra.into(),
+                hover_enabled: false,
+                ..Style::default()
+            },
+        );
+    }
+    presets
 }
 pub fn safe_color(value: &str) -> bool {
     let bytes = value.as_bytes();

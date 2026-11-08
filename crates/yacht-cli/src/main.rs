@@ -5,13 +5,14 @@ use std::{
         Arc,
     },
 };
-use yacht_core::{csv::Delimiter, files, invalid, style::Style, Result};
+use yacht_core::{csv::Delimiter, files, html::OutputMode, invalid, style::Style, Result};
 const HELP: &str = "YACHT — Yet Another CSV HTML Translator
 Usage: yacht input.csv [more.csv ...] [options]
   -o, --output PATH       Output for one input (default: beside CSV)
   --overwrite            Explicitly allow replacing existing HTML
   --delimiter VALUE      comma, tab, semicolon, pipe (default: comma)
   --unstyled             Omit all styling
+  --html-output MODE     document (default) or table (inline styles for pasting)
   --table-class TEXT      CSS classes
   --font-family TEXT      Comma-separated font names
   --font-size N           Font size in pixels
@@ -22,6 +23,8 @@ Usage: yacht input.csv [more.csv ...] [options]
   --header-bg COLOR       Header background
   --header-text-color COLOR
   --body-bg COLOR         Body background
+  --first-column BOOL     First-column background fill
+  --first-column-bg COLOR First-column background color
   --zebra BOOL            true/false, yes/no, y/n, on/off, 1/0
   --zebra-bg COLOR        Alternating row color
   --hover BOOL            Hover highlight
@@ -35,7 +38,7 @@ fn path(text: &str) -> PathBuf {
         if let Some(home) = home {
             return home.into();
         }
-    } else if let Some(rest) = text.strip_prefix("~/") {
+    } else if let Some(rest) = text.strip_prefix("~/").or_else(|| text.strip_prefix(r"~\")) {
         if let Some(home) = home {
             return PathBuf::from(home).join(rest);
         }
@@ -43,11 +46,12 @@ fn path(text: &str) -> PathBuf {
     PathBuf::from(text)
 }
 fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
-    if args.is_empty() || args.iter().any(|a| a == "--help" || a == "-h") {
+    if args.is_empty() {
         println!("{HELP}");
         return Ok(());
     }
     let mut style = Style::default();
+    let mut output_mode = OutputMode::Document;
     let (mut inputs, mut output, mut delimiter, mut overwrite, mut positional) =
         (vec![], None, Delimiter::Comma, false, false);
     let mut args = args.into_iter();
@@ -57,6 +61,10 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
             continue;
         }
         match arg.as_str() {
+            "--help" | "-h" => {
+                println!("{HELP}");
+                return Ok(());
+            }
             "--" => {
                 positional = true;
                 continue;
@@ -83,6 +91,25 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
             output = Some(value);
             continue;
         }
+        if flag == "--overwrite" {
+            overwrite = match value.to_lowercase().as_str() {
+                "1" | "true" | "yes" | "y" | "on" => true,
+                "0" | "false" | "no" | "n" | "off" => false,
+                _ => return Err(invalid(format!("Invalid boolean: {value}"))),
+            };
+            continue;
+        }
+        if flag == "--unstyled" {
+            let unstyled = match value.to_lowercase().as_str() {
+                "1" | "true" | "yes" | "y" | "on" => true,
+                "0" | "false" | "no" | "n" | "off" => false,
+                _ => return Err(invalid(format!("Invalid boolean: {value}"))),
+            };
+            if unstyled {
+                style = Style::unstyled();
+            }
+            continue;
+        }
         if flag == "--delimiter" {
             delimiter = match value.as_str() {
                 "comma" => Delimiter::Comma,
@@ -90,6 +117,14 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
                 "semicolon" => Delimiter::Semicolon,
                 "pipe" => Delimiter::Pipe,
                 _ => return Err(invalid(format!("Unknown delimiter: {value}"))),
+            };
+            continue;
+        }
+        if flag == "--html-output" {
+            output_mode = match value.to_ascii_lowercase().as_str() {
+                "table" => OutputMode::Table,
+                "document" => OutputMode::Document,
+                _ => return Err(invalid("HTML output must be table or document.")),
             };
             continue;
         }
@@ -121,6 +156,14 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
                     _ => return Err(invalid(format!("Invalid boolean: {value}"))),
                 };
             }
+            "--first-column" => {
+                style.first_column_enabled = match value.to_lowercase().as_str() {
+                    "1" | "true" | "yes" | "y" | "on" => true,
+                    "0" | "false" | "no" | "n" | "off" => false,
+                    _ => return Err(invalid(format!("Invalid boolean: {value}"))),
+                };
+            }
+            "--first-column-bg" => style.first_column_bg = value,
             "--hover" => {
                 style.hover_enabled = match value.to_lowercase().as_str() {
                     "1" | "true" | "yes" | "y" | "on" => true,
@@ -156,7 +199,15 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
             .as_deref()
             .map(path)
             .unwrap_or_else(|| files::default_output(&source));
-        match files::convert(&source, &target, &style, delimiter, overwrite, cancel) {
+        match files::convert_with_mode(
+            &source,
+            &target,
+            &style,
+            delimiter,
+            overwrite,
+            output_mode,
+            cancel,
+        ) {
             Ok(()) => println!(
                 "Converted: {} -> {}",
                 source.canonicalize().unwrap_or(source).display(),
@@ -190,5 +241,17 @@ fn main() {
         } else {
             1
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn help_is_only_an_option_before_the_separator() {
+        assert!(run(vec!["--help".into()], &|| false).is_ok());
+        assert!(run(vec!["--".into(), "--help".into()], &|| false).is_err());
+        // An option value is data, even when it happens to spell a help flag.
+        assert!(run(vec!["--table-class".into(), "--help".into()], &|| false).is_err());
     }
 }

@@ -11,6 +11,9 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QThread>
+#include <QTextBrowser>
+#include <QTextDocument>
+#include <QTextTable>
 #include <QUuid>
 
 namespace Yacht {
@@ -47,6 +50,27 @@ int SmokeTest::run(MainWindow &window, const QString &directory) {
         inputFile.close();
 
         window.loadFile(input);
+        for (const QString &name : {QStringLiteral("N-Blue"), QStringLiteral("N-Gray")}) {
+            window.selectPreset(name);
+            window.loadSelectedPreset();
+            window.onPerformRender();
+            auto style = window.currentStyle();
+            auto *document = window.previewWidget()->findChild<QTextBrowser *>()->document();
+            QTextTable *table = nullptr;
+            for (auto it = document->rootFrame()->begin(); !it.atEnd(); ++it) {
+                table = qobject_cast<QTextTable *>(it.currentFrame());
+                if (table) break;
+            }
+            QString secondBackground = style.value(style.value(QStringLiteral("zebra_enabled")).toBool()
+                                                       ? QStringLiteral("zebra_bg") : QStringLiteral("body_bg")).toString();
+            if (!table || table->rows() != 3 || table->columns() < 2 ||
+                table->cellAt(0, 0).format().background().color() != QColor(style.value(QStringLiteral("header_bg")).toString()) ||
+                table->cellAt(1, 0).format().background().color() != QColor(style.value(QStringLiteral("first_column_bg")).toString()) ||
+                table->cellAt(1, 1).format().background().color() != QColor(style.value(QStringLiteral("body_bg")).toString()) ||
+                table->cellAt(2, 1).format().background().color() != QColor(secondBackground)) {
+                throw std::runtime_error("Native preview table colors do not match " + name.toStdString());
+            }
+        }
         window.setStyle(YachtCore::style(QStringLiteral("unstyled")));
         window.onPerformRender();
         waitWithEvents(250);
@@ -99,6 +123,7 @@ int SmokeTest::run(MainWindow &window, const QString &directory) {
         batchInputs.append(input);
         batchArgs[QStringLiteral("inputs")] = batchInputs;
         batchArgs[QStringLiteral("style")] = window.currentStyle();
+        batchArgs[QStringLiteral("output_mode")] = window.preferences().outputMode;
         QJsonArray batchResults = YachtCore::call(QStringLiteral("batch"), batchArgs).toArray();
         if (batchResults.isEmpty() ||
             (batchResults.first().toObject().contains(QStringLiteral("error")) &&
@@ -109,7 +134,7 @@ int SmokeTest::run(MainWindow &window, const QString &directory) {
         Preferences prefs = Preferences::load();
         prefs.previewRows = 50;
         prefs.save();
-        if (Preferences::load().previewRows != 50 || window.styleFields().size() != 16) {
+        if (Preferences::load().previewRows != 50 || window.styleFields().size() != 18) {
             throw std::runtime_error("Settings/style controls");
         }
 

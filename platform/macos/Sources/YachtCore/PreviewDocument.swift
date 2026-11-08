@@ -8,7 +8,7 @@ public struct PreviewDocument: Sendable, Decodable {
     enum CodingKeys: String, CodingKey {
         case html, source, rowCount = "row_count", sourceTruncated = "source_truncated", previewUnavailable = "preview_unavailable"
     }
-    public init(table: TableData, style: StyleOptions, limit: Int = 200) throws {
-        self = try RustBridge.call("preview", ["handle": table.handle, "style": try RustBridge.object(style), "limit": max(0, limit)])
+    public init(table: TableData, style: StyleOptions, limit: Int = 200, outputMode: HTMLOutputMode = .table) throws {
+        self = try RustBridge.call("preview", ["handle": table.handle, "style": try RustBridge.object(style), "limit": max(0, limit), "output_mode": outputMode.rawValue])
     }
 }

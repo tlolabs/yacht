@@ -16,6 +16,14 @@ The native CLI accepts all former style flags, multiple files and single-file `-
 4. Numeric matching recognizes ungrouped four/five-digit numbers and consistently validates thousands grouping. Percentages, scientific notation and nonnumeric labels remain text.
 5. Unsafe CSS input is rejected before preview/copy/export. An empty custom font list uses `inherit` in styled output; exact Unstyled omits CSS entirely.
 6. Malformed CSV is rejected, rather than silently repaired by Python’s permissive reader. Valid quoted/multiline data is retained byte-for-byte after UTF-8 decoding.
+7. The apps now default to inline-styled table markup for pasting into Canvas.
+   Settings can restore complete-document output for source, copy, export, and
+   batch. The CLI retains its page default and adds `--html-output table|document`.
+8. The original built-in style is named Y-Default. Six N-color presets add
+   screenshot-inspired banding and first-column fills. Eleven Google Sheets-inspired
+   G-color presets add colored headers and alternating white/tinted full rows,
+   including the first column, with hover disabled. The two added first-column
+   fields default to disabled/white, preserving older preset appearances.
 
 Current Rust and Swift tests assert document structure, escaping, styling, numeric
 alignment, sparse rows, delimiters and Unicode directly. Sixty seeded CLI cases
@@ -33,7 +41,8 @@ in the `v2.1.0` tag rather than in the active test suite.
 - Presets migrate into Application Support without altering the Python preset file. They are independent after migration.
 - Large-data preview/source limits are visible. Export and clipboard output remain complete.
 
-No raw HTML, inline CSS, fragment export, custom table width or general CSV editing feature existed. Those features are intentionally outside this rewrite.
+Inline CSS and fragment export are now supported. Raw cell HTML, custom table
+width, and general CSV editing remain outside this rewrite.
 
 ## Rust/native release (2.1.0)
 

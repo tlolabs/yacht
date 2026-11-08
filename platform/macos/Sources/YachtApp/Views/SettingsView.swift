@@ -1,4 +1,5 @@
 import SwiftUI
+import YachtCore
 
 struct SettingsView: View {
     @Bindable var preferences: Preferences
@@ -18,6 +19,17 @@ struct SettingsView: View {
             .accessibilityLabel("Appearance")
             .accessibilityIdentifier("appearance")
             .help("Choose System, Light, or Dark appearance")
+
+            Toggle("Complete HTML document", isOn: Binding(
+                get: { preferences.outputMode == .document },
+                set: { preferences.outputMode = $0 ? .document : .table }
+            ))
+            .accessibilityLabel("Complete HTML document")
+            .accessibilityIdentifier("completeHTMLDocument")
+            .help("Off: copy and export just the table HTML. On: include a complete HTML page.")
+
+            Text("Off by default: Table HTML only, ready to paste into Canvas. This setting applies to copied HTML, exports, batch conversions, and HTML Source.")
+                .font(.caption).foregroundStyle(.secondary)
 
             Toggle("Remember last-used table style", isOn: $preferences.rememberStyle)
                 .accessibilityLabel("Remember last-used table style")

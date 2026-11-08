@@ -28,6 +28,20 @@ SettingsDialog::SettingsDialog(Preferences &prefs, QWidget *parent)
     m_rememberCheckBox->setChecked(m_prefs.rememberStyle);
     mainLayout->addWidget(m_rememberCheckBox);
 
+    auto *outputLabel = new QLabel(QStringLiteral("HTML output"), this);
+    mainLayout->addWidget(outputLabel);
+    m_outputModeCombo = new QComboBox(this);
+    m_outputModeCombo->setObjectName(QStringLiteral("outputModeCombo"));
+    m_outputModeCombo->setAccessibleName(QStringLiteral("HTML output"));
+    m_outputModeCombo->setAccessibleDescription(QStringLiteral("Choose table markup for Canvas or a complete HTML document for copying and exporting"));
+    m_outputModeCombo->setToolTip(QStringLiteral("Table HTML only is ready to paste into Canvas; complete HTML includes a whole page"));
+    outputLabel->setBuddy(m_outputModeCombo);
+    m_outputModeCombo->addItem(QStringLiteral("Table HTML only (Canvas)"), QStringLiteral("table"));
+    m_outputModeCombo->addItem(QStringLiteral("Complete HTML document"), QStringLiteral("document"));
+    int outputIdx = m_outputModeCombo->findData(m_prefs.outputMode);
+    m_outputModeCombo->setCurrentIndex(outputIdx >= 0 ? outputIdx : 0);
+    mainLayout->addWidget(m_outputModeCombo);
+
     auto *rowsLabel = new QLabel(QStringLiteral("Maximum preview rows"), this);
     mainLayout->addWidget(rowsLabel);
 
@@ -85,7 +99,8 @@ SettingsDialog::SettingsDialog(Preferences &prefs, QWidget *parent)
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
     mainLayout->addWidget(buttonBox);
 
-    setTabOrder(m_rememberCheckBox, m_previewRowsCombo);
+    setTabOrder(m_rememberCheckBox, m_outputModeCombo);
+    setTabOrder(m_outputModeCombo, m_previewRowsCombo);
     setTabOrder(m_previewRowsCombo, m_appearanceCombo);
     setTabOrder(m_appearanceCombo, m_clearRecentButton);
     setTabOrder(m_clearRecentButton, buttonBox);
@@ -99,6 +114,7 @@ void SettingsDialog::onClearRecent() {
 
 void SettingsDialog::onSave() {
     m_prefs.rememberStyle = m_rememberCheckBox->isChecked();
+    m_prefs.outputMode = m_outputModeCombo->currentData().toString();
     m_prefs.previewRows = m_previewRowsCombo->currentData().toInt();
     m_prefs.appearance = m_appearanceCombo->currentText();
     if (m_clearRecent) {

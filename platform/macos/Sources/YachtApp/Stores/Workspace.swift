@@ -86,12 +86,12 @@ final class Workspace {
         do { try style.validate(); validationMessage = nil }
         catch { validationMessage = error.localizedDescription; preview = nil; rendering = false; return }
         guard let table else { return }
-        let options = style, limit = preferences.previewRows
+        let options = style, limit = preferences.previewRows, outputMode = preferences.outputMode
         rendering = true
         previewTask = Task {
             do {
                 try await Task.sleep(for: .milliseconds(180))
-                let result = try await Background.run { try PreviewDocument(table: table, style: options, limit: limit) }
+                let result = try await Background.run { try PreviewDocument(table: table, style: options, limit: limit, outputMode: outputMode) }
                 guard !Task.isCancelled else { return }
                 preview = result; rendering = false; preferences.remember(options)
             } catch is CancellationError {} catch {
@@ -102,12 +102,13 @@ final class Workspace {
     }
     func copyHTML() {
         guard let table, canExport else { return }
-        let options = style; working = true; status = "Preparing HTML for clipboard…"
+        let options = style, outputMode = preferences.outputMode
+        working = true; status = "Preparing HTML for clipboard…"
         operationTask = Task {
             do {
-                let html = try await Background.run { try HTMLGenerator.document(table, style: options) }
+                let html = try await Background.run { try HTMLGenerator.output(table, style: options, outputMode: outputMode) }
                 try Task.checkCancellation()
-                DesktopActions.copy(html); status = "Copied complete HTML document"
+                DesktopActions.copy(html); status = outputMode == .document ? "Copied complete HTML document" : "Copied table HTML"
             } catch is CancellationError { status = "Copy cancelled" }
             catch { errorMessage = error.localizedDescription }
             working = false
@@ -115,11 +116,12 @@ final class Workspace {
     }
     func prepareExport() {
         guard let table, canExport else { return }
-        let options = style; working = true; status = "Preparing export…"
+        let options = style, outputMode = preferences.outputMode
+        working = true; status = "Preparing export…"
         operationTask = Task {
             do {
                 let url = FileManager.default.temporaryDirectory.appendingPathComponent("yacht-export-\(UUID().uuidString).html")
-                try await Background.run { try FileService.export(table, style: options, to: url) }
+                try await Background.run { try FileService.export(table, style: options, to: url, outputMode: outputMode) }
                 if Task.isCancelled { try? FileManager.default.removeItem(at: url); throw CancellationError() }
                 preparedExport = url; exportDocument = HTMLFile(fileURL: url)
                 showExporter = true; status = "Choose where to save HTML"
@@ -145,7 +147,7 @@ final class Workspace {
     }
     func runBatch() {
         guard !working else { return }
-        let urls = batchURLs, options = style, separator = delimiter, overwrite = batchOverwrite
+        let urls = batchURLs, options = style, separator = delimiter, overwrite = batchOverwrite, outputMode = preferences.outputMode
         working = true; batchProgress = 0; batchResults = []
         operationTask = Task {
             for url in urls {
@@ -155,7 +157,7 @@ final class Workspace {
                     try await Background.run {
                         let granted = url.startAccessingSecurityScopedResource()
                         defer { if granted { url.stopAccessingSecurityScopedResource() } }
-                        _ = try FileService.batchItem(url, style: options, delimiter: separator, overwrite: overwrite)
+                        _ = try FileService.batchItem(url, style: options, delimiter: separator, overwrite: overwrite, outputMode: outputMode)
                     }
                     batchResults.append("Saved \(output.lastPathComponent)"); lastExport = output
                 } catch is CancellationError { break }
@@ -163,7 +165,7 @@ final class Workspace {
                 batchProgress += 1
             }
             working = false
-            status = "Batch processed \(batchProgress) of \(urls.count) files"
+            status = Task.isCancelled ? "Batch cancelled" : "Batch processed \(batchProgress) of \(urls.count) files"
         }
     }
 }

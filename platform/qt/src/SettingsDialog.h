@@ -22,6 +22,7 @@ private slots:
 private:
     Preferences &m_prefs;
     QCheckBox *m_rememberCheckBox{nullptr};
+    QComboBox *m_outputModeCombo{nullptr};
     QComboBox *m_previewRowsCombo{nullptr};
     QComboBox *m_appearanceCombo{nullptr};
     QPushButton *m_clearRecentButton{nullptr};

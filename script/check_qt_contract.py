@@ -40,6 +40,8 @@ for relative in filter(None, tracked):
     lower = relative.lower()
     require('avalonia' not in lower, f'Tracked Avalonia artifact remains: {relative}')
     require(not lower.endswith(retired_suffixes), f'Tracked .NET UI artifact remains: {relative}')
+    if relative.startswith('.github/workflow-archive/'):
+        continue  # Historical automation is inactive, not a current build input.
     if (relative.startswith(active_roots) or relative in ('Cargo.toml', 'Cargo.lock', 'Package.swift', 'Package.resolved')) and lower.endswith(text_suffixes):
         if relative not in ('script/check_qt_contract.py', 'script/check_windows_runtime.py'):
             require('avalonia' not in (ROOT / relative).read_text(errors='ignore').lower(),
@@ -49,7 +51,8 @@ internal = (ROOT / 'script/package_qt_internal.sh').read_text()
 require('dist/internal/' in internal and 'build/internal-artifacts/' in internal, 'Internal artifacts must have isolated output paths')
 require('com.tlolabs.yacht.qt.internal' in internal, 'Internal bundle identity missing')
 
-workflow = (ROOT / '.github/workflows/native-macos.yml').read_text().split('  qt-macos-internal:')[1]
+# Keep the historical internal-build isolation contract without re-enabling CI.
+workflow = (ROOT / '.github/workflow-archive/2026-11-08/native-macos.yml').read_text().split('  qt-macos-internal:')[1]
 require('contents: read' in workflow and 'actions/upload-artifact@' in workflow, 'Internal CI must only upload workflow artifacts')
 require('path: release/' not in workflow and 'gh release' not in workflow, 'Internal CI must not publish production release assets')
 

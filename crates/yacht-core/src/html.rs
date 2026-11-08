@@ -1,5 +1,14 @@
 use crate::{check, style::Style, table::Table, Cancel, Result};
+use serde::{Deserialize, Serialize};
 use std::io::Write;
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OutputMode {
+    #[default]
+    Table,
+    Document,
+}
 
 pub fn escape(text: &str) -> String {
     let bytes = text.as_bytes();
@@ -39,14 +48,20 @@ pub fn is_numeric(text: &str) -> bool {
     let last = bytes[bytes.len() - 1];
     // Fast path: if bounded by ASCII digits/signs and ending in an ASCII digit,
     // skip trim() completely.
-    let bytes = if (first.is_ascii_digit() || first == b'+' || first == b'-') && last.is_ascii_digit() {
-        bytes
-    } else if first < 128 && !first.is_ascii_whitespace() && !first.is_ascii_digit() && first != b'+' && first != b'-' {
-        // Fast rejection: leading ASCII byte that is neither digit, sign, nor whitespace
-        return false;
-    } else {
-        text.trim().as_bytes()
-    };
+    let bytes =
+        if (first.is_ascii_digit() || first == b'+' || first == b'-') && last.is_ascii_digit() {
+            bytes
+        } else if first < 128
+            && !first.is_ascii_whitespace()
+            && !first.is_ascii_digit()
+            && first != b'+'
+            && first != b'-'
+        {
+            // Fast rejection: leading ASCII byte that is neither digit, sign, nor whitespace
+            return false;
+        } else {
+            text.trim().as_bytes()
+        };
     if bytes.is_empty() {
         return false;
     }
@@ -87,44 +102,75 @@ pub fn is_numeric(text: &str) -> bool {
 /// Writes directly to the caller's buffered sink, including very large cells.
 fn escaped(text: &str, out: &mut impl Write, cancel: Cancel<'_>) -> Result<()> {
     let bytes = text.as_bytes();
-    if !bytes
-        .iter()
-        .any(|&b| matches!(b, b'&' | b'<' | b'>' | b'"' | b'\''))
-    {
-        if bytes.len() <= 65536 {
-            out.write_all(bytes)?;
-            return Ok(());
-        }
-        for chunk in bytes.chunks(65536) {
+    // Bound the search as well as the writes: excerpt sinks can stop before the
+    // rest of a very large cell is scanned, and cancellation stays responsive.
+    for chunk in bytes.chunks(65536) {
+        if bytes.len() > 65536 {
             check(cancel)?;
+        }
+        let Some(first) = chunk
+            .iter()
+            .position(|&b| matches!(b, b'&' | b'<' | b'>' | b'"' | b'\''))
+        else {
             out.write_all(chunk)?;
-        }
-        return Ok(());
-    }
-    let mut start = 0;
-    for (i, &b) in bytes.iter().enumerate() {
-        if (i & 0xffff) == 0 && i > 0 {
-            check(cancel)?;
-        }
-        let replacement: &[u8] = match b {
-            b'&' => b"&amp;",
-            b'<' => b"&lt;",
-            b'>' => b"&gt;",
-            b'"' => b"&quot;",
-            b'\'' => b"&#x27;",
-            _ => continue,
+            continue;
         };
-        out.write_all(&bytes[start..i])?;
-        out.write_all(replacement)?;
-        start = i + 1;
+        let mut start = 0;
+        for (i, &b) in chunk.iter().enumerate().skip(first) {
+            let replacement: &[u8] = match b {
+                b'&' => b"&amp;",
+                b'<' => b"&lt;",
+                b'>' => b"&gt;",
+                b'"' => b"&quot;",
+                b'\'' => b"&#x27;",
+                _ => continue,
+            };
+            out.write_all(&chunk[start..i])?;
+            out.write_all(replacement)?;
+            start = i + 1;
+        }
+        out.write_all(&chunk[start..])?;
     }
-    out.write_all(&bytes[start..])?;
     Ok(())
 }
 
 pub fn accessible_text_color(bg: &str) -> &'static str {
-    let hex = bg.trim().strip_prefix('#').unwrap_or(bg.trim());
-    if hex.len() == 6 {
+    let trimmed = bg.trim();
+    let lower = trimmed.to_ascii_lowercase();
+    match lower.as_str() {
+        "black" | "navy" | "darkblue" | "midnightblue" | "maroon" | "purple" | "indigo"
+        | "darkgreen" | "darkred" => return "#ffffff",
+        _ => {}
+    }
+    if let Some(inner) = lower
+        .strip_prefix("rgb(")
+        .or_else(|| lower.strip_prefix("rgba("))
+        .and_then(|s| s.strip_suffix(')'))
+    {
+        let parts: Vec<&str> = inner
+            .split(|c: char| c == ',' || c.is_whitespace() || c == '/')
+            .filter(|s| !s.is_empty())
+            .collect();
+        if parts.len() >= 3 {
+            let parse_component = |part: &str| -> Option<f32> {
+                if let Some(pct) = part.strip_suffix('%') {
+                    pct.parse::<f32>().ok().map(|p| p * 2.55)
+                } else {
+                    part.parse::<f32>().ok()
+                }
+            };
+            if let (Some(r), Some(g), Some(b)) = (
+                parse_component(parts[0]),
+                parse_component(parts[1]),
+                parse_component(parts[2]),
+            ) {
+                let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                return if lum < 128.0 { "#ffffff" } else { "#222222" };
+            }
+        }
+    }
+    let hex = trimmed.strip_prefix('#').unwrap_or(trimmed);
+    if hex.len() == 6 || hex.len() == 8 {
         if let (Ok(r), Ok(g), Ok(b)) = (
             u8::from_str_radix(&hex[0..2], 16),
             u8::from_str_radix(&hex[2..4], 16),
@@ -133,13 +179,15 @@ pub fn accessible_text_color(bg: &str) -> &'static str {
             let lum = 0.2126 * (r as f32) + 0.7152 * (g as f32) + 0.0722 * (b as f32);
             return if lum < 128.0 { "#ffffff" } else { "#222222" };
         }
-    } else if hex.len() == 3 {
+    } else if hex.len() == 3 || hex.len() == 4 {
         if let (Ok(r), Ok(g), Ok(b)) = (
             u8::from_str_radix(&hex[0..1], 16),
             u8::from_str_radix(&hex[1..2], 16),
             u8::from_str_radix(&hex[2..3], 16),
         ) {
-            let lum = 0.2126 * ((r * 17) as f32) + 0.7152 * ((g * 17) as f32) + 0.0722 * ((b * 17) as f32);
+            let lum = 0.2126 * ((r * 17) as f32)
+                + 0.7152 * ((g * 17) as f32)
+                + 0.0722 * ((b * 17) as f32);
             return if lum < 128.0 { "#ffffff" } else { "#222222" };
         }
     }
@@ -165,6 +213,13 @@ pub fn write(
             css.push_str(&format!(
                 ".csv-table tbody tr:nth-child(even) td {{\n  background: {};\n  color: {};\n}}\n",
                 s.zebra_bg, zebra_fg
+            ));
+        }
+        if s.first_column_enabled {
+            css.push_str(&format!(
+                ".csv-table tbody tr td:first-child {{\n  background: {};\n  color: {};\n}}\n",
+                s.first_column_bg,
+                accessible_text_color(&s.first_column_bg)
             ));
         }
         if s.hover_enabled {
@@ -233,4 +288,192 @@ pub fn document(
     write(table, s, row_limit, &mut out, cancel)?;
     // SAFETY: write only outputs valid UTF-8 HTML structure, escaped cell content, and validated style properties.
     Ok(unsafe { String::from_utf8_unchecked(out) })
+}
+
+/// A paste-ready fragment: every persistent visual style is on the table/cells.
+/// No page wrappers or stylesheet are needed by the destination editor.
+pub fn write_output(
+    table: &Table,
+    s: &Style,
+    row_limit: Option<usize>,
+    mode: OutputMode,
+    out: &mut impl Write,
+    cancel: Cancel<'_>,
+) -> Result<()> {
+    if mode == OutputMode::Document {
+        return write(table, s, row_limit, out, cancel);
+    }
+    s.validate()?;
+    check(cancel)?;
+    let unstyled = *s == Style::unstyled();
+    if unstyled {
+        out.write_all(b"<table>\n")?;
+    } else {
+        out.write_all(b"<table class=\"csv-table")?;
+        if !s.table_class.is_empty() {
+            out.write_all(b" ")?;
+            escaped(&s.table_class, out, cancel)?;
+        }
+        out.write_all(b"\" style=\"")?;
+        escaped(&format!(
+            "font-family: {}; font-size: {}px; width: 100%; border-collapse: {}; border-spacing: {}px;",
+            if s.font_family.is_empty() { "inherit" } else { &s.font_family },
+            s.font_size_px, s.border_collapse, s.border_spacing_px
+        ), out, cancel)?;
+        out.write_all(b"\">\n")?;
+    }
+    let cell_style = format!(
+        "border: {}px {} {}; padding: {}px; vertical-align: top;",
+        s.border_width_px, s.border_style, s.border_color, s.cell_padding_px
+    );
+    let header_style = escape(&format!(
+        "{cell_style} background: {}; color: {}; text-align: left;",
+        s.header_bg, s.header_text_color
+    ));
+    let body_style = |background: &str| {
+        escape(&format!(
+            "{cell_style} background: {background}; color: {};",
+            accessible_text_color(background)
+        ))
+    };
+    let body = body_style(&s.body_bg);
+    let zebra = body_style(&s.zebra_bg);
+    let first = body_style(&s.first_column_bg);
+    out.write_all(b"  <thead><tr>")?;
+    for (i, col) in table.header.iter().enumerate() {
+        write!(out, "<th scope=\"col\" title=\"Field #{}\"", i + 1)?;
+        if !unstyled {
+            write!(out, " style=\"{header_style}\"")?;
+        }
+        out.write_all(b">")?;
+        escaped(col, out, cancel)?;
+        out.write_all(b"</th>")?;
+    }
+    out.write_all(b"</tr></thead>\n  <tbody>\n")?;
+    for (row_index, row) in table
+        .rows
+        .iter()
+        .take(row_limit.unwrap_or(usize::MAX))
+        .enumerate()
+    {
+        check(cancel)?;
+        out.write_all(b"    <tr>")?;
+        for i in 0..table.header.len() {
+            let cell = row.get(i).map(String::as_str).unwrap_or("");
+            out.write_all(b"<td")?;
+            if !unstyled {
+                let numeric = is_numeric(cell);
+                if numeric {
+                    out.write_all(b" class=\"num\"")?;
+                }
+                let style = if i == 0 && s.first_column_enabled {
+                    &first
+                } else if s.zebra_enabled && row_index % 2 == 1 {
+                    &zebra
+                } else {
+                    &body
+                };
+                write!(out, " style=\"{style}")?;
+                if numeric {
+                    out.write_all(b" text-align: right;")?;
+                }
+                out.write_all(b"\"")?;
+            }
+            out.write_all(b">")?;
+            escaped(cell, out, cancel)?;
+            out.write_all(b"</td>")?;
+        }
+        out.write_all(b"</tr>\n")?;
+    }
+    out.write_all(b"  </tbody>\n</table>\n")?;
+    Ok(())
+}
+
+pub fn output(
+    table: &Table,
+    style: &Style,
+    row_limit: Option<usize>,
+    mode: OutputMode,
+    cancel: Cancel<'_>,
+) -> Result<String> {
+    let mut out = Vec::new();
+    write_output(table, style, row_limit, mode, &mut out, cancel)?;
+    // All content is either validated CSS, escaped text, or static UTF-8 markup.
+    Ok(unsafe { String::from_utf8_unchecked(out) })
+}
+
+#[cfg(test)]
+mod escape_tests {
+    use super::*;
+    use std::io;
+
+    #[test]
+    fn chunked_escaping_preserves_unicode_and_adjacent_entities() {
+        for prefix in [0, 1, 65531, 65532, 65533, 65534, 65535, 65536, 65537] {
+            for suffix in ["plain", "é\u{301}🛥️", "<&>\"'", "é<&>\"'\u{301}🛥️"] {
+                let input = format!("{}{suffix}", "a".repeat(prefix));
+                let mut output = Vec::new();
+                escaped(&input, &mut output, &|| false).unwrap();
+                assert_eq!(output, escape(&input).as_bytes());
+            }
+        }
+        let input = "é\u{301}<&>\"'🛥️".repeat(20000);
+        let mut output = Vec::new();
+        escaped(&input, &mut output, &|| false).unwrap();
+        assert_eq!(output, escape(&input).as_bytes());
+    }
+
+    #[test]
+    fn oversized_cell_stops_at_the_excerpt_without_a_large_write() {
+        struct Bounded {
+            bytes: Vec<u8>,
+            max_write: usize,
+        }
+        impl Write for Bounded {
+            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+                self.max_write = self.max_write.max(bytes.len());
+                let n = bytes
+                    .len()
+                    .min(100000usize.saturating_sub(self.bytes.len()));
+                self.bytes.extend_from_slice(&bytes[..n]);
+                if n < bytes.len() {
+                    Err(io::Error::other("excerpt complete"))
+                } else {
+                    Ok(n)
+                }
+            }
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+        for suffix in ["", "&"] {
+            let input = format!("{}{suffix}", "a".repeat(2000000));
+            let mut output = Bounded {
+                bytes: Vec::new(),
+                max_write: 0,
+            };
+            assert!(matches!(
+                escaped(&input, &mut output, &|| false),
+                Err(crate::Error::Io(_))
+            ));
+            assert_eq!(output.bytes, vec![b'a'; 100000]);
+            assert!(output.max_write <= 65536);
+        }
+    }
+
+    #[test]
+    fn small_cells_keep_the_existing_cancellation_fast_path() {
+        let mut output = Vec::new();
+        escaped("<&é", &mut output, &|| {
+            panic!("small cells use the caller's check")
+        })
+        .unwrap();
+        assert_eq!(output, b"&lt;&amp;\xc3\xa9");
+        let mut output = Vec::new();
+        assert!(matches!(
+            escaped(&"a".repeat(65537), &mut output, &|| true),
+            Err(crate::Error::Cancelled)
+        ));
+        assert!(output.is_empty());
+    }
 }

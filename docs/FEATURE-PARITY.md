@@ -19,6 +19,9 @@ necessary even for rows with automated verification.
 | Blank/missing/extra cells and warnings | V | V | V | V | Rust/Swift ragged tests, native binding tests |
 | Sample and single-file open | V | V | V | V | XCTest + native runtime smoke |
 | All sixteen style controls, native color choice | V | V | I | I | Rust CSS tests; UI smoke; picker acceptance manual |
+| Table-only/default and complete-document HTML output setting | V | V | I | I | Rust API/ABI, Swift, and internal macOS Qt integration; Windows/Linux native acceptance pending |
+| Six N-color presets and first-column fill controls | V | V | I | I | Shared palette/fragment tests, Swift tests, and internal macOS Qt integration; Windows/Linux native acceptance pending |
+| Eleven G-color presets with full-row banding | V | V | I | I | Rust palette/table/document tests, Swift/ABI tests, macOS preset UI test, and internal macOS Qt rendering/collision tests; Windows/Linux native acceptance pending |
 | Styled/unstyled and numeric alignment | V | V | V | V | Rust/Swift document-contract and style tests |
 | Live actual HTML preview | V | V | I | I | Rust preview tests + native runtime smoke; Qt static rendering does not reproduce browser hover behavior |
 | Bounded preview/source, unlimited export/copy | V | V | V | V | 100k rows/huge-cell tests, binding export checks |
