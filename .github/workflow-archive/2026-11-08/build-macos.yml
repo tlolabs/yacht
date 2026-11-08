@@ -15,8 +15,8 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ inputs.arch == 'arm64' && '26.6' || '26.3' }}.app/Contents/Developer
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: dtolnay/rust-toolchain@315e265cd78dad1e1dcf3a5074f6d6c47029d5aa # stable
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.98.1'
           targets: ${{ inputs.arch == 'arm64' && 'aarch64-apple-darwin' || 'x86_64-apple-darwin' }}
@@ -45,13 +45,13 @@ jobs:
       - name: Prepare verified release inputs
         if: github.event_name != 'schedule' || inputs.arch == 'arm64'
         run: python3 script/publish_release.py prepare --target macos-${{ inputs.arch }} --source-sha "$GITHUB_SHA" --source-ref "$GITHUB_REF" --run-id "$GITHUB_RUN_ID" release
-      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: macOS-${{ inputs.arch }}-UI-test-results
           path: build/UITests.xcresult
           if-no-files-found: ignore
-      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      - uses: actions/upload-artifact@v6
         if: github.event_name != 'schedule' || inputs.arch == 'arm64'
         with:
           name: YACHT-macos-${{ inputs.arch }}-${{ github.sha }}
