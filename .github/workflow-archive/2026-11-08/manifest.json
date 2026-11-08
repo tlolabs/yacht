@@ -1,0 +1,41 @@
+{
+  "repository": "tlolabs/yacht",
+  "archived_on": "2026-11-08",
+  "workflows": [
+    {
+      "name": "Build linux application",
+      "workflow_id": 381702420,
+      "original_path": ".github/workflows/build-linux.yml",
+      "archive_path": ".github/workflow-archive/2026-11-08/build-linux.yml",
+      "sha256": "c27b0dac894a9469ae7d33105983d5ff62acf52dab51232689ac81c0a1033ce9"
+    },
+    {
+      "name": "Build macos application",
+      "workflow_id": 381702422,
+      "original_path": ".github/workflows/build-macos.yml",
+      "archive_path": ".github/workflow-archive/2026-11-08/build-macos.yml",
+      "sha256": "fd1d2f8f23405b120423f0a2b97c34de68c0073470a2db9415b363763c55cd72"
+    },
+    {
+      "name": "Build windows application",
+      "workflow_id": 381702423,
+      "original_path": ".github/workflows/build-windows.yml",
+      "archive_path": ".github/workflow-archive/2026-11-08/build-windows.yml",
+      "sha256": "b27608dc6b91a88f5211021a08272d33b780cc44b4d319991d9ca3bdd570fb14"
+    },
+    {
+      "name": "Native cross-platform",
+      "workflow_id": 358795321,
+      "original_path": ".github/workflows/native-macos.yml",
+      "archive_path": ".github/workflow-archive/2026-11-08/native-macos.yml",
+      "sha256": "3d14eb5bfb62093a57cb02d4c2e61327a103e8a3e80f2954b2e774c63ad27fb2"
+    },
+    {
+      "name": "Published update authentication",
+      "workflow_id": 374800967,
+      "original_path": ".github/workflows/update-qualification.yml",
+      "archive_path": ".github/workflow-archive/2026-11-08/update-qualification.yml",
+      "sha256": "8acbb19a9710f32af002296bb1a9eec6be434a9410b7f9d2834051a2ca5a9608"
+    }
+  ]
+}
