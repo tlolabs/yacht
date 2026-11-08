@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "repository": "tlolabs/yacht",
+  "captured_at": "2026-11-08T01:13:36Z",
+  "entries": [
+    {
+      "tag": "v2.1.0",
+      "sha": "bfcf06c1433941a688effa6890569ba342ab795c",
+      "target": "linux-x64"
+    },
+    {
+      "tag": "v2.1.0",
+      "sha": "bfcf06c1433941a688effa6890569ba342ab795c",
+      "target": "linux-arm64"
+    },
+    {
+      "tag": "v2.1.0",
+      "sha": "bfcf06c1433941a688effa6890569ba342ab795c",
+      "target": "windows-x64"
+    },
+    {
+      "tag": "v2.1.0",
+      "sha": "bfcf06c1433941a688effa6890569ba342ab795c",
+      "target": "windows-arm64"
+    },
+    {
+      "tag": "v2.1.1",
+      "sha": "21b8e15aaa346353f9356cf70b057e4df03a9b85",
+      "target": "linux-x64"
+    },
+    {
+      "tag": "v2.1.1",
+      "sha": "21b8e15aaa346353f9356cf70b057e4df03a9b85",
+      "target": "linux-arm64"
+    },
+    {
+      "tag": "v2.1.1",
+      "sha": "21b8e15aaa346353f9356cf70b057e4df03a9b85",
+      "target": "windows-x64"
+    },
+    {
+      "tag": "v2.1.1",
+      "sha": "21b8e15aaa346353f9356cf70b057e4df03a9b85",
+      "target": "windows-arm64"
+    },
+    {
+      "tag": "v2.1.2-rc.1",
+      "sha": "4cdfc333a254decc211b5f9743a46730c46014d3",
+      "target": "linux-x64"
+    },
+    {
+      "tag": "v2.1.2-rc.1",
+      "sha": "4cdfc333a254decc211b5f9743a46730c46014d3",
+      "target": "linux-arm64"
+    },
+    {
+      "tag": "v2.1.2-rc.1",
+      "sha": "4cdfc333a254decc211b5f9743a46730c46014d3",
+      "target": "windows-x64"
+    },
+    {
+      "tag": "v2.1.2-rc.1",
+      "sha": "4cdfc333a254decc211b5f9743a46730c46014d3",
+      "target": "windows-arm64"
+    },
+    {
+      "tag": "v2.1.2-rc.2",
+      "sha": "5f560fea884832bcb1c1ddf3277b4cd8b5f6961a",
+      "target": "linux-x64"
+    },
+    {
+      "tag": "v2.1.2-rc.2",
+      "sha": "5f560fea884832bcb1c1ddf3277b4cd8b5f6961a",
+      "target": "linux-arm64"
+    },
+    {
+      "tag": "v2.1.2-rc.2",
+      "sha": "5f560fea884832bcb1c1ddf3277b4cd8b5f6961a",
+      "target": "windows-x64"
+    },
+    {
+      "tag": "v2.1.2-rc.2",
+      "sha": "5f560fea884832bcb1c1ddf3277b4cd8b5f6961a",
+      "target": "windows-arm64"
+    }
+  ]
+}
