@@ -14,8 +14,10 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QPushButton>
+#include <QSignalSpy>
 #include <QStyle>
 #include <QTextBrowser>
+#include <QTextCursor>
 #include <QTextDocument>
 #include <QTextTable>
 #include <QDir>
@@ -510,6 +512,137 @@ void testViewModelAndPresentation() {
     std::cout << "Shared Qt presentation: all assertions passed." << std::endl;
 }
 
+void testUnchangedPreviewPreservesDocumentsAndSelection() {
+    QTemporaryDir tempDir;
+    check(tempDir.isValid(), "Unchanged preview temporary directory");
+    qputenv("YACHT_TEST_DATA", tempDir.path().toUtf8());
+    {
+        auto desktop = std::make_shared<TestDesktopServices>();
+        MainWindow window(desktop);
+        window.initialize();
+        auto *preview = window.previewWidget();
+        auto *browser = preview->findChild<QTextBrowser *>();
+        auto *source = window.sourceEdit();
+        check(browser != nullptr && preview->isNavigationComplete(), "Initial preview rendered");
+        const QString initialSource = source->toPlainText();
+        const QString initialRendered = browser->document()->toHtml();
+        check(initialSource.size() > 30, "Source contains selectable HTML");
+        QTextCursor selection = source->textCursor();
+        selection.setPosition(10);
+        selection.setPosition(30, QTextCursor::KeepAnchor);
+        source->setTextCursor(selection);
+        const QString selectedText = selection.selectedText();
+        QSignalSpy htmlChanges(browser->document(), &QTextDocument::contentsChanged);
+        QSignalSpy sourceChanges(source->document(), &QTextDocument::contentsChanged);
+        check(htmlChanges.isValid() && sourceChanges.isValid(), "Document change spies connected");
+
+        window.onPerformRender();
+        window.onPerformRender();
+        check(htmlChanges.isEmpty(), "Identical preview does not rewrite the rendered document");
+        check(sourceChanges.isEmpty(), "Identical source does not rewrite the source document");
+        check(source->toPlainText() == initialSource, "Unchanged source content preserved");
+        check(source->textCursor().position() == selection.position() &&
+                  source->textCursor().anchor() == selection.anchor() &&
+                  source->textCursor().selectedText() == selectedText,
+              "Repeated preview preserves source cursor and selection");
+
+        QJsonObject changedStyle = window.currentStyle();
+        changedStyle[QStringLiteral("font_size_px")] = 19;
+        window.setStyle(changedStyle);
+        window.onPerformRender();
+        check(!htmlChanges.isEmpty() && !sourceChanges.isEmpty(), "Changed style updates both documents");
+        check(source->toPlainText() != initialSource && browser->document()->toHtml() != initialRendered,
+              "Changed style is visible in source and rendered formatting");
+
+        const QString fontWithNbsp = QStringLiteral("Arial,\u00a0serif");
+        changedStyle[QStringLiteral("font_family")] = fontWithNbsp;
+        window.setStyle(changedStyle);
+        window.onPerformRender();
+        check(source->document()->toRawText().contains(fontWithNbsp), "Source preserves nonbreaking space in font family");
+        const QString normalizedNbspSource = source->toPlainText();
+        htmlChanges.clear();
+        sourceChanges.clear();
+        window.onPerformRender();
+        check(htmlChanges.isEmpty() && sourceChanges.isEmpty(), "Identical nonbreaking-space source does not rewrite documents");
+
+        changedStyle[QStringLiteral("font_family")] = QStringLiteral("Arial, serif");
+        window.setStyle(changedStyle);
+        window.onPerformRender();
+        check(!sourceChanges.isEmpty() && source->toPlainText() == normalizedNbspSource,
+              "Raw source change is applied even when plain-text normalization is unchanged");
+        check(source->document()->toRawText().contains(QStringLiteral("Arial, serif")) &&
+                  !source->document()->toRawText().contains(fontWithNbsp),
+              "ASCII space replaces the previous nonbreaking space in source");
+
+        changedStyle[QStringLiteral("table_class")] = QStringLiteral("first\u2028second");
+        window.setStyle(changedStyle);
+        window.onPerformRender();
+        const QString lineSeparatorRaw = source->document()->toRawText();
+        const QString lineSeparatorPlain = source->toPlainText();
+        check(lineSeparatorRaw.contains(QStringLiteral("first\u2028second")), "Source preserves Unicode line separator");
+        sourceChanges.clear();
+        changedStyle[QStringLiteral("table_class")] = QStringLiteral("first\nsecond");
+        window.setStyle(changedStyle);
+        window.onPerformRender();
+        check(!sourceChanges.isEmpty() && source->toPlainText() == lineSeparatorPlain &&
+                  source->document()->toRawText() != lineSeparatorRaw &&
+                  !source->document()->toRawText().contains(QChar(0x2028)),
+              "LF replaces a Unicode line separator despite equal normalized source");
+
+        const QString beforeSourceClear = source->document()->toRawText();
+        source->clear();
+        check(source->toPlainText().isEmpty(), "Direct source clear removes displayed content");
+        htmlChanges.clear();
+        sourceChanges.clear();
+        window.onPerformRender();
+        check(htmlChanges.isEmpty() && !sourceChanges.isEmpty() &&
+                  source->document()->toRawText() == beforeSourceClear,
+              "Direct source clear invalidates cached source and rehydrates only source");
+
+        const QString changedSource = source->toPlainText();
+        const QString changedText = browser->toPlainText();
+        preview->clear();
+        check(!preview->isNavigationComplete() && browser->toPlainText().isEmpty(), "Preview clear invalidates rendered state");
+        htmlChanges.clear();
+        sourceChanges.clear();
+        window.onPerformRender();
+        check(preview->isNavigationComplete() && browser->toPlainText() == changedText,
+              "Identical HTML renders again after an explicit clear");
+        check(!htmlChanges.isEmpty() && sourceChanges.isEmpty() && source->toPlainText() == changedSource,
+              "Rehydrating preview leaves unchanged source intact");
+
+        const QString input = tempDir.path() + QStringLiteral("/different.csv");
+        QFile csv(input);
+        check(csv.open(QIODevice::WriteOnly), "Write different preview input");
+        csv.write("Name,Count\nfresh source,42\n");
+        csv.close();
+        window.loadFile(input);
+        check(source->toPlainText().contains(QStringLiteral("fresh source")) &&
+                  browser->toPlainText().contains(QStringLiteral("fresh source")),
+              "Different input replaces the previously rendered documents");
+
+        const QString beforeErrorSource = source->toPlainText();
+        const QString beforeErrorText = browser->toPlainText();
+        StyleField *font = window.findField(QStringLiteral("font_size_px"));
+        check(font != nullptr, "Find preview font size field");
+        font->setFieldText(QStringLiteral("invalid"));
+        window.onPerformRender();
+        check(source->toPlainText().isEmpty() && browser->toPlainText().isEmpty() &&
+                  !preview->isNavigationComplete(),
+              "Validation failure clears and invalidates both documents");
+        htmlChanges.clear();
+        sourceChanges.clear();
+        font->setFieldText(QStringLiteral("19"));
+        window.onPerformRender();
+        check(!htmlChanges.isEmpty() && !sourceChanges.isEmpty() && preview->isNavigationComplete(),
+              "Recovery from validation failure renders both documents again");
+        check(source->toPlainText() == beforeErrorSource && browser->toPlainText() == beforeErrorText,
+              "Recovery restores the same content that preceded the error");
+    }
+    qunsetenv("YACHT_TEST_DATA");
+    std::cout << "Unchanged previews, selection and invalidation: all assertions passed." << std::endl;
+}
+
 void testOutputModesAndBuiltins() {
     QTemporaryDir tempDir;
     check(tempDir.isValid(), "Output modes temporary directory");
@@ -885,6 +1018,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Running Qt Rust binding and integration tests..." << std::endl;
     testRustBinding();
     testViewModelAndPresentation();
+    testUnchangedPreviewPreservesDocumentsAndSelection();
     testOutputModesAndBuiltins();
     testAccessibilityAndPlatformSupport();
     testSingleInstanceArgumentHandling();

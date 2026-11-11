@@ -331,10 +331,13 @@ pub fn write_output(
         s.header_bg, s.header_text_color
     ));
     let body_style = |background: &str| {
-        escape(&format!(
+        let value = escape(&format!(
             "{cell_style} background: {background}; color: {};",
             accessible_text_color(background)
-        ))
+        ));
+        // Keep the invariant attribute prefix with each style, so body cells
+        // can write it directly without invoking a formatter for every cell.
+        format!(" style=\"{value}")
     };
     let body = body_style(&s.body_bg);
     let zebra = body_style(&s.zebra_bg);
@@ -360,12 +363,15 @@ pub fn write_output(
         out.write_all(b"    <tr>")?;
         for i in 0..table.header.len() {
             let cell = row.get(i).map(String::as_str).unwrap_or("");
-            out.write_all(b"<td")?;
-            if !unstyled {
+            if unstyled {
+                out.write_all(b"<td>")?;
+            } else {
                 let numeric = is_numeric(cell);
-                if numeric {
-                    out.write_all(b" class=\"num\"")?;
-                }
+                out.write_all(if numeric {
+                    b"<td class=\"num\""
+                } else {
+                    b"<td"
+                })?;
                 let style = if i == 0 && s.first_column_enabled {
                     &first
                 } else if s.zebra_enabled && row_index % 2 == 1 {
@@ -373,13 +379,13 @@ pub fn write_output(
                 } else {
                     &body
                 };
-                write!(out, " style=\"{style}")?;
-                if numeric {
-                    out.write_all(b" text-align: right;")?;
-                }
-                out.write_all(b"\"")?;
+                out.write_all(style.as_bytes())?;
+                out.write_all(if numeric {
+                    b" text-align: right;\">"
+                } else {
+                    b"\">"
+                })?;
             }
-            out.write_all(b">")?;
             escaped(cell, out, cancel)?;
             out.write_all(b"</td>")?;
         }

@@ -88,8 +88,14 @@ impl Parser {
         if self.started {
             self.field()?;
         }
-        let cap = self.row.len().max(4);
-        let row = std::mem::replace(&mut self.row, Vec::with_capacity(cap));
+        let row = if self.row.is_empty() {
+            // Blank records need no cell storage. Reuse the scratch vector for
+            // the next nonblank record instead of retaining it in an empty row.
+            Vec::new()
+        } else {
+            let cap = self.row.len();
+            std::mem::replace(&mut self.row, Vec::with_capacity(cap))
+        };
         if self.header.is_none() {
             self.header = Some(row);
         } else {

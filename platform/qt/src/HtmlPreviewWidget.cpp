@@ -19,6 +19,7 @@ HtmlPreviewWidget::HtmlPreviewWidget(QWidget *parent)
 }
 
 void HtmlPreviewWidget::setHtml(const QString &html) {
+    if (m_navigationComplete && m_lastHtml == html) return;
     m_lastHtml = html;
     m_browser->setHtml(html);
     m_navigationComplete = true;

@@ -39,6 +39,72 @@ fn csv_record_rules() {
     assert_eq!(parse("A,B\n1\n2,3,4\n\n").warnings().len(), 2);
 }
 #[test]
+fn sparse_rows_survive_changes_in_record_width() {
+    let input = b"A,B,C\n\nsolo\n1,2,3\n\nx,y,z,extra\nlast\n";
+    let expected = Table {
+        header: ["A", "B", "C", "Column 4"].map(str::to_owned).to_vec(),
+        rows: vec![
+            vec![],
+            vec!["solo".into()],
+            vec!["1".into(), "2".into(), "3".into()],
+            vec![],
+            vec!["x".into(), "y".into(), "z".into(), "extra".into()],
+            vec!["last".into()],
+        ],
+        short_row_count: 4,
+        extra_row_count: 1,
+    };
+    assert_eq!(
+        csv::parse(input, Delimiter::Comma, &|| false).unwrap(),
+        expected
+    );
+    for chunk in [1, 2, 3, 7, 65536] {
+        assert_eq!(
+            csv::read_stream(Cursor::new(input), Delimiter::Comma, chunk, &|| false).unwrap(),
+            expected,
+            "chunk={chunk}"
+        );
+    }
+}
+#[test]
+fn repeated_records_preserve_narrow_and_wide_unicode_cells() {
+    for width in [1, 3, 128] {
+        let header: Vec<String> = (0..width).map(|column| format!("H{column}")).collect();
+        let rows: Vec<Vec<String>> = (0..4)
+            .map(|row| {
+                (0..width)
+                    .map(|column| format!("Café 🛥 {row}:{column}"))
+                    .collect()
+            })
+            .collect();
+        let mut input = format!("{}\n", header.join(","));
+        for row in &rows {
+            input.push_str(&row.join(","));
+            input.push('\n');
+        }
+        let expected = Table {
+            header,
+            rows,
+            short_row_count: 0,
+            extra_row_count: 0,
+        };
+        assert_eq!(parse(&input), expected, "width={width}");
+        for chunk in [1, 7, 65536] {
+            assert_eq!(
+                csv::read_stream(
+                    Cursor::new(input.as_bytes()),
+                    Delimiter::Comma,
+                    chunk,
+                    &|| false
+                )
+                .unwrap(),
+                expected,
+                "width={width}, chunk={chunk}"
+            );
+        }
+    }
+}
+#[test]
 fn utf8_bom_chunks_delimiters_and_errors() {
     for d in [
         Delimiter::Comma,
@@ -372,6 +438,156 @@ fn bindings_handle_lifetime_and_cancellation() {
 }
 
 #[test]
+fn numeric_document_dispatch_avoids_a_response_capacity_cliff() {
+    // Numeric document cells add two JSON-escaped attribute quotes each. This
+    // wide fixture crosses a small reservation hint without crossing the
+    // predecessor's next power-of-two allocation boundary.
+    let table = Table::from_parts(
+        vec!["A".to_owned(); 128],
+        vec![vec!["1".to_owned(); 128]; 512],
+    )
+    .unwrap();
+    let expected = html::output(
+        &table,
+        &Style::default(),
+        None,
+        html::OutputMode::Document,
+        &|| false,
+    )
+    .unwrap();
+    let records: Vec<_> = std::iter::once(table.header.clone())
+        .chain(table.rows.iter().cloned())
+        .collect();
+    let engine = Engine::default();
+    let inserted = api(&engine, "records", serde_json::json!({"records": records}));
+    let request = serde_json::json!({"version": 1, "op": "html",
+        "handle": inserted["handle"], "output_mode": "document"});
+    let response = engine.dispatch(&serde_json::to_vec(&request).unwrap(), &|| false);
+    let decoded: serde_json::Value = serde_json::from_slice(&response).unwrap();
+    assert_eq!(decoded["ok"].as_str(), Some(expected.as_str()));
+    assert!(
+        response.capacity() <= response.len().next_power_of_two(),
+        "numeric document JSON retained {} bytes for {} output bytes; previous growth boundary is {}",
+        response.capacity(),
+        response.len(),
+        response.len().next_power_of_two()
+    );
+}
+
+#[test]
+fn binding_strings_and_previews_match_core_and_exact_dispatch_json() {
+    fn assert_response(engine: &Engine, request: serde_json::Value, expected: serde_json::Value) {
+        assert_eq!(
+            engine.request(request.clone(), &|| false).unwrap(),
+            expected
+        );
+        assert_eq!(
+            engine.dispatch(&serde_json::to_vec(&request).unwrap(), &|| false),
+            serde_json::to_vec(&serde_json::json!({"ok": expected})).unwrap()
+        );
+    }
+    fn insert(engine: &Engine, table: &Table) -> serde_json::Value {
+        let records: Vec<_> = std::iter::once(table.header.clone())
+            .chain(table.rows.iter().cloned())
+            .collect();
+        api(engine, "records", serde_json::json!({"records": records}))["handle"].clone()
+    }
+
+    let engine = Engine::default();
+    let text = "Café 🛥 <&>\"'\n\t\0";
+    assert_response(
+        &engine,
+        serde_json::json!({"version": 1, "op": "escape", "text": text}),
+        serde_json::Value::String(html::escape(text)),
+    );
+    // JSON escaping can exceed the bounded response capacity hint. It must
+    // still grow normally and return every byte, including escaped NULs.
+    let controls = "\0\\\"\n\t".repeat(16_384);
+    assert_response(
+        &engine,
+        serde_json::json!({"version": 1, "op": "escape", "text": controls}),
+        serde_json::Value::String(html::escape(&controls)),
+    );
+    let table = Table::from_parts(
+        vec!["<Name&>".into(), "Count".into(), "Notes".into()],
+        vec![
+            vec![text.into(), "-1,234.5".into(), "line 1\r\nline 2".into()],
+            vec![],
+            vec!["last".into(), "17%".into()],
+        ],
+    )
+    .unwrap();
+    let handle = insert(&engine, &table);
+    let styled = Style {
+        first_column_enabled: true,
+        table_class: "x\"<&".into(),
+        ..Default::default()
+    };
+    for (style, mode, limit) in [
+        (&styled, html::OutputMode::Table, None),
+        (&styled, html::OutputMode::Document, Some(1)),
+        (&styled, html::OutputMode::Table, Some(0)),
+        (&Style::unstyled(), html::OutputMode::Document, None),
+    ] {
+        assert_response(
+            &engine,
+            serde_json::json!({"version": 1, "op": "html", "handle": handle,
+                "style": style, "output_mode": mode, "limit": limit}),
+            serde_json::Value::String(html::output(&table, style, limit, mode, &|| false).unwrap()),
+        );
+    }
+    for (mode, inline, limit) in [
+        (html::OutputMode::Table, false, 0),
+        (html::OutputMode::Table, true, 1),
+        (html::OutputMode::Document, false, 200),
+        (html::OutputMode::Document, true, 200),
+    ] {
+        let expected =
+            preview::generate_with_renderer(&table, &styled, limit, mode, inline, &|| false)
+                .unwrap();
+        assert_response(
+            &engine,
+            serde_json::json!({"version": 1, "op": "preview", "handle": handle,
+                "style": styled, "output_mode": mode, "inline_preview": inline, "limit": limit}),
+            serde_json::to_value(expected).unwrap(),
+        );
+    }
+
+    let large = Table::from_parts(vec!["Text".into()], vec![vec!["🛥️".repeat(200_000)]]).unwrap();
+    let large_handle = insert(&engine, &large);
+    let expected = preview::generate_with_renderer(
+        &large,
+        &styled,
+        200,
+        html::OutputMode::Table,
+        false,
+        &|| false,
+    )
+    .unwrap();
+    assert!(expected.preview_unavailable);
+    assert!(expected.source_truncated);
+    assert!(expected.source.len() <= preview::SOURCE_BUDGET);
+    assert_response(
+        &engine,
+        serde_json::json!({"version": 1, "op": "preview", "handle": large_handle,
+            "style": styled, "output_mode": "table"}),
+        serde_json::to_value(expected).unwrap(),
+    );
+
+    for op in ["escape", "html", "preview"] {
+        let request = serde_json::json!({"version": 1, "op": op, "handle": handle, "text": text});
+        assert!(matches!(
+            engine.request(request.clone(), &|| true),
+            Err(Error::Cancelled)
+        ));
+        assert_eq!(
+            engine.dispatch(&serde_json::to_vec(&request).unwrap(), &|| true),
+            br#"{"error":{"code":"cancelled","message":"Cancelled"}}"#
+        );
+    }
+}
+
+#[test]
 fn binding_html_defaults_to_a_self_contained_table_fragment() {
     let engine = Engine::default();
     let table = api(
@@ -437,6 +653,84 @@ fn binding_html_defaults_to_a_self_contained_table_fragment() {
     assert!(!bare.contains("style="));
     assert!(!bare.contains("class="));
     assert!(bare.contains("north &amp; south</td>"));
+}
+
+#[test]
+fn inline_cells_match_original_output_and_propagate_sink_errors() {
+    // Captured from the original release library, before the inline writer
+    // optimization. Includes numeric/text cells, both stripes, a first-column
+    // override, missing cells, Unicode and escaped attribute/text characters.
+    let table = Table::from_parts(
+        vec!["<H>&".into(), "Count".into(), "Notes".into()],
+        vec![
+            vec!["12".into(), "word".into(), "é<&>\"'".into()],
+            vec!["Café".into(), "-1,234.5".into()],
+            vec![],
+        ],
+    )
+    .unwrap();
+    let style = Style {
+        first_column_enabled: true,
+        first_column_bg: "navy".into(),
+        zebra_bg: "black".into(),
+        font_family: "\"Times New Roman\", serif".into(),
+        table_class: "x\"<&".into(),
+        ..Default::default()
+    };
+    for (style, limit, expected) in [
+        (&style, None, include_str!("fixtures/inline-styled.html")),
+        (
+            &style,
+            Some(1),
+            include_str!("fixtures/inline-styled-one-row.html"),
+        ),
+        (
+            &Style::unstyled(),
+            None,
+            include_str!("fixtures/inline-unstyled.html"),
+        ),
+    ] {
+        let output =
+            html::output(&table, style, limit, html::OutputMode::Table, &|| false).unwrap();
+        assert_eq!(output, expected);
+        struct FailAfter(usize);
+        impl std::io::Write for FailAfter {
+            fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+                if self.0 == 0 {
+                    return Err(std::io::Error::other("full"));
+                }
+                let n = bytes.len().min(self.0);
+                self.0 -= n;
+                Ok(n)
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+        for budget in [0, 64, 500, expected.len() - 1] {
+            if budget < expected.len() {
+                assert!(matches!(
+                    html::write_output(
+                        &table,
+                        style,
+                        limit,
+                        html::OutputMode::Table,
+                        &mut FailAfter(budget),
+                        &|| false
+                    ),
+                    Err(Error::Io(_))
+                ));
+            }
+        }
+        let checks = Cell::new(0);
+        assert!(matches!(
+            html::output(&table, style, limit, html::OutputMode::Table, &|| {
+                checks.set(checks.get() + 1);
+                checks.get() >= 2
+            }),
+            Err(Error::Cancelled)
+        ));
+    }
 }
 
 #[test]

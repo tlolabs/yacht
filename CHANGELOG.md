@@ -4,6 +4,8 @@ All notable changes are recorded here. Earlier releases remain in Git history.
 
 ## [Unreleased]
 
+## [2.1.3] — 2026-11-11
+
 ### Added
 
 - Add an HTML output setting on macOS, Windows, and Linux, defaulting to a single table with inline styles for pasting into Canvas. Complete-page output remains available; source, copy, export, and batch follow the setting.
@@ -14,6 +16,21 @@ All notable changes are recorded here. Earlier releases remain in Git history.
 ### Changed
 
 - Name the original built-in table style Y-Default. Existing custom presets and remembered styles remain compatible.
+- Reduce inline HTML formatting, parser row allocations, and JSON response copying while preserving exact output and C ABI ownership.
+- Avoid rewriting unchanged Qt preview/source documents, preserving selection and Unicode content.
+- Require Developer ID signing, Apple notarization acceptance, stapling, and final archive Gatekeeper verification for local distributable macOS packages.
+
+### Fixed
+
+- Reuse blank-row parser scratch storage without retaining unnecessary cell capacity.
+- Prevent wide numeric Document responses from doubling serialization buffers beyond the original allocation behavior.
+- Invalidate the Qt source cache on document changes and compare exact source text across Unicode normalization cases.
+
+### Known issues
+
+- Production automatic updates remain disabled pending separate trust and installation qualification.
+- Large repeated Copy operations can retain substantial allocator address-space/RSS; the optimization evidence does not establish leak freedom.
+- SwiftUI GUI test execution and native verification of every supported architecture remain incomplete; see `docs/PERFORMANCE.md` for actual coverage.
 
 ## [2.1.2-rc.2] — 2026-10-08
 

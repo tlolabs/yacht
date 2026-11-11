@@ -339,6 +339,9 @@ void MainWindow::setupUi() {
     m_tabWidget->setAccessibleName(QStringLiteral("Table display mode"));
     m_previewWidget = new HtmlPreviewWidget(m_tabWidget);
     m_sourceEdit = new QPlainTextEdit(m_tabWidget);
+    connect(m_sourceEdit, &QPlainTextEdit::textChanged, this, [this] {
+        m_lastAppliedSource.reset();
+    });
     m_sourceEdit->setReadOnly(true);
     m_sourceEdit->setAccessibleName(QStringLiteral("HTML Source"));
     m_sourceEdit->setAccessibleDescription(QStringLiteral("Read-only HTML table source code"));
@@ -773,7 +776,10 @@ void MainWindow::onPerformRender() {
         bool truncated = result.value(QStringLiteral("source_truncated")).toBool();
 
         m_previewWidget->setHtml(html);
-        m_sourceEdit->setPlainText(source);
+        if (!m_lastAppliedSource || *m_lastAppliedSource != source) {
+            m_sourceEdit->setPlainText(source);
+            m_lastAppliedSource = source;
+        }
 
         QString note = unavailable ? QStringLiteral("Cells too large to preview. ")
                                    : QStringLiteral("Preview shows %1 of %2 rows. ").arg(rowCount).arg(totalRows);

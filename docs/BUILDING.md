@@ -3,7 +3,7 @@
 This guide records the current build scripts and historical package formats. The target stable release procedure and its unresolved signing work are in [RELEASING.md](RELEASING.md). Test coverage and commands are in [TESTING.md](TESTING.md).
 
 Cargo.toml's workspace version is authoritative. `script/sync_version.py` updates
-macOS and Windows metadata without changing the existing Mac build number.
+both macOS version strings and the Windows metadata.
 All release platforms use the same commit. Platform minima and dependency ownership
 are listed in [DEPENDENCIES.md](DEPENDENCIES.md). See [verification](VERIFICATION.md)
 for what was actually executed locally; a configured CI job is not proof it passed.
@@ -64,18 +64,18 @@ and UserDefaults keys are retained. The new bundle ID uses a new UserDefaults
 domain; preferences from the previous bundle ID are not automatically migrated. Window/app/HTML display names
 use YACHT. Build/run modes: --build-only, --verify, --debug, --logs, --telemetry.
 
-Developer ID/notarization remains optional:
+Developer ID/notarization is the default for distributable macOS packaging:
 
 ```sh
 SIGNING_IDENTITY='Developer ID Application: Your Name (TEAMID)' \
 NOTARY_PROFILE='yacht-notary' ./script/package.sh --notarize --arch arm64
 ```
 
-Default builds (`--unsigned`) are ad-hoc signed and explicitly ignore ambient signing/notary credentials. Use `--sign` for signing without upload, or `--notarize` for explicit notarization. Provision a certificate/private key in an ephemeral
+Default packaging (`--notarize`) requires `SIGNING_IDENTITY` and `NOTARY_PROFILE` before building. Explicit `--unsigned` debug/test packages ignore ambient signing/notary credentials; `--sign` is signing-only and does not claim notarization. Add `--production` only for authenticated update packages; that mode retains stable-tag, clean-source and updater-trust checks. Ordinary debug iteration uses `script/build_and_run.sh`. Provision a certificate/private key in an ephemeral
 CI keychain or local Keychain; create a notary profile with `xcrun notarytool
 store-credentials`. The script signs app/CLI, notarizes/staples the app,
 verifies signatures/architectures, then creates checksums. Never commit credentials.
-CI intentionally produces development signatures until credentials are configured.
+Hosted macOS CI remains disabled under the weekly smoke policy; this command is local-only.
 
 ## Windows
 
@@ -185,3 +185,14 @@ ICO in its executable and installer and loads it for the window; Linux
 ships the scalable SVG in the hicolor icon theme. All six architectures use the same
 artwork. Artwork changes on main appear in subsequent builds; existing tagged
 release assets are immutable.
+
+### Local package trust labels
+
+Before building a notarized package, the script checks the stored profile with
+read-only `notarytool history`. It extracts the final ZIP and verifies its app
+signature, stapled ticket and Gatekeeper assessment after packaging.
+Explicit unsigned archives use a `-development-unnotarized` filename suffix.
+Signing-only app archives use `-signed-unnotarized`; these modes also use
+separate dist directories and checksum names. The standalone CLI is labeled
+`signed-unnotarized` even alongside a notarized app because only the app is
+submitted to Apple.

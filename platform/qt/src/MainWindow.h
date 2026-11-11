@@ -10,6 +10,7 @@
 #include <QProgressBar>
 #include <QTimer>
 #include <atomic>
+#include <optional>
 #include <vector>
 
 class QAction;
@@ -160,6 +161,8 @@ private:
     QTabWidget *m_tabWidget{nullptr};
     HtmlPreviewWidget *m_previewWidget{nullptr};
     QPlainTextEdit *m_sourceEdit{nullptr};
+    // One exact Rust-bounded source excerpt; textChanged invalidates it.
+    std::optional<QString> m_lastAppliedSource;
     QLabel *m_noteLabel{nullptr};
 
     QProgressBar *m_progressBar{nullptr};

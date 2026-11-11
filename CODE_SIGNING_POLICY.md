@@ -1,6 +1,6 @@
 # Code signing policy
 
-Git commits need no cryptographic signature; see [CONTRIBUTING.md](CONTRIBUTING.md). This policy covers release tags and distributed artifacts. Release-tag signing, package signing, and notarization are optional until the corresponding credentials and verification are configured. Stable release tags must still match the project version and checked-out commit.
+Git commits need no cryptographic signature; see [CONTRIBUTING.md](CONTRIBUTING.md). This policy covers release tags and distributed artifacts. Release-tag signing remains optional. Local distributable macOS packages use Developer ID signing and notarization by default; missing credentials stop packaging clearly. Explicit development/test packages may remain unsigned. Other platform signing policy is unchanged. Stable release tags must still match the project version and checked-out commit.
 
 An **official stable release** is a GitHub Release for a SemVer tag `vMAJOR.MINOR.PATCH` authorized by Thomas Lothian, with artifacts built from that tagged commit and accompanied by checksums and release provenance. A passing CI run alone is a development build. Tags with a prerelease suffix are prereleases; `main`/nightly outputs are development builds. Unsigned artifacts must be labeled as such and must never be described as signed or notarized.
 

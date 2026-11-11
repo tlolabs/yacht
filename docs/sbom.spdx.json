@@ -2,8 +2,8 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "YACHT-2.1.2",
-  "documentNamespace": "https://github.com/tlolabs/yacht/spdx/v2.1.2",
+  "name": "YACHT-2.1.3",
+  "documentNamespace": "https://github.com/tlolabs/yacht/spdx/v2.1.3",
   "creationInfo": {
     "creators": [
       "Tool: tlo-labs-dependency-inventory/v1"
@@ -14,7 +14,7 @@
     {
       "SPDXID": "SPDXRef-Package-YACHT",
       "name": "yacht",
-      "versionInfo": "2.1.2",
+      "versionInfo": "2.1.3",
       "downloadLocation": "https://github.com/tlolabs/yacht",
       "licenseConcluded": "GPL-3.0-or-later",
       "licenseDeclared": "GPL-3.0-or-later",

@@ -6,15 +6,19 @@
 
 #include <QApplication>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QStringList>
 
 int main(int argc, char *argv[]) {
+    // Opt-in smoke instrumentation starts at main entry, before QApplication.
+    QElapsedTimer launchTimer;
+    launchTimer.start();
     QApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("YACHT"));
     app.setOrganizationName(QStringLiteral("TLO Labs"));
     app.setApplicationDisplayName(Yacht::AppIdentity::title());
 
-    QString version = QStringLiteral("2.1.2");
+    QString version = QStringLiteral("2.1.3");
     try {
         version = Yacht::YachtCore::call(QStringLiteral("info")).toObject().value(QStringLiteral("version")).toString(version);
     } catch (...) {}
@@ -25,7 +29,9 @@ int main(int argc, char *argv[]) {
         if (args[i] == QStringLiteral("--ui-smoke-test") && i + 1 < args.size()) {
             Yacht::MainWindow window;
             window.initialize();
-            return Yacht::SmokeTest::run(window, args[i + 1]);
+            const bool performance = !qEnvironmentVariableIsEmpty("YACHT_PERF_SAMPLES");
+            if (performance) window.show();
+            return Yacht::SmokeTest::run(window, args[i + 1], performance ? &launchTimer : nullptr);
         }
     }
 

@@ -2,15 +2,17 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
-# Local packaging never uploads or consumes ambient signing credentials.
-# Signing/notarization require an explicit mode chosen by the caller.
-PACKAGE_MODE=--unsigned
+# Distributable local packages are notarized by default. Debug/test builds use
+# build_and_run.sh or an explicit --unsigned package.
+PACKAGE_MODE=--notarize
+PRODUCTION=0
 PACKAGE_ARCH="$(uname -m)"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --unsigned|--sign|--notarize) PACKAGE_MODE="$1"; shift ;;
+    --production) PRODUCTION=1; shift ;;
     --arch) [[ $# -ge 2 ]] || { echo '--arch requires x64 or arm64' >&2; exit 2; }; PACKAGE_ARCH="$2"; shift 2 ;;
-    *) echo 'Usage: package.sh [--unsigned|--sign|--notarize] [--arch x64|arm64]' >&2; exit 2 ;;
+    *) echo 'Usage: package.sh [--unsigned|--sign|--notarize] [--production] [--arch x64|arm64]' >&2; exit 2 ;;
   esac
 done
 case "$PACKAGE_ARCH" in
@@ -21,15 +23,31 @@ esac
 case "$PACKAGE_MODE" in
   --unsigned) SIGNING_IDENTITY=-; NOTARY_PROFILE= ;;
   --sign)
-    python3 "$ROOT_DIR/script/check_release_tag.py" --stable-only --require-clean
     : "${SIGNING_IDENTITY:?Set SIGNING_IDENTITY for --sign}"; NOTARY_PROFILE= ;;
   --notarize)
-    python3 "$ROOT_DIR/script/check_release_tag.py" --stable-only --require-clean
     : "${SIGNING_IDENTITY:?Set SIGNING_IDENTITY for --notarize}"; : "${NOTARY_PROFILE:?Set NOTARY_PROFILE for --notarize}" ;;
 esac
+if [[ "$PACKAGE_MODE" != --unsigned ]]; then
+  [[ "$SIGNING_IDENTITY" == "Developer ID Application:"* ]] || { echo 'A Developer ID Application identity is required.' >&2; exit 2; }
+  security find-identity -v -p codesigning | grep -F -- "\"$SIGNING_IDENTITY\"" >/dev/null || { echo 'Developer ID identity is not available in Keychain.' >&2; exit 2; }
+fi
+if [[ "$PRODUCTION" == 1 ]]; then
+  [[ "$PACKAGE_MODE" == --notarize ]] || { echo '--production requires notarization.' >&2; exit 2; }
+  python3 "$ROOT_DIR/script/check_release_tag.py" --stable-only --require-clean
+fi
+if [[ "$PACKAGE_MODE" == --notarize ]]; then
+  xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" --output-format json >/dev/null
+fi
+PACKAGE_SUFFIX=
+CLI_SUFFIX=-signed-unnotarized
+case "$PACKAGE_MODE" in
+  --unsigned) PACKAGE_SUFFIX=-development-unnotarized; CLI_SUFFIX=$PACKAGE_SUFFIX ;;
+  --sign) PACKAGE_SUFFIX=-signed-unnotarized ;;
+esac
 BUILD_DIR="$ROOT_DIR/build/package-macos-$PACKAGE_ARCH"
-DIST_DIR="$ROOT_DIR/dist/macos-$PACKAGE_ARCH"
-ARTIFACT="YACHT-macos-$PACKAGE_ARCH"
+DIST_DIR="$ROOT_DIR/dist/macos-$PACKAGE_ARCH$PACKAGE_SUFFIX"
+ARTIFACT="YACHT-macos-$PACKAGE_ARCH$PACKAGE_SUFFIX"
+CLI_ARTIFACT="yacht-macos-$PACKAGE_ARCH$CLI_SUFFIX"
 if [[ -z "${DEVELOPER_DIR:-}" && -d /Applications/Xcode.app/Contents/Developer ]]; then export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer; fi
 python3 script/sync_version.py >/dev/null
 xcodebuild -project Yacht.xcodeproj -scheme Yacht -configuration Release -derivedDataPath "$BUILD_DIR" -destination 'generic/platform=macOS' ARCHS="$APPLE_ARCH" ONLY_ACTIVE_ARCH=NO build -quiet
@@ -41,7 +59,7 @@ trap 'rm -rf "$STAGING_DIR"' EXIT
 ditto "$BUILD_DIR/Build/Products/Release/YACHT.app" "$STAGING_DIR/YACHT.app"
 cp "$CLI_DIR/yacht" "$STAGING_DIR/yacht"
 update_args=("$STAGING_DIR/YACHT.app" --arch "$PACKAGE_ARCH")
-if [[ "$PACKAGE_MODE" == --notarize ]]; then update_args+=(--production); fi
+if [[ "$PRODUCTION" == 1 ]]; then update_args+=(--production); fi
 python3 script/configure_macos_updates.py "${update_args[@]}"
 cp LICENSE README.md THIRD_PARTY_NOTICES.md "$STAGING_DIR/"
 cp THIRD_PARTY_NOTICES.md "$STAGING_DIR/YACHT.app/Contents/Resources/"
@@ -73,11 +91,7 @@ for binary in "$STAGING_DIR/YACHT.app/Contents/MacOS/YachtApp" "$STAGING_DIR/yac
 done
 if [[ -n "${NOTARY_PROFILE:-}" ]]; then
   [[ "$SIGNING_IDENTITY" != '-' ]] || { echo 'Notarization requires Developer ID signing.' >&2; exit 1; }
-  ditto -c -k --keepParent "$STAGING_DIR/YACHT.app" "$STAGING_DIR/notarize.zip"
-  xcrun notarytool submit "$STAGING_DIR/notarize.zip" --keychain-profile "$NOTARY_PROFILE" --wait
-  xcrun stapler staple "$STAGING_DIR/YACHT.app"
-  xcrun stapler validate "$STAGING_DIR/YACHT.app"
-  rm "$STAGING_DIR/notarize.zip"
+  bash script/notarize_app.sh "$STAGING_DIR/YACHT.app" "$DIST_DIR"
 fi
 # dist contains generated artifacts only; replace the complete bundle so an
 # earlier Debug build cannot leave unsigned auxiliary files in the release app.
@@ -88,11 +102,16 @@ cp "$STAGING_DIR/yacht" "$DIST_DIR/yacht"
 if [[ -n "${NOTARY_PROFILE:-}" ]]; then
   spctl --assess --type execute --verbose "$DIST_DIR/YACHT.app"
 fi
-ditto -c -k --keepParent "$DIST_DIR/YACHT.app" "release/$ARTIFACT.zip"
+CANDIDATE="$STAGING_DIR/$ARTIFACT.zip"
+ditto -c -k --keepParent "$DIST_DIR/YACHT.app" "$CANDIDATE"
 if [[ "$PACKAGE_MODE" == --notarize ]]; then
-  python3 script/verify_macos_update.py "release/$ARTIFACT.zip" --arch "$PACKAGE_ARCH"
+  bash script/verify_notarized_zip.sh "$CANDIDATE" YACHT.app
 fi
-cp "$DIST_DIR/yacht" "release/yacht-macos-$PACKAGE_ARCH"
-(cd release && shasum -a 256 "$ARTIFACT.zip" "yacht-macos-$PACKAGE_ARCH" > "SHA256SUMS-macos-$PACKAGE_ARCH")
+if [[ "$PRODUCTION" == 1 ]]; then
+  python3 script/verify_macos_update.py "$CANDIDATE" --arch "$PACKAGE_ARCH"
+fi
+mv "$CANDIDATE" "release/$ARTIFACT.zip"
+cp "$DIST_DIR/yacht" "release/$CLI_ARTIFACT"
+(cd release && shasum -a 256 "$ARTIFACT.zip" "$CLI_ARTIFACT" > "SHA256SUMS-macos-$PACKAGE_ARCH$PACKAGE_SUFFIX")
 rm -f -- "release/$ARTIFACT.dmg"
 echo "Packaged macOS $PACKAGE_ARCH app and CLI in release/"

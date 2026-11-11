@@ -4,11 +4,14 @@
 
 #include <QString>
 
+class QElapsedTimer;
+
 namespace Yacht {
 
 class SmokeTest {
 public:
-    static int run(MainWindow &window, const QString &directory);
+    static int run(MainWindow &window, const QString &directory,
+                   const QElapsedTimer *launchTimer = nullptr);
 };
 
 } // namespace Yacht

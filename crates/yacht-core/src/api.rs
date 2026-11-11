@@ -57,6 +57,30 @@ fn count(v: &Value, key: &str, default: usize) -> Result<usize> {
             .ok_or_else(|| invalid(format!("{key} must be nonnegative."))),
     }
 }
+fn string_value(text: String) -> Value {
+    // Keep the exact-length storage formerly produced by serde's string copy,
+    // while allowing the allocator to trim/reuse the generated allocation.
+    Value::String(text.into_boxed_str().into_string())
+}
+fn response_capacity(value: &Value) -> usize {
+    let text_bytes = match value {
+        Value::String(text) => text.len(),
+        Value::Object(fields) => ["html", "source"]
+            .iter()
+            .filter_map(|key| fields.get(*key).and_then(Value::as_str))
+            .map(str::len)
+            .fold(0usize, usize::saturating_add),
+        _ => 0,
+    };
+    // Numeric document cells add about 10% in escaped attribute quotes. Keep
+    // enough slack to avoid doubling these responses at the end of serialization.
+    // A bounded hint, not a JSON size calculation: quote/control-heavy output
+    // can still grow normally. Avoid repeatedly copying large HTML responses.
+    text_bytes
+        .saturating_add(text_bytes / 8)
+        .saturating_add(1024)
+        .min(128 * 1024 * 1024)
+}
 impl Engine {
     fn insert(&self, table: Table) -> Value {
         let id = self.next.fetch_add(1, Ordering::Relaxed) + 1;
@@ -105,7 +129,7 @@ impl Engine {
             }
             "safe_color" => json!(style::safe_color(text(&v, "text")?)),
             "is_unstyled" => json!(style(&mut v)? == Style::unstyled()),
-            "escape" => json!(html::escape(text(&v, "text")?)),
+            "escape" => string_value(html::escape(text(&v, "text")?)),
             "numeric" => json!(html::is_numeric(text(&v, "text")?)),
             "sample" => self.insert(Table::sample()),
             "records" => self.insert(Table::new(serde_json::from_value(take_field(
@@ -132,23 +156,40 @@ impl Engine {
             "rows" => json!(self.table(&v)?.rows),
             "preview" => {
                 let s = style(&mut v)?;
-                json!(preview::generate_with_renderer(
+                let result = preview::generate_with_renderer(
                     self.table(&v)?.as_ref(),
                     &s,
                     count(&v, "limit", 200)?,
                     output_mode(&v)?,
                     v["inline_preview"].as_bool().unwrap_or(false),
-                    cancel
-                )?)
+                    cancel,
+                )?;
+                Value::Object(
+                    [
+                        ("html".into(), string_value(result.html)),
+                        ("source".into(), string_value(result.source)),
+                        ("row_count".into(), Value::from(result.row_count)),
+                        (
+                            "source_truncated".into(),
+                            Value::Bool(result.source_truncated),
+                        ),
+                        (
+                            "preview_unavailable".into(),
+                            Value::Bool(result.preview_unavailable),
+                        ),
+                    ]
+                    .into_iter()
+                    .collect(),
+                )
             }
             "html" => {
                 let s = style(&mut v)?;
-                json!(html::output(
+                string_value(html::output(
                     self.table(&v)?.as_ref(),
                     &s,
                     Some(count(&v, "limit", usize::MAX)?),
                     output_mode(&v)?,
-                    cancel
+                    cancel,
                 )?)
             }
             "default_output" => json!(files::default_output(Path::new(text(&v, "path")?))),
@@ -211,7 +252,8 @@ impl Engine {
         let result = serde_json::from_slice(bytes)
             .map_err(crate::Error::from)
             .and_then(|v| self.request(v, cancel));
-        let mut out = Vec::with_capacity(1024);
+        let capacity = result.as_ref().map(response_capacity).unwrap_or(1024);
+        let mut out = Vec::with_capacity(capacity);
         match result {
             Ok(value) => {
                 out.extend_from_slice(b"{\"ok\":");
