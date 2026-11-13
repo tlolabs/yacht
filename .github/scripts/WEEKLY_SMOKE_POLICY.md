@@ -1,3 +1,18 @@
+## YACHT publication integration
+
+YACHT's active workflow uses `select --require-mac-release` and
+`finalize --require-publication`. These extend the generic smoke-only gate below:
+selection checks the trusted release holds and existing public matching-release Mac
+asset evidence before posting any new pending claim; missing prerequisites skip
+without consuming attempts. Existing/partial target assets also skip only that target. The active publication
+path rejects moved baseline tags and refreshes all selected tag identities and
+release prerequisites before the first claim. The publisher repeats the current
+readiness/tag check before each asset upload. Finalization waits
+for the publisher matrix and requires both smoke and publication success for each
+target. See `../WEEKLY_RELEASES.md` for qualification signals and the v2.1.3 hold.
+Generic smoke-only invocations without those flags retain their prior semantics (including moved-tag selection);
+the immutable baseline and all historical claim contexts are unchanged.
+
 # Weekly new-release-tag smoke gate
 
 Files to copy into each repository:

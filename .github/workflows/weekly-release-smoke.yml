@@ -32,9 +32,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: >-
           python3 control/.github/scripts/weekly_release_smoke.py select
-          --pattern '^v[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$'
+          --pattern '^v[0-9]+\.[0-9]+\.[0-9]+(?:-(?:beta|rc)\.[0-9]+)?$'
           --baseline-file control/.github/weekly-smoke-baseline.json
-          --targets linux-x64,linux-arm64,windows-x64,windows-arm64 --claim
+          --targets linux-x64,linux-arm64,windows-x64,windows-arm64 --require-mac-release --claim
   smoke:
     name: Smoke ${{ matrix.tag }} (${{ matrix.target }})
     needs: select
@@ -50,6 +50,7 @@ jobs:
       run:
         working-directory: source
     env:
+      RUSTUP_TOOLCHAIN: 1.99.1
       ARCH: ${{ endsWith(matrix.target, 'arm64') && 'arm64' || 'x64' }}
       RUST_TARGET: ${{ endsWith(matrix.target, 'arm64') && 'aarch64-pc-windows-msvc' || 'x86_64-pc-windows-msvc' }}
     steps:
@@ -65,7 +66,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: '1.98.1'
+          toolchain: '1.99.1'
           targets: ${{ runner.os == 'Windows' && env.RUST_TARGET || '' }}
       - uses: actions/setup-python@v7
         with:
@@ -80,44 +81,103 @@ jobs:
           host: ${{ endsWith(matrix.target, 'arm64') && 'windows_arm64' || 'windows' }}
           target: desktop
           arch: ${{ endsWith(matrix.target, 'arm64') && 'win64_msvc2022_arm64' || 'win64_msvc2022_64' }}
-      - name: Build Linux library and app
+      - name: Package Linux from the tagged source
         if: runner.os == 'Linux'
         run: |
-          cargo build --workspace --locked --release
-          cmake -S platform/qt -B build/weekly-smoke -DCMAKE_BUILD_TYPE=Release -DYACHT_FFI_LIB="$PWD/target/release/libyacht_ffi.so"
-          cmake --build build/weekly-smoke --target YachtApp --parallel
-          cp target/release/libyacht_ffi.so build/weekly-smoke/
-      - name: Linux startup smoke
-        if: runner.os == 'Linux'
-        timeout-minutes: 2
-        run: |
-          ./target/release/yacht --help
-          xvfb-run -a dbus-run-session -- python3 ../control/.github/scripts/launch_smoke.py build/weekly-smoke/YachtApp
-      - name: Build Windows library and app
+          ./script/package_linux.sh
+          mkdir -p verified-extract
+          tar -xzf release/YACHT-*-linux-"${ARCH}".tar.gz -C verified-extract
+          dpkg-deb -x release/YACHT-*-linux-"${ARCH}".deb verified-deb
+          verified-deb/usr/bin/yacht --help
+          xvfb-run -a dbus-run-session -- python3 ../control/.github/scripts/launch_smoke.py verified-deb/usr/lib/yacht/YachtApp
+          verified-extract/bin/yacht --help
+          xvfb-run -a dbus-run-session -- python3 ../control/.github/scripts/launch_smoke.py verified-extract/lib/yacht/YachtApp
+      - name: Package and smoke Windows from the tagged source
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          cargo build --workspace --locked --release --target $env:RUST_TARGET
-          if ($LASTEXITCODE) { throw 'Rust build failed' }
           $cmakeArch = if ($env:ARCH -eq 'arm64') { 'ARM64' } else { 'x64' }
-          cmake -S platform/qt -B build/weekly-smoke -A $cmakeArch "-DYACHT_FFI_LIB=$PWD/target/$env:RUST_TARGET/release/yacht_ffi.dll.lib"
+          cmake -S platform/qt -B "build/qt-$env:ARCH" -A $cmakeArch "-DYACHT_FFI_LIB=$PWD/target/$env:RUST_TARGET/release/yacht_ffi.dll.lib"
           if ($LASTEXITCODE) { throw 'Qt configure failed' }
-          cmake --build build/weekly-smoke --config Release --target YachtApp --parallel
-          if ($LASTEXITCODE) { throw 'Qt build failed' }
-          Copy-Item "target/$env:RUST_TARGET/release/yacht_ffi.dll" build/weekly-smoke/Release/
-      - name: Windows startup smoke
-        if: runner.os == 'Windows'
-        timeout-minutes: 2
-        shell: pwsh
-        run: |
-          & "target/$env:RUST_TARGET/release/yacht.exe" --help
-          if ($LASTEXITCODE) { throw 'CLI startup failed' }
-          $env:PATH = "$env:QT_ROOT_DIR/bin;$env:PATH"
-          $env:QT_PLUGIN_PATH = "$env:QT_ROOT_DIR/plugins"
-          python ../control/.github/scripts/launch_smoke.py build/weekly-smoke/Release/YachtApp.exe
-          if ($LASTEXITCODE) { throw 'GUI startup failed' }
-  finalize:
+          ./script/package_windows.ps1 -Architecture $env:ARCH
+          if ($LASTEXITCODE) { throw 'Windows packaging failed' }
+          $setup = @(Get-ChildItem "release/YACHT-*-windows-$env:ARCH-setup.exe")
+          if ($setup.Count -ne 1) { throw 'Expected exactly one installer' }
+          $installDir = Join-Path $env:RUNNER_TEMP 'yacht-weekly-install'
+          $install = Start-Process $setup[0].FullName -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$installDir`"") -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw 'Installer smoke failed' }
+          & "$installDir/yacht.exe" --help
+          if ($LASTEXITCODE) { throw 'Installed CLI failed' }
+          Expand-Archive "release/YACHT-*-windows-$env:ARCH.zip" verified-extract
+          & ./verified-extract/yacht.exe --help
+          if ($LASTEXITCODE) { throw 'Packaged CLI failed' }
+          Remove-Item Env:QT_PLUGIN_PATH -ErrorAction SilentlyContinue
+          Remove-Item Env:QT_QPA_PLATFORM_PLUGIN_PATH -ErrorAction SilentlyContinue
+          $env:PATH = "$env:SystemRoot/System32;$env:SystemRoot"
+          & "$env:pythonLocation/python.exe" ../control/.github/scripts/launch_smoke.py verified-extract/YachtApp.exe
+          if ($LASTEXITCODE) { throw 'Packaged GUI failed' }
+          & "$env:pythonLocation/python.exe" ../control/.github/scripts/launch_smoke.py "$installDir/YachtApp.exe"
+          if ($LASTEXITCODE) { throw 'Installed GUI failed' }
+      - name: Validate package and bind checksums to this tag and run
+        env:
+          RELEASE_TAG: ${{ matrix.tag }}
+          RELEASE_SHA: ${{ matrix.sha }}
+          RELEASE_TARGET: ${{ matrix.target }}
+        shell: bash
+        run: python ../control/.github/scripts/weekly_publish.py prepare --source . --directory release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: weekly-${{ matrix.tag }}-${{ matrix.target }}
+          path: source/release/*
+          if-no-files-found: error
+          retention-days: 14
+  publish:
+    name: Publish ${{ matrix.tag }} (${{ matrix.target }})
     needs: [select, smoke]
+    if: always() && github.run_attempt == 1 && needs.select.outputs.has_new == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - name: Find only this successful target's artifact
+        id: artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: weekly-${{ matrix.tag }}-${{ matrix.target }}
+          BUILD_JOB_NAME: Smoke ${{ matrix.tag }} (${{ matrix.target }})
+        run: |
+          python3 control/.github/scripts/weekly_publish.py find
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        if: steps.artifact.outputs.found == 'true'
+        with:
+          ref: ${{ matrix.sha }}
+          path: source
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        if: steps.artifact.outputs.found == 'true'
+        with:
+          name: weekly-${{ matrix.tag }}-${{ matrix.target }}
+          path: packages
+      - name: Publish verified assets without changing release channel or Latest
+        if: steps.artifact.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ matrix.tag }}
+          RELEASE_SHA: ${{ matrix.sha }}
+          RELEASE_TARGET: ${{ matrix.target }}
+        run: python3 control/.github/scripts/weekly_publish.py publish --source source --directory packages
+  finalize:
+    needs: [select, smoke, publish]
     if: always() && github.run_attempt == 1 && needs.select.outputs.has_new == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -135,4 +195,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SMOKE_MATRIX: ${{ needs.select.outputs.matrix }}
-        run: python3 control/.github/scripts/weekly_release_smoke.py finalize --matrix-env SMOKE_MATRIX
+        run: python3 control/.github/scripts/weekly_release_smoke.py finalize --matrix-env SMOKE_MATRIX --require-publication

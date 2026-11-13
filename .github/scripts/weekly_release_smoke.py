@@ -279,17 +279,25 @@ class Gate:
         return job_proven_unstarted(job)
 
     def select(self, pattern: str, targets: list[str], max_matrix: int = MAX_MATRIX,
-               baseline: dict | None = None) -> tuple[dict, dict]:
+               baseline: dict | None = None, eligibility=None) -> tuple[dict, dict]:
         if type(max_matrix) is not int or not 1 <= max_matrix <= MAX_MATRIX:
             raise GateError(f"max-matrix must be between 1 and {MAX_MATRIX}")
         targets = parse_targets(",".join(targets))
         baselined = validate_baseline(baseline, self.api.repo) if baseline is not None else set()
         tags = self.tags(pattern)
+        if eligibility is not None:
+            baseline_shas = {tag: sha for tag, sha, _ in baselined}
+            for row in tags:
+                if row['tag'] in baseline_shas and row['sha'] != baseline_shas[row['tag']]:
+                    raise GateError(f"Baselined release tag moved: {row['tag']}; inspect manually")
         cache = {}
         selected = []
         summary = {"matching_tags": len(tags), "new": 0, "baseline": 0, "recovered_pending": 0,
                    **{state: 0 for state in sorted(STATES)}}
         attempts = {}
+        eligibility_cache = {}
+        summary["ineligible"] = 0
+        summary["skipped_releases"] = {}
         for row in tags:
             for target in targets:
                 item = {**row, "target": target}
@@ -299,11 +307,19 @@ class Gate:
                 if row["sha"] not in cache:
                     cache[row["sha"]] = self.statuses(row["sha"])
                 previous = cache[row["sha"]].get(context_for(row["tag"], target))
-                if previous is None:
+                if previous is None or (previous["state"] == "pending" and self.pending_is_unstarted(item, previous, attempts)):
+                    if eligibility is not None:
+                        key = (row['tag'], target)
+                        if key not in eligibility_cache:
+                            eligibility_cache[key] = eligibility(row['tag'], target)
+                        reason = eligibility_cache[key]
+                        if reason is not None:
+                            summary['ineligible'] += 1
+                            summary['skipped_releases'][row['tag'] + '/' + target] = reason
+                            continue
                     selected.append(item)
-                elif previous["state"] == "pending" and self.pending_is_unstarted(item, previous, attempts):
-                    selected.append(item)
-                    summary["recovered_pending"] += 1
+                    if previous is not None:
+                        summary["recovered_pending"] += 1
                 else:
                     summary[previous["state"]] += 1
         summary["new"] = len(selected)
@@ -333,6 +349,17 @@ class Gate:
             raise GateError("GitHub did not confirm the requested status; outcome is uncertain, inspect before retrying")
         return result
 
+    def preflight(self, matrix: dict, pattern: str, eligibility):
+        """Refresh every selected identity/prerequisite before the first write."""
+        items = validate_matrix(matrix)
+        current_tags = {row['tag']: row['sha'] for row in self.tags(pattern)}
+        for item in items:
+            if current_tags.get(item['tag']) != item['sha']:
+                raise GateError(f"Tag moved or disappeared before claim: {item['tag']}")
+            reason = eligibility(item['tag'], item['target'])
+            if reason is not None:
+                raise GateError(f"Publication readiness changed before claim: {item['tag']} ({item['target']}): {reason}")
+
     def claim(self, matrix: dict, target_url: str):
         items = validate_matrix(matrix)
         # Resolve/validate the entire matrix before the first mutation. There is
@@ -350,7 +377,7 @@ class Gate:
         validate_baseline(snapshot, self.api.repo)
         return snapshot
 
-    def finalize(self, matrix: dict, run_id: int, attempt: int, target_url: str) -> dict:
+    def finalize(self, matrix: dict, run_id: int, attempt: int, target_url: str, require_publication=False) -> dict:
         items = validate_matrix(matrix)
         run_id = positive_int(run_id, "run ID")
         attempt = positive_int(attempt, "run attempt")
@@ -384,6 +411,16 @@ class Gate:
                     # Includes cancelled, skipped, neutral, action_required,
                     # startup_failure, stale and any new API conclusion.
                     state, description = "error", "Smoke cancelled, skipped, or inconclusive; no automatic retry"
+            if state == "success" and require_publication:
+                publishers = by_name.get(f"Publish {item['tag']} ({item['target']})", [])
+                if len(publishers) != 1 or publishers[0].get('status') != 'completed':
+                    state, description = 'error', 'Publication missing, ambiguous, or unfinished; no automatic retry'
+                elif publishers[0].get('conclusion') == 'success':
+                    description = 'Weekly native smoke and publication passed'
+                elif publishers[0].get('conclusion') in {'failure', 'timed_out'}:
+                    state, description = 'failure', 'Native smoke passed but publication failed; no automatic retry'
+                else:
+                    state, description = 'error', 'Native smoke passed but publication inconclusive; no automatic retry'
             decisions.append((item, state, description))
         summary = {state: 0 for state in sorted(STATES)}
         for item, state, description in decisions:
@@ -505,6 +542,7 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument("--pattern", required=True, help="Python regex, full-match release tag names")
             command.add_argument("--targets", required=True)
         if name == "select":
+            command.add_argument("--require-mac-release", action="store_true", help="Require public Mac release and honor trusted holds before claim")
             command.add_argument("--max-matrix", type=int, default=MAX_MATRIX)
             command.add_argument("--baseline-file", help="Trusted immutable existing-tag setup snapshot")
             command.add_argument("--claim", action="store_true", help="Post pending statuses after full successful selection")
@@ -517,6 +555,7 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument("--state", choices=sorted(STATES), required=True)
             command.add_argument("--description", required=True)
         if name == "finalize":
+            command.add_argument("--require-publication", action="store_true")
             command.add_argument("--matrix-env", default="SMOKE_MATRIX", help="Environment variable containing trusted gate matrix JSON")
     return cli
 
@@ -528,9 +567,16 @@ def main(argv: list[str] | None = None) -> int:
         gate = Gate(api)
         if args.command == "select":
             baseline = load_baseline(args.baseline_file, api.repo) if args.baseline_file else None
-            matrix, summary = gate.select(args.pattern, parse_targets(args.targets), args.max_matrix, baseline=baseline)
+            eligibility = None
+            if args.require_mac_release:
+                import weekly_eligibility
+                holds = weekly_eligibility.load_holds()
+                eligibility = lambda tag, target: weekly_eligibility.check(api, tag, holds, target=target)
+            matrix, summary = gate.select(args.pattern, parse_targets(args.targets), args.max_matrix, baseline=baseline, eligibility=eligibility)
             if args.claim and matrix["include"]:
                 _, _, url = current_run(api)
+                if eligibility is not None:
+                    gate.preflight(matrix, args.pattern, eligibility)
                 gate.claim(matrix, url)
             emit_outputs(matrix, summary)
         elif args.command == "baseline":
@@ -550,7 +596,7 @@ def main(argv: list[str] | None = None) -> int:
                 matrix = json.loads(os.environ[args.matrix_env])
             except (KeyError, json.JSONDecodeError) as exc:
                 raise GateError(f"Missing or invalid JSON environment variable {args.matrix_env}") from exc
-            summary = gate.finalize(matrix, run_id, attempt, url)
+            summary = gate.finalize(matrix, run_id, attempt, url, require_publication=args.require_publication)
             print("Finalized: " + json.dumps(summary, sort_keys=True))
             if summary["pending"]:
                 print(f"Finalization incomplete: {summary['pending']} native smoke job(s) never executed; "
@@ -558,7 +604,7 @@ def main(argv: list[str] | None = None) -> int:
             if summary["failure"] or summary["error"] or summary["pending"]:
                 return 1
         return 0
-    except (GateError, OSError) as exc:
+    except (GateError, OSError, ValueError) as exc:
         print(f"Tag gate failed: {exc}", file=sys.stderr)
         return 1
 

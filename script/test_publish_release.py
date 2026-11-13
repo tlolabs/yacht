@@ -53,7 +53,7 @@ class ReleaseTests(unittest.TestCase):
                 release.verify_manifest(directory, "macos-arm64", SHA, "123", VERSION)
 
     def test_prepare_cli_accepts_directory_after_options(self):
-        with tempfile.TemporaryDirectory() as temporary:
+        with patch.dict(globals(), VERSION=release.version()), tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             self.package(directory)
             commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=release.ROOT, text=True).strip()
