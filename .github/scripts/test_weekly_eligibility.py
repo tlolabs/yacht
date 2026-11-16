@@ -81,9 +81,14 @@ class EligibilityTests(unittest.TestCase):
 
     def test_hold_short_circuits_api_even_if_asset_exists(self):
         api = Mock()
-        self.assertIsNotNone(e.check(api, TAG, {TAG: 'hold'}))
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/'holds.json'
+            path.write_text(json.dumps(dict(schema=1, held_tags={TAG: 'UI hold'})))
+            self.assertIsNotNone(e.check(api, TAG, e.load_holds(path)))
+            path.write_text(json.dumps(dict(schema=1, held_tags={})))
+            self.assertEqual(e.load_holds(path), {})
         api.pages.assert_not_called()
-        self.assertIn('v2.1.3', e.load_holds())
+        e.load_holds()  # The repository policy must remain valid, including when empty.
 
     def test_corrupt_hold_policy_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -184,7 +189,11 @@ class EligibilityTests(unittest.TestCase):
         self.assertIn('--require-mac-release --claim', text)
         self.assertIn('needs: [select, smoke, publish]', text)
         self.assertIn('--require-publication', text)
-        self.assertNotIn('workflow_dispatch:', text)
+        self.assertIn('workflow_dispatch:', text)
+        self.assertIn('required: true', text)
+        self.assertIn("github.ref == 'refs/heads/main'", text)
+        self.assertIn('tag_args=(--tag "$REQUESTED_TAG")', text)
+        self.assertIn('REQUESTED_TAG: ${{ inputs.tag }}', text)
         self.assertNotIn('release:', text)
 
     def test_finalizer_requires_smoke_and_publication_success(self):

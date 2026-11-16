@@ -1,3 +1,55 @@
+# macOS v2.1.3 post-alert verification — 2026-11-15
+
+The historical packaged-app failure waited for `Copied table HTML` after dismissing
+the unconfigured-update notice. On an unlocked native macOS ARM64 desktop, the
+unchanged notarized v2.1.3 package passed the original focused test and all 13
+original UI tests. The historical failure did not recur; no application root cause
+or application-source repair is claimed.
+
+`testUnconfiguredUpdateCheckPreservesUsableApplication` now waits for the sample
+preview, Copy readiness and alert dismissal, checks that the app remains foreground
+with a window, and requires fresh sample HTML on the clipboard before checking the
+original success status. It repeats this flow three times without reactivating the
+app after dismissal. A unique clipboard sentinel and change count prevent an earlier
+copy from satisfying a later round. Failure diagnostics report app/window/status
+and clipboard change count without dumping clipboard contents.
+
+Current local results:
+
+- Xcode Debug build-for-testing passed. This is a development build, not a new
+  notarized distributable. Tests used the unchanged notarized app extracted into
+  separate test products, rather than the development app.
+- Strengthened focused regression: 1 passed, 0 failed/skipped, with 3 alert/copy cycles.
+- Final native UI suite: 13 passed, 0 failed/skipped, including 3 alert/copy cycles.
+- Swift package tests: 32 core and 5 updater-safety tests passed.
+- Offline update-release policy tests: 7 passed; update source contract passed.
+- Weekly selection/publication policy tests: 123 passed, including trusted-hold
+  enforcement with a fixture and loading an empty hold policy.
+- The exact existing ZIP passed strict deep signature verification, staple
+  validation and Gatekeeper assessment as `Notarized Developer ID`.
+
+Tested archive: `release/yacht-2.1.3-macos-arm64.zip`, 4,593,286 bytes, SHA-256
+`920af232611c2ed0bb672c138591a95852712dd57dfd4f4e196636cdb7a33a22`.
+Its executable SHA-256 is
+`6d8c7be5499a45a1575248ef4281fd52e51d7d808efdf6ded7e44faf52590445`.
+The existing Apple receipt reports `Accepted`, submission
+`21b27fe7-faba-4e3a-8b87-7fe98dbee298`. App source and Xcode project match tagged
+v2.1.3. No release archive was rebuilt or replaced, and the clipboard was preserved
+and restored around every native run.
+
+Result bundles and commands remain local under
+`/private/tmp/yacht-post-alert-20261115-55a1972b/`, including `baseline.xcresult`,
+`baseline-full.xcresult`, `repeated-regression.xcresult` and `final-full.xcresult`.
+Their action metrics confirm the counts above. Raw native logs/results can contain
+desktop context and must not be published unfiltered. Historical failures and the
+earlier authentication-blocked attempt remain recorded in the prior release ledger.
+
+The local `v2.1.3` verification hold was cleared only after these package/UI checks
+passed. Generic trusted holds and all matching public-release/Mac-asset prerequisites
+remain enforced. No commit, push, tag change, CI dispatch or publication occurred.
+Native Intel macOS, Windows/Linux execution and authenticated update installation
+were not qualified by this run.
+
 # G-color preset validation — 2026-10-19
 
 Local macOS ARM64 checks for eleven Google Sheets-inspired presets (nineteen

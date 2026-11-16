@@ -5,6 +5,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
@@ -665,6 +666,102 @@ class FinalizeTests(unittest.TestCase):
         api.failure = "/jobs?"
         with self.assertRaises(gate.GateError):
             gate.Gate(api).finalize({"include": [item()]}, 123, 1, URL)
+        self.assertEqual(api.writes, [])
+
+
+class ExactTagCLITests(unittest.TestCase):
+    def invoke(self, api, tag, *flags, pattern=PATTERN):
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with patch.object(gate, "GitHub", return_value=api), \
+                patch.object(gate, "current_run", return_value=(123, 1, URL)), \
+                patch.dict(os.environ, {}, clear=True), \
+                contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            result = gate.main(["select", "--repo", REPO, "--pattern", pattern,
+                                "--targets", ",".join(TARGETS), "--tag", tag, *flags])
+        return result, stdout.getvalue(), stderr.getvalue()
+
+    def test_exact_tag_isolated_from_other_tags_and_regex_lookalikes(self):
+        api = FakeAPI([tagrow(), tagrow("v1x2x3", OTHER_SHA), tagrow("v1.2.30", OTHER_SHA)])
+        result, stdout, _ = self.invoke(api, "v1.2.3", "--claim", pattern=r"v.*")
+        self.assertEqual(result, 0)
+        matrix = json.loads(stdout.splitlines()[0].split("=", 1)[1])
+        self.assertEqual(matrix, {"include": [item(target=t) for t in TARGETS]})
+        self.assertEqual(len(api.writes), 4)
+        self.assertFalse(any(OTHER_SHA in endpoint or "/tags/v1x2x3" in endpoint or
+                             "/tags/v1.2.30" in endpoint for endpoint, _ in api.calls))
+
+    def test_unsafe_exact_tag_fails_before_api_or_claim(self):
+        for tag in ("", "v1.*", "v1.2.3\nforged=true", "$(touch /tmp/no)", "v1.2.3;echo"):
+            with self.subTest(tag=tag):
+                api = FakeAPI([tagrow()])
+                result, stdout, _ = self.invoke(api, tag, "--claim")
+                self.assertEqual(result, 1)
+                self.assertEqual(stdout, "")
+                self.assertEqual(api.calls, [])
+
+    def test_exact_tag_must_match_trusted_pattern(self):
+        api = FakeAPI([tagrow("release/v1.2.3")])
+        result, stdout, stderr = self.invoke(api, "release/v1.2.3", "--claim")
+        self.assertEqual(result, 1)
+        self.assertIn("does not match", stderr)
+        self.assertEqual(stdout, "")
+        self.assertEqual(api.calls, [])
+
+    def test_nonexistent_exact_tag_fails_without_claim_or_success_outputs(self):
+        api = FakeAPI([tagrow("v1.2.30")])
+        result, stdout, stderr = self.invoke(api, "v1.2.3", "--claim")
+        self.assertEqual(result, 1)
+        self.assertIn("does not exist", stderr)
+        self.assertEqual(stdout, "")
+        self.assertEqual(api.writes, [])
+
+    def test_exact_tag_uses_same_filter_for_selection_and_preflight(self):
+        import weekly_eligibility
+        patterns = []
+
+        class TrackedGate(gate.Gate):
+            def tags(self, pattern):
+                patterns.append(pattern)
+                return super().tags(pattern)
+
+        api = FakeAPI([tagrow(), tagrow("v1.2.30", OTHER_SHA)])
+        with patch.object(gate, "Gate", TrackedGate), \
+                patch.object(weekly_eligibility, "load_holds", return_value={}), \
+                patch.object(weekly_eligibility, "check", return_value=None) as readiness:
+            result, _, _ = self.invoke(api, "v1.2.3", "--require-mac-release", "--claim")
+        self.assertEqual(result, 0)
+        self.assertEqual(patterns, [re.escape("v1.2.3")] * 2)
+        self.assertEqual(readiness.call_count, 8)
+        self.assertEqual(len(api.writes), 4)
+
+    def test_exact_tag_still_rejects_move_before_any_claim(self):
+        import weekly_eligibility
+
+        class MovingAPI(FakeAPI):
+            tag_reads = 0
+
+            def request(self, endpoint, payload=None):
+                if endpoint.startswith(ROOT + "/tags?"):
+                    self.tag_reads += 1
+                    if self.tag_reads == 2:
+                        self.tag_rows = [tagrow(sha=OTHER_SHA)]
+                return super().request(endpoint, payload)
+
+        api = MovingAPI([tagrow()])
+        with patch.object(weekly_eligibility, "load_holds", return_value={}), \
+                patch.object(weekly_eligibility, "check", return_value=None):
+            result, stdout, stderr = self.invoke(api, "v1.2.3", "--require-mac-release", "--claim")
+        self.assertEqual(result, 1)
+        self.assertIn("moved or disappeared", stderr)
+        self.assertEqual(stdout, "")
+        self.assertEqual(api.writes, [])
+
+    def test_exact_tag_does_not_retry_consumed_targets(self):
+        api = FakeAPI([tagrow()], {SHA: [status(target=t, state="failure", identifier=i)
+                                       for i, t in enumerate(TARGETS, 1)]})
+        result, stdout, _ = self.invoke(api, "v1.2.3", "--claim")
+        self.assertEqual(result, 0)
+        self.assertIn("has_new=false\n", stdout)
         self.assertEqual(api.writes, [])
 
 

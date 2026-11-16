@@ -542,6 +542,7 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument("--pattern", required=True, help="Python regex, full-match release tag names")
             command.add_argument("--targets", required=True)
         if name == "select":
+            command.add_argument("--tag", help="Select only this exact tag, which must match --pattern and exist")
             command.add_argument("--require-mac-release", action="store_true", help="Require public Mac release and honor trusted holds before claim")
             command.add_argument("--max-matrix", type=int, default=MAX_MATRIX)
             command.add_argument("--baseline-file", help="Trusted immutable existing-tag setup snapshot")
@@ -566,17 +567,29 @@ def main(argv: list[str] | None = None) -> int:
         api = GitHub(args.repo)
         gate = Gate(api)
         if args.command == "select":
+            pattern = args.pattern
+            if args.tag is not None:
+                tag = validate_tag(args.tag)
+                try:
+                    matches = re.fullmatch(pattern, tag)
+                except re.error as exc:
+                    raise GateError(f"Invalid tag pattern: {exc}") from exc
+                if not matches:
+                    raise GateError(f"Requested tag does not match the release pattern: {tag}")
+                pattern = re.escape(tag)
             baseline = load_baseline(args.baseline_file, api.repo) if args.baseline_file else None
             eligibility = None
             if args.require_mac_release:
                 import weekly_eligibility
                 holds = weekly_eligibility.load_holds()
                 eligibility = lambda tag, target: weekly_eligibility.check(api, tag, holds, target=target)
-            matrix, summary = gate.select(args.pattern, parse_targets(args.targets), args.max_matrix, baseline=baseline, eligibility=eligibility)
+            matrix, summary = gate.select(pattern, parse_targets(args.targets), args.max_matrix, baseline=baseline, eligibility=eligibility)
+            if args.tag is not None and summary["matching_tags"] == 0:
+                raise GateError(f"Requested release tag does not exist: {tag}")
             if args.claim and matrix["include"]:
                 _, _, url = current_run(api)
                 if eligibility is not None:
-                    gate.preflight(matrix, args.pattern, eligibility)
+                    gate.preflight(matrix, pattern, eligibility)
                 gate.claim(matrix, url)
             emit_outputs(matrix, summary)
         elif args.command == "baseline":

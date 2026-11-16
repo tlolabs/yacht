@@ -79,7 +79,7 @@ def build_inventory():
     }
 
 
-def build_spdx_sbom(inventory, version="2.1.3"):
+def build_spdx_sbom(inventory, version="2.1.4"):
     spdx_packages = [
         {
             "SPDXID": "SPDXRef-Package-YACHT",

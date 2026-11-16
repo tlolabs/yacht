@@ -84,7 +84,7 @@ SettingsDialog::SettingsDialog(Preferences &prefs, QWidget *parent)
     connect(m_clearRecentButton, &QPushButton::clicked, this, &SettingsDialog::onClearRecent);
     mainLayout->addWidget(m_clearRecentButton);
 
-    QString version = QStringLiteral("2.1.3");
+    QString version = QStringLiteral("2.1.4");
     try {
         version = YachtCore::call(QStringLiteral("info")).toObject().value(QStringLiteral("version")).toString(version);
     } catch (...) {}

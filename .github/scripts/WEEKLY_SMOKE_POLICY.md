@@ -9,9 +9,16 @@ path rejects moved baseline tags and refreshes all selected tag identities and
 release prerequisites before the first claim. The publisher repeats the current
 readiness/tag check before each asset upload. Finalization waits
 for the publisher matrix and requires both smoke and publication success for each
-target. See `../WEEKLY_RELEASES.md` for qualification signals and the v2.1.3 hold.
+target. See `../WEEKLY_RELEASES.md` for qualification signals and the trusted hold policy.
 Generic smoke-only invocations without those flags retain their prior semantics (including moved-tag selection);
 the immutable baseline and all historical claim contexts are unchanged.
+
+The active workflow also accepts an owner-authorized manual dispatch from `main`
+with one required exact version tag. `select --tag TAG` validates the input against
+the trusted `--pattern`, escapes it for both selection and preflight, and fails if
+the tag does not exist. Omitting `--tag` preserves weekly selection. Exact-tag
+selection retains the same holds, readiness, ledger and publication checks; it
+does not grant a retry for consumed target attempts.
 
 # Weekly new-release-tag smoke gate
 

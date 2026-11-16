@@ -4,6 +4,21 @@ All notable changes are recorded here. Earlier releases remain in Git history.
 
 ## [Unreleased]
 
+## [2.1.4] — 2026-11-15
+
+### Changed
+
+- Allow an owner-requested Windows/Linux run for one exact release tag while preserving the weekly schedule, release-readiness checks, and per-target publication safeguards.
+
+### Fixed
+
+- Stabilize macOS post-update-alert verification by waiting for dismissal and Copy readiness, then requiring fresh clipboard HTML across three repeated alert/copy cycles.
+- Clear the resolved macOS post-alert release hold after successful native packaged-app verification.
+
+### Known issues
+
+- Production automatic updates remain disabled pending separate trust and installation qualification.
+
 ## [2.1.3] — 2026-11-11
 
 ### Added

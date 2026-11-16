@@ -3,6 +3,12 @@ on:
   schedule:
     # Sunday 08:17 PST / 09:17 PDT. GitHub schedules may start later.
     - cron: '17 16 * * 0'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Exact existing version tag to process with all normal eligibility checks'
+        required: true
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -10,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   select:
-    if: github.run_attempt == 1
+    if: github.run_attempt == 1 && (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -30,11 +36,18 @@ jobs:
         name: Select and claim new version tags
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >-
-          python3 control/.github/scripts/weekly_release_smoke.py select
-          --pattern '^v[0-9]+\.[0-9]+\.[0-9]+(?:-(?:beta|rc)\.[0-9]+)?$'
-          --baseline-file control/.github/weekly-smoke-baseline.json
-          --targets linux-x64,linux-arm64,windows-x64,windows-arm64 --require-mac-release --claim
+          REQUESTED_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          tag_args=()
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            tag_args=(--tag "$REQUESTED_TAG")
+          fi
+          python3 control/.github/scripts/weekly_release_smoke.py select \
+            --pattern '^v[0-9]+\.[0-9]+\.[0-9]+(?:-(?:beta|rc)\.[0-9]+)?$' \
+            --baseline-file control/.github/weekly-smoke-baseline.json \
+            --targets linux-x64,linux-arm64,windows-x64,windows-arm64 --require-mac-release --claim \
+            "${tag_args[@]}"
   smoke:
     name: Smoke ${{ matrix.tag }} (${{ matrix.target }})
     needs: select

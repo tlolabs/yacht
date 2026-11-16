@@ -1,9 +1,17 @@
 # Weekly direct downloads
 
 The Sunday 16:17 UTC schedule processes only unattempted, publication-ready version tags. No push,
-PR, tag-event, manual dispatch or automatic retry trigger is added. Existing
+PR, tag-event or automatic retry trigger is added. Existing
 baseline and durable claims remain unchanged. Moved baseline tags fail closed. AVID Core has its own Saturday
 workflow; this repository does not schedule it.
+
+An owner-authorized manual dispatch can process one exact existing version tag
+without waiting for Sunday. Dispatch the active workflow from `main` and supply
+the required `tag` input; dispatches from other refs do not select work. The input
+must match the same version-tag pattern and is escaped before selection and the
+pre-claim identity refresh. Missing tags fail explicitly. This path uses all the
+normal holds, release/Mac-asset readiness checks, per-target attempt ledger and
+publication guards. It does not retry consumed attempts or enable archived workflows.
 
 Each Linux/Windows x64/ARM64 job packages its exact immutable tagged source,
 checks the final package and launches the extracted/installed app briefly.
@@ -36,9 +44,11 @@ Any change fails the whole preflight without writing claims. API failures are
 errors, never empty release lists.
 
 The trusted `.github/weekly-release-holds.json` blocks known held tags regardless
-of available assets. It currently holds `v2.1.3` for the unresolved macOS UI
-regression. Its hold must only be removed explicitly after resolution, not by
-uploading a Mac artifact. An existing release can additionally carry the exact
+of available assets. Holds must only be removed explicitly after resolution, not by
+uploading a Mac artifact. The `v2.1.3` post-alert verification hold was cleared after
+the unchanged notarized ARM64 package passed the original and strengthened native
+UI suites; see [verification evidence](../docs/VERIFICATION.md#macos-v213-post-alert-verification--2026-11-15).
+An existing release can additionally carry the exact
 body marker `<!-- weekly-publication: hold -->`. The publisher rechecks the
 same release/asset/hold prerequisites and exact remote tag immediately before each asset upload. If readiness
 changes after a genuine attempt, publication fails and that attempt stays

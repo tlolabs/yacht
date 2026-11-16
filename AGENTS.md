@@ -16,6 +16,12 @@ This section supersedes older instructions for automatic CI coverage and publica
 
 Hosted native CI runs once weekly on Sunday morning Pacific, and only for newly introduced version tags. Existing tags are baselined. The active workflow builds and packages supported Linux and Windows targets, performs basic final-package startup and integrity checks, and publishes each independently successful target to its matching existing public release. This publication scope reflects the owner clarification of 2026-11-12. Before claiming attempts, require an existing matching nondraft release with an uploaded matching-release Mac archive and size/SHA256 evidence; honor trusted release holds. Missing prerequisites and existing/partial native target assets skip without consuming attempts. Reject moved baseline tags; refresh all selected tag identities and readiness before the first claim. Recheck readiness and tag identity before every asset upload and record publication failures in the durable outcome, not smoke-only success. It does not run macOS builds, full regression suites, automatic retries, or release creation. It never moves tags, replaces different asset bytes, changes GitHub Latest or publishes authenticated update feeds. Existing platform signing rules remain intact; unsigned direct downloads must not be represented as signed updates. Legacy workflows are retained but disabled. GitHub-managed security services remain separate. Runtime authentication, signature verification, and artifact-integrity safeguards must not be weakened. Local development and release verification requirements still apply before any separately authorized publication.
 
+Owner update, 2026-11-15: explicit release requests may dispatch the active workflow
+from trusted `main` for one required exact version tag. This adds no automatic
+trigger or retry and does not change the Sunday schedule. Manual selection must
+retain the same baseline, readiness, hold, tag-identity, claim and publication
+checks; already attempted or published targets remain consumed/skipped.
+
 ## Archived legacy automation
 
 The former custom workflows are preserved, inactive, under `.github/workflow-archive/2026-11-08/`, with original paths and hashes recorded in its manifest. This archive supersedes older descriptions of automatic builds, retries, reporting, and release publishing. Do not move them back to `.github/workflows/`, enable, or dispatch them without a new explicit owner instruction. GitHub-managed security services remain separate and enabled.

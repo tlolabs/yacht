@@ -267,14 +267,44 @@ import AppKit
 
     func testUnconfiguredUpdateCheckPreservesUsableApplication() throws {
         try launch()
-        app.menuBars.menuBarItems["YACHT"].click()
-        app.menuItems["Check for Updates…"].click()
+        XCTAssertTrue(app.webViews.staticTexts["Friction, Baby"].waitForExistence(timeout: 10))
+        let copy = app.buttons["copyHTML"].firstMatch
+        let status = app.staticTexts["status"]
+        let pasteboard = NSPasteboard.general
+        func diagnostics(_ round: Int) -> String {
+            let statusText = status.exists ? (status.value as? String ?? status.label) : "<missing>"
+            return "Round \(round): app state \(app.state), windows \(app.windows.count), status \(statusText), pasteboard change count \(pasteboard.changeCount)"
+        }
+        func assertCopyReady(_ round: Int) {
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                copy.exists && copy.isEnabled && copy.isHittable
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, diagnostics(round))
+        }
+        assertCopyReady(0)
         let message = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "Updates are not configured in this build", "Updates are not configured in this build")).firstMatch
-        XCTAssertTrue(message.waitForExistence(timeout: 5))
-        app.buttons["OK"].firstMatch.click()
-        app.buttons["copyHTML"].firstMatch.click()
-        XCTAssertTrue(app.staticTexts["Copied table HTML"].waitForExistence(timeout: 10))
-        XCTAssertTrue(NSPasteboard.general.string(forType: .string)?.contains("Friction, Baby") == true)
+        for round in 1...3 {
+            app.menuBars.menuBarItems["YACHT"].click()
+            app.menuItems["Check for Updates…"].click()
+            XCTAssertTrue(message.waitForExistence(timeout: 5), diagnostics(round))
+            app.buttons["OK"].firstMatch.click()
+            XCTAssertTrue(message.waitForNonExistence(timeout: 5), diagnostics(round))
+            XCTAssertTrue(app.state == .runningForeground, diagnostics(round))
+            XCTAssertTrue(app.windows.firstMatch.exists, diagnostics(round))
+            assertCopyReady(round)
+
+            pasteboard.clearContents()
+            XCTAssertTrue(pasteboard.setString("YACHT update alert sentinel \(round)", forType: .string))
+            let previousChangeCount = pasteboard.changeCount
+            copy.click()
+            let copied = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                pasteboard.changeCount != previousChangeCount &&
+                    pasteboard.string(forType: .string)?.contains("Friction, Baby") == true
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [copied], timeout: 10), .completed, diagnostics(round))
+            XCTAssertTrue(app.staticTexts["Copied table HTML"].waitForExistence(timeout: 10), diagnostics(round))
+            XCTAssertTrue(pasteboard.string(forType: .string)?.contains("Friction, Baby") == true, diagnostics(round))
+        }
     }
 
     func testUnconfiguredAutomaticUpdatesControlIsAccessibleAndDisabled() throws {

@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
     app.setOrganizationName(QStringLiteral("TLO Labs"));
     app.setApplicationDisplayName(Yacht::AppIdentity::title());
 
-    QString version = QStringLiteral("2.1.3");
+    QString version = QStringLiteral("2.1.4");
     try {
         version = Yacht::YachtCore::call(QStringLiteral("info")).toObject().value(QStringLiteral("version")).toString(version);
     } catch (...) {}
