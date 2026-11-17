@@ -41,6 +41,31 @@ impl Excerpt {
         unsafe { String::from_utf8_unchecked(self.bytes) }
     }
 }
+
+/// Keep complete rows within the actual rendered-byte budget.
+/// The HTML writers emit each body-row closing tag as one structural write;
+/// cell text is escaped, so it cannot be mistaken for this marker.
+struct PreviewExcerpt {
+    excerpt: Excerpt,
+    footer: &'static [u8],
+    row_count: usize,
+    row_end: usize,
+}
+impl Write for PreviewExcerpt {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        let n = self.excerpt.write(bytes)?;
+        if bytes == b"</tr>\n"
+            && self.excerpt.bytes.len() + self.footer.len() <= self.excerpt.budget
+        {
+            self.row_count += 1;
+            self.row_end = self.excerpt.bytes.len();
+        }
+        Ok(n)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        self.excerpt.flush()
+    }
+}
 pub fn generate(table: &Table, style: &Style, limit: usize, cancel: Cancel<'_>) -> Result<Preview> {
     generate_with_mode(table, style, limit, html::OutputMode::Document, cancel)
 }
@@ -66,52 +91,62 @@ pub fn generate_with_renderer(
 ) -> Result<Preview> {
     style.validate()?;
     check(cancel)?;
-    let header_overhead = table.header.len().saturating_mul(100);
-    let mut cost = table
+    let mut count = limit.min(table.rows.len());
+    // An allocation hint only: escaping and inline styles vary by cell. The
+    // bounded sink determines how many complete rows actually fit, without an
+    // extra pass over every cell or rejecting text that needs little escaping.
+    let cost = table
         .header
-        .iter()
-        .map(|s| s.len().saturating_mul(6).saturating_add(100))
-        .fold(0usize, usize::saturating_add);
-    let mut count = 0;
-    for row in table.rows.iter().take(limit) {
-        check(cancel)?;
-        let next = row
-            .iter()
-            .map(|s| s.len().saturating_mul(6))
-            .fold(header_overhead, usize::saturating_add);
-        if cost.saturating_add(next) > PREVIEW_BUDGET {
-            break;
-        }
-        cost += next;
-        count += 1;
-    }
-    let mut unavailable = cost > PREVIEW_BUDGET || (count == 0 && !table.rows.is_empty());
+        .len()
+        .saturating_mul(count.saturating_add(1))
+        .saturating_mul(100);
+    let mut unavailable = count == 0 && !table.rows.is_empty();
     let mut html = String::new();
     let render_mode = if inline {
         html::OutputMode::Table
     } else {
         html::OutputMode::Document
     };
+    let footer: &[u8] = if inline {
+        b"  </tbody>\n</table>\n"
+    } else {
+        b"      </tbody>\n    </table>\n  </div>\n</body>\n</html>\n"
+    };
     if !unavailable {
-        let mut sink = Excerpt {
-            bytes: Vec::with_capacity(cost.clamp(1024, PREVIEW_BUDGET)),
-            truncated: false,
-            budget: PREVIEW_BUDGET,
+        let mut sink = PreviewExcerpt {
+            excerpt: Excerpt {
+                bytes: Vec::with_capacity(cost.clamp(1024, PREVIEW_BUDGET)),
+                truncated: false,
+                budget: PREVIEW_BUDGET,
+            },
+            footer,
+            row_count: 0,
+            row_end: 0,
         };
         let result = html::write_output(table, style, Some(count), render_mode, &mut sink, cancel);
         if let Err(crate::Error::Cancelled) = result {
             return Err(crate::Error::Cancelled);
         }
-        if sink.truncated {
-            unavailable = true;
+        if sink.excerpt.truncated {
+            if sink.row_count == 0 {
+                unavailable = true;
+                count = 0;
+            } else {
+                // Drop the partial row and reuse the rows already rendered,
+                // rather than rendering the same large table again at a lower limit.
+                count = sink.row_count;
+                sink.excerpt.bytes.truncate(sink.row_end);
+                sink.excerpt.bytes.extend_from_slice(sink.footer);
+                html = sink.excerpt.text();
+            }
         } else {
             result?;
-            html = sink.text();
+            html = sink.excerpt.text();
         }
     }
     let (source, truncated) = if mode == render_mode
         && !unavailable
-        && (table.rows.len() <= count || html.len() >= SOURCE_BUDGET)
+        && (table.rows.len() <= count || html.len().saturating_sub(footer.len()) >= SOURCE_BUDGET)
     {
         if html.len() <= SOURCE_BUDGET {
             (html.clone(), false)

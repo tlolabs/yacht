@@ -11,7 +11,8 @@ class UpdateClient {
 public:
     static QJsonObject run(const QString &command, const QStringList &arguments = QStringList(),
                            std::function<bool()> cancel = nullptr);
-    static void verifyInstaller(const QJsonObject &download);
+    static void verifyInstaller(const QJsonObject &download,
+                                std::function<bool()> cancel = nullptr);
     static QString findUpdaterBinary();
 };
 

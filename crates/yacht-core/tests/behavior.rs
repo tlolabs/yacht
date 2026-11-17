@@ -326,9 +326,10 @@ fn preview_and_complete_exports() {
         p.source,
         html::document(&table, &style, None, &|| false).unwrap()
     );
-    let huge = parse(&format!("A\n{}", "🛥️".repeat(200_000)));
+    let huge = parse(&format!("A\n{}", "🛥️".repeat(400_000)));
     let p = preview::generate(&huge, &Style::unstyled(), 200, &|| false).unwrap();
     assert!(p.preview_unavailable && p.source_truncated);
+    assert_eq!(p.row_count, 0);
     assert!(p.source.len() <= 1_000_000);
     assert!(!p.source.contains('\u{fffd}'));
     let wide = Table::new(
@@ -337,11 +338,12 @@ fn preview_and_complete_exports() {
             .collect(),
     )
     .unwrap();
-    assert!(
-        preview::generate(&wide, &style, 200, &|| false)
-            .unwrap()
-            .row_count
-            < 3
+    let p = preview::generate(&wide, &style, 200, &|| false).unwrap();
+    assert!(p.row_count > 0 && p.row_count < 200);
+    assert!(p.html.len() <= preview::PREVIEW_BUDGET);
+    assert_eq!(
+        p.html,
+        html::document(&wide, &style, Some(p.row_count), &|| false).unwrap()
     );
     let large = parse(&format!("A,B\n{}", "123456,hello\n".repeat(100_000)));
     assert_eq!(large.rows.len(), 100_000);
@@ -352,6 +354,207 @@ fn preview_and_complete_exports() {
             .count(),
         100_000
     );
+}
+#[test]
+fn inline_preview_keeps_complete_rows_when_markup_exceeds_the_estimate() {
+    let style = Style::default();
+    for row in [vec!["1".into(); 100], vec![String::new(); 100], vec![]] {
+        let table = Table::from_parts(vec!["H".into(); 100], vec![row; 200]).unwrap();
+        for mode in [html::OutputMode::Table, html::OutputMode::Document] {
+            let p = preview::generate_with_renderer(&table, &style, 200, mode, true, &|| false)
+                .unwrap();
+            assert!(!p.preview_unavailable);
+            assert!(p.row_count > 0 && p.row_count < 200);
+            assert!(p.html.len() <= preview::PREVIEW_BUDGET);
+            assert_eq!(
+                p.html,
+                html::output(
+                    &table,
+                    &style,
+                    Some(p.row_count),
+                    html::OutputMode::Table,
+                    &|| false
+                )
+                .unwrap()
+            );
+            let full = html::output(&table, &style, None, mode, &|| false).unwrap();
+            assert!(full.starts_with(&p.source));
+            assert_eq!(p.source_truncated, full.len() > p.source.len());
+            assert!(p.source.len() <= preview::SOURCE_BUDGET);
+        }
+    }
+}
+
+#[test]
+fn bounded_preview_closes_both_renderers_and_rejects_an_oversized_header() {
+    // Class text is escaped into the table opening tag but is absent from the
+    // preliminary row-size estimate. Exercise overflow in both HTML renderers.
+    let table = Table::from_parts(vec!["Café 🛥".into()], vec![vec!["<&é🛥".into()]; 200]).unwrap();
+    let mut style = Style {
+        table_class: "a".repeat(1_995_000),
+        ..Default::default()
+    };
+    for inline in [false, true] {
+        let mode = if inline {
+            html::OutputMode::Table
+        } else {
+            html::OutputMode::Document
+        };
+        let p =
+            preview::generate_with_renderer(&table, &style, 200, mode, inline, &|| false).unwrap();
+        assert!(!p.preview_unavailable);
+        assert!(p.row_count > 0 && p.row_count < 200);
+        assert!(p.html.len() <= preview::PREVIEW_BUDGET);
+        assert_eq!(
+            p.html,
+            html::output(&table, &style, Some(p.row_count), mode, &|| false).unwrap()
+        );
+        assert!(p.source_truncated);
+        assert!(html::output(&table, &style, None, mode, &|| false)
+            .unwrap()
+            .starts_with(&p.source));
+    }
+    style.table_class = "a".repeat(preview::PREVIEW_BUDGET);
+    let p = preview::generate_with_renderer(
+        &table,
+        &style,
+        200,
+        html::OutputMode::Table,
+        true,
+        &|| false,
+    )
+    .unwrap();
+    assert!(p.preview_unavailable);
+    assert_eq!(p.row_count, 0);
+    assert!(p.html.is_empty());
+    assert!(p.source_truncated);
+    assert!(p.source.len() <= preview::SOURCE_BUDGET);
+}
+
+#[test]
+fn preview_uses_actual_escaped_bytes_for_large_cells_and_exact_boundaries() {
+    let style = Style::default();
+    for inline in [false, true] {
+        let mode = if inline {
+            html::OutputMode::Table
+        } else {
+            html::OutputMode::Document
+        };
+        for cell in ["a".repeat(400_000), "🛥️".repeat(200_000)] {
+            let table = Table::from_parts(vec!["H".into()], vec![vec![cell]]).unwrap();
+            let p = preview::generate_with_renderer(&table, &style, 200, mode, inline, &|| false)
+                .unwrap();
+            assert!(!p.preview_unavailable);
+            assert_eq!(p.row_count, 1);
+            let full = html::output(&table, &style, None, mode, &|| false).unwrap();
+            assert_eq!(p.html, full);
+            assert!(full.starts_with(&p.source));
+            assert_eq!(p.source_truncated, full.len() > p.source.len());
+            assert!(p.source.len() <= preview::SOURCE_BUDGET);
+        }
+        let small = Table::from_parts(vec!["H".into()], vec![vec!["a".into()]]).unwrap();
+        let overhead = html::output(&small, &style, None, mode, &|| false)
+            .unwrap()
+            .len()
+            - 1;
+        let exact_cell = "a".repeat(preview::PREVIEW_BUDGET - overhead);
+        for trailing_row in [false, true] {
+            let mut rows = vec![vec![exact_cell.clone()]];
+            if trailing_row {
+                rows.push(vec!["later row".into()]);
+            }
+            let table = Table::from_parts(vec!["H".into()], rows).unwrap();
+            let p = preview::generate_with_renderer(&table, &style, 200, mode, inline, &|| false)
+                .unwrap();
+            assert!(!p.preview_unavailable);
+            assert_eq!(p.row_count, 1);
+            assert_eq!(p.html.len(), preview::PREVIEW_BUDGET);
+            assert_eq!(
+                p.html,
+                html::output(&table, &style, Some(1), mode, &|| false).unwrap()
+            );
+        }
+        let too_large =
+            Table::from_parts(vec!["H".into()], vec![vec![format!("{exact_cell}a")]]).unwrap();
+        let p = preview::generate_with_renderer(&too_large, &style, 200, mode, inline, &|| false)
+            .unwrap();
+        assert!(p.preview_unavailable);
+        assert_eq!(p.row_count, 0);
+        assert!(p.html.is_empty());
+    }
+}
+
+#[test]
+fn source_excerpt_never_reuses_the_footer_of_a_partial_preview() {
+    let style = Style::default();
+    for inline in [false, true] {
+        let mode = if inline {
+            html::OutputMode::Table
+        } else {
+            html::OutputMode::Document
+        };
+        let small = Table::from_parts(vec!["H".into()], vec![vec!["a".into()]]).unwrap();
+        let overhead = html::output(&small, &style, None, mode, &|| false)
+            .unwrap()
+            .len()
+            - 1;
+        for extra in [0, 1, 10] {
+            for limit in [1, 200] {
+                let first_cell = "a".repeat(preview::SOURCE_BUDGET + extra - overhead);
+                let table = Table::from_parts(
+                    vec!["H".into()],
+                    vec![vec![first_cell], vec!["b".repeat(1_100_000)]],
+                )
+                .unwrap();
+                let p =
+                    preview::generate_with_renderer(&table, &style, limit, mode, inline, &|| false)
+                        .unwrap();
+                assert!(!p.preview_unavailable);
+                assert_eq!(p.row_count, 1);
+                assert_eq!(p.html.len(), preview::SOURCE_BUDGET + extra);
+                assert!(p.source_truncated);
+                assert_eq!(p.source.len(), preview::SOURCE_BUDGET);
+                assert!(html::output(&table, &style, None, mode, &|| false)
+                    .unwrap()
+                    .starts_with(&p.source));
+            }
+        }
+    }
+}
+
+#[test]
+fn zero_row_limits_and_header_only_tables_preserve_their_preview_behavior() {
+    let style = Style::default();
+    let populated = Table::sample();
+    let empty = Table::from_parts(vec!["Header".into()], vec![]).unwrap();
+    for inline in [false, true] {
+        let mode = if inline {
+            html::OutputMode::Table
+        } else {
+            html::OutputMode::Document
+        };
+        let p = preview::generate_with_renderer(&populated, &style, 0, mode, inline, &|| false)
+            .unwrap();
+        assert!(p.preview_unavailable);
+        assert!(p.html.is_empty());
+        assert_eq!(p.row_count, 0);
+        assert_eq!(
+            p.source,
+            html::output(&populated, &style, None, mode, &|| false).unwrap()
+        );
+        for limit in [0, 200] {
+            let p = preview::generate_with_renderer(&empty, &style, limit, mode, inline, &|| false)
+                .unwrap();
+            assert!(!p.preview_unavailable);
+            assert_eq!(p.row_count, 0);
+            assert_eq!(
+                p.html,
+                html::output(&empty, &style, None, mode, &|| false).unwrap()
+            );
+            assert_eq!(p.source, p.html);
+            assert!(!p.source_truncated);
+        }
+    }
 }
 #[test]
 fn atomic_export_presets_batch_and_cancellation() {
@@ -553,7 +756,7 @@ fn binding_strings_and_previews_match_core_and_exact_dispatch_json() {
         );
     }
 
-    let large = Table::from_parts(vec!["Text".into()], vec![vec!["🛥️".repeat(200_000)]]).unwrap();
+    let large = Table::from_parts(vec!["Text".into()], vec![vec!["🛥️".repeat(400_000)]]).unwrap();
     let large_handle = insert(&engine, &large);
     let expected = preview::generate_with_renderer(
         &large,
@@ -765,7 +968,7 @@ fn table_mode_bounds_utf8_source_and_cancels_during_a_large_field() {
     let table = api(
         &engine,
         "records",
-        serde_json::json!({"records":[["A"],["🛥️".repeat(200_000)]]}),
+        serde_json::json!({"records":[["A"],["🛥️".repeat(400_000)]]}),
     );
     let args = serde_json::json!({"handle":table["handle"],"output_mode":"table"});
     let full = api(&engine, "html", args.clone());

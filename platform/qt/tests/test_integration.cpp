@@ -21,6 +21,8 @@
 #include <QTextDocument>
 #include <QTextTable>
 #include <QDir>
+#include <QElapsedTimer>
+#include <QEventLoop>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -33,6 +35,26 @@
 #include <vector>
 
 using namespace Yacht;
+
+namespace Yacht {
+
+// Exercise worker ownership without enabling production updates in the Mac
+// reference host or depending on networking and an installed update helper.
+class MainWindowTestAccess {
+public:
+    static void startUpdate(MainWindow &window,
+                            std::function<void(std::function<bool()>)> work) {
+        window.m_updateCancelled = false;
+        window.startUpdateWorker([&window, work = std::move(work)] {
+            work([&window] { return window.m_updateCancelled.load(); });
+        });
+    }
+    static void postResult(MainWindow &window, std::function<void()> completion) {
+        window.postUpdateResult(std::move(completion));
+    }
+};
+
+} // namespace Yacht
 
 void check(bool condition, const std::string &message) {
     if (!condition) {
@@ -72,6 +94,7 @@ public:
     QString clipboardText;
     QStringList messages;
     std::function<QStringList()> openFilesFunc;
+    std::function<void(const QString &, const QString &)> messageFunc;
 
     QStringList openFiles() override {
         return openFilesFunc ? openFilesFunc() : QStringList();
@@ -83,11 +106,13 @@ public:
     bool confirm(const QString &, const QString &, const QString &) override {
         return accept;
     }
-    void showMessage(const QString &, const QString &message) override {
+    void showMessage(const QString &title, const QString &message) override {
         messages.append(message);
+        if (messageFunc) messageFunc(title, message);
     }
-    std::optional<bool> reviewBatch(const QStringList &) override {
-        return false;
+    std::function<std::optional<bool>(const QStringList &)> reviewBatchFunc;
+    std::optional<bool> reviewBatch(const QStringList &paths) override {
+        return reviewBatchFunc ? reviewBatchFunc(paths) : std::optional<bool>(false);
     }
     std::function<bool(Preferences &)> settingsFunc;
     bool settings(Preferences &prefs) override { return settingsFunc ? settingsFunc(prefs) : false; }
@@ -921,6 +946,13 @@ void testAccessibilityAndPlatformSupport() {
 
 void testSingleInstanceArgumentHandling() {
     std::cout << "Testing SingleInstance argument handling (QLT-03)..." << std::endl;
+    QTemporaryDir senderDirectory;
+    QTemporaryDir receiverDirectory;
+    check(senderDirectory.isValid() && receiverDirectory.isValid(), "File forwarding directories");
+    const QString originalCwd = QDir::currentPath();
+    check(QDir::setCurrent(senderDirectory.path()), "Set sender working directory");
+    const QString senderCwd = QDir::currentPath();
+    const auto senderPath = [&](const QString &name) { return QDir(senderCwd).filePath(name); };
 
     // 1. argv[0] only -> empty list (activation)
     QStringList noFiles{QStringLiteral("/usr/local/bin/yacht")};
@@ -930,32 +962,175 @@ void testSingleInstanceArgumentHandling() {
     // 2. Single CSV file -> 1 file (excludes argv[0])
     QStringList oneFile{QStringLiteral("/usr/local/bin/yacht"), QStringLiteral("data.csv")};
     normalized = SingleInstance::normalizeArguments(oneFile);
-    check(normalized.size() == 1 && normalized[0] == QStringLiteral("data.csv"),
-          "Single file excludes argv[0] and contains only the CSV");
+    check(normalized.size() == 1 && normalized[0] == senderPath(QStringLiteral("data.csv")),
+          "Single file is resolved against the sender working directory");
+    check(QDir::setCurrent(receiverDirectory.path()), "Set primary instance working directory");
+    check(normalized[0] != QDir::current().filePath(QStringLiteral("data.csv")),
+          "Forwarded path is independent of the primary instance working directory");
+    check(QDir::setCurrent(senderDirectory.path()), "Restore sender working directory");
 
     // 3. Multiple files with spaces and Unicode
     QStringList multiFiles{QStringLiteral("yacht"), QStringLiteral("path with spaces.csv"),
                            QStringLiteral("Unicode 🛥.tsv")};
     normalized = SingleInstance::normalizeArguments(multiFiles);
     check(normalized.size() == 2 &&
-          normalized[0] == QStringLiteral("path with spaces.csv") &&
-          normalized[1] == QStringLiteral("Unicode 🛥.tsv"),
+          normalized[0] == senderPath(QStringLiteral("path with spaces.csv")) &&
+          normalized[1] == senderPath(QStringLiteral("Unicode 🛥.tsv")),
           "Multiple files preserve spaces and Unicode characters");
 
     // 4. Options and smoke test args are excluded
     QStringList smokeArgs{QStringLiteral("yacht"), QStringLiteral("--ui-smoke-test"),
                           QStringLiteral("smoke.json"), QStringLiteral("target.csv")};
     normalized = SingleInstance::normalizeArguments(smokeArgs);
-    check(normalized.size() == 1 && normalized[0] == QStringLiteral("target.csv"),
+    check(normalized.size() == 1 && normalized[0] == senderPath(QStringLiteral("target.csv")),
           "Option flags and their arguments are excluded");
 
     // 5. Dash-prefixed file after '--' is preserved as file
     QStringList dashFiles{QStringLiteral("yacht"), QStringLiteral("--"), QStringLiteral("-my-file.csv")};
     normalized = SingleInstance::normalizeArguments(dashFiles);
-    check(normalized.size() == 1 && normalized[0] == QStringLiteral("-my-file.csv"),
+    check(normalized.size() == 1 && normalized[0] == senderPath(QStringLiteral("-my-file.csv")),
           "Dash-prefixed filename after '--' is preserved as a file argument");
 
+    QStringList literalSeparator{QStringLiteral("yacht"), QStringLiteral("--"), QStringLiteral("--")};
+    normalized = SingleInstance::normalizeArguments(literalSeparator);
+    check(normalized.size() == 1 && normalized[0] == senderPath(QStringLiteral("--")),
+          "Literal '--' filename after the separator is preserved");
+
+    const QString absolutePath = receiverDirectory.path() + QStringLiteral("/absolute.csv");
+    normalized = SingleInstance::normalizeArguments({QStringLiteral("yacht"), absolutePath});
+    check(normalized.size() == 1 && normalized[0] == absolutePath, "Absolute file operands are preserved");
+    check(QDir::setCurrent(originalCwd), "Restore original working directory");
+
     std::cout << "SingleInstance argument handling: all assertions passed." << std::endl;
+}
+
+void testQueuedFileOpens() {
+    std::cout << "Testing queued file-open requests..." << std::endl;
+    QTemporaryDir directory;
+    check(directory.isValid(), "Queued file-open directory");
+    qputenv("YACHT_TEST_DATA", directory.path().toUtf8());
+    const auto input = [&](const QString &name) {
+        const QString path = directory.path() + QLatin1Char('/') + name;
+        QFile csv(path);
+        check(csv.open(QIODevice::WriteOnly), "Write queued CSV");
+        csv.write("Header\nqueued value\n");
+        return path;
+    };
+    const QString first = input(QStringLiteral("first.csv"));
+    const QString batchFirst = input(QStringLiteral("batch-first.csv"));
+    const QString batchSecond = input(QStringLiteral("batch-second.csv"));
+    const QString last = input(QStringLiteral("last.csv"));
+    auto desktop = std::make_shared<TestDesktopServices>();
+    MainWindow window(desktop);
+    window.initialize();
+    int batchReviews = 0;
+    bool batchSummarySeen = false;
+    desktop->messageFunc = [&](const QString &title, const QString &) {
+        if (title != QStringLiteral("Batch results")) return;
+        batchSummarySeen = true;
+        check(window.isBusy(), "Batch remains busy while presenting its results");
+        QApplication::processEvents();
+        check(window.summaryText().contains(QStringLiteral("first.csv")),
+              "Queued opens do not reenter the batch results dialog");
+    };
+    desktop->reviewBatchFunc = [&](const QStringList &paths) {
+        ++batchReviews;
+        check(paths == QStringList{batchFirst, batchSecond}, "Queued batch retains grouping and order");
+        check(window.summaryText().contains(QStringLiteral("first.csv")), "Earlier queued open runs before the batch");
+        return std::optional<bool>(false);
+    };
+    {
+        BusyScope activeOperation(&window);
+        window.receive({first});
+        window.receive({batchFirst, batchSecond}, true);
+        QApplication::processEvents();
+        check(window.summaryText().contains(QStringLiteral("Built-in sample")), "Incoming files wait during active work");
+        check(batchReviews == 0, "Batch review waits for active work");
+        window.cancelActiveWork();
+    }
+    // A new request arriving before the queued dispatch must remain last.
+    window.receive({last});
+    QElapsedTimer deadline;
+    deadline.start();
+    while (!window.summaryText().contains(QStringLiteral("last.csv")) && deadline.elapsed() < 5000) {
+        QApplication::processEvents(QEventLoop::AllEvents, 10);
+    }
+    check(window.summaryText().contains(QStringLiteral("last.csv")), "All queued opens run after active work");
+    check(batchReviews == 1, "Queued batch is reviewed exactly once");
+    check(batchSummarySeen, "Batch results are presented before the next queued open");
+    check(QFile::exists(directory.path() + QStringLiteral("/batch-first.html")) &&
+          QFile::exists(directory.path() + QStringLiteral("/batch-second.html")),
+          "Queued batch converts both inputs");
+    check(window.preferences().recent.first() == last && window.preferences().recent.contains(first),
+          "Queued single-file requests are imported in FIFO order");
+
+    const QString discarded = input(QStringLiteral("discard-on-close.csv"));
+    {
+        BusyScope activeOperation(&window);
+        window.receive({discarded});
+        check(!window.close(), "Confirmed close waits for active work to stop");
+    }
+    QApplication::processEvents();
+    window.receive({discarded});
+    QApplication::processEvents();
+    check(!window.preferences().recent.contains(discarded), "Confirmed close discards queued and later file opens");
+    std::cout << "Queued file-open requests: all assertions passed." << std::endl;
+}
+
+void testUpdateWorkerLifetime() {
+    std::cout << "Testing update worker ownership and queued shutdown results..." << std::endl;
+    QTemporaryDir directory;
+    check(directory.isValid(), "Update worker test directory");
+    qputenv("YACHT_TEST_DATA", directory.path().toUtf8());
+    auto desktop = std::make_shared<TestDesktopServices>();
+    bool completionRan = false;
+    std::atomic<bool> workerFinished{false};
+    std::promise<void> started;
+    auto startedFuture = started.get_future();
+    {
+        auto window = std::make_unique<MainWindow>(desktop);
+        MainWindow *target = window.get();
+        MainWindowTestAccess::startUpdate(*window, [&, target](std::function<bool()> cancelled) {
+            started.set_value();
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+            while (!cancelled() && std::chrono::steady_clock::now() < deadline) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            check(cancelled(), "Window destruction signals update cancellation");
+            MainWindowTestAccess::postResult(*target, [&] { completionRan = true; });
+            workerFinished = true;
+        });
+        check(startedFuture.wait_for(std::chrono::seconds(5)) == std::future_status::ready,
+              "Update worker starts before window destruction");
+        window.reset();
+        check(workerFinished.load(), "Window destruction waits for its update worker");
+    }
+    QApplication::processEvents();
+    check(!completionRan, "Destroying the window removes queued update results");
+
+    {
+        MainWindow window(desktop);
+        std::promise<void> posted;
+        auto postedFuture = posted.get_future();
+        MainWindowTestAccess::startUpdate(window, [&](std::function<bool()>) {
+            MainWindowTestAccess::postResult(window, [&] { completionRan = true; });
+            posted.set_value();
+        });
+        check(postedFuture.wait_for(std::chrono::seconds(5)) == std::future_status::ready,
+              "Update completion is queued before closure");
+        check(window.close(), "Idle window accepts closure");
+        QApplication::processEvents();
+        check(!completionRan, "Confirmed close suppresses an already queued completion");
+    }
+
+    bool verificationCancelled = false;
+    try {
+        UpdateClient::verifyInstaller(QJsonObject(), [] { return true; });
+    } catch (const YachtCancelledException &) {
+        verificationCancelled = true;
+    }
+    check(verificationCancelled, "Installer verification observes cancellation before starting");
+    std::cout << "Update worker ownership: all assertions passed." << std::endl;
 }
 
 void testSecureUpdaterResolution() {
@@ -1022,6 +1197,8 @@ int main(int argc, char *argv[]) {
     testOutputModesAndBuiltins();
     testAccessibilityAndPlatformSupport();
     testSingleInstanceArgumentHandling();
+    testQueuedFileOpens();
+    testUpdateWorkerLifetime();
     testSecureUpdaterResolution();
     std::cout << "All integration tests passed successfully!" << std::endl;
     return 0;

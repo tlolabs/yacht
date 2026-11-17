@@ -14,6 +14,26 @@
 
 namespace Yacht {
 
+namespace {
+
+bool waitForStarted(QProcess &process, const std::function<bool()> &cancel) {
+    const auto started = std::chrono::steady_clock::now();
+    do {
+        if (cancel && cancel()) {
+            process.kill();
+            process.waitForFinished(3000);
+            throw YachtCancelledException();
+        }
+        if (process.waitForStarted(100)) return true;
+        if (process.state() != QProcess::Starting) return false;
+    } while (std::chrono::steady_clock::now() - started < std::chrono::seconds(5));
+    process.kill();
+    process.waitForFinished(3000);
+    return false;
+}
+
+} // namespace
+
 QString UpdateClient::findUpdaterBinary() {
     QString binName = QStringLiteral("yacht-update");
 #if defined(Q_OS_WIN)
@@ -67,7 +87,7 @@ QJsonObject UpdateClient::run(const QString &command, const QStringList &argumen
 
     QProcess process;
     process.start(program, args);
-    if (!process.waitForStarted(5000)) {
+    if (!waitForStarted(process, cancel)) {
         throw std::runtime_error("Cannot start update checker: " + process.errorString().toStdString());
     }
 
@@ -91,6 +111,8 @@ QJsonObject UpdateClient::run(const QString &command, const QStringList &argumen
         }
     }
 
+    if (cancel && cancel()) throw YachtCancelledException();
+
     if (process.exitCode() != 0) {
         QString err = QString::fromUtf8(process.readAllStandardError()).trimmed();
         if (err.isEmpty()) {
@@ -109,7 +131,9 @@ QJsonObject UpdateClient::run(const QString &command, const QStringList &argumen
     return doc.object();
 }
 
-void UpdateClient::verifyInstaller(const QJsonObject &download) {
+void UpdateClient::verifyInstaller(const QJsonObject &download,
+                                    std::function<bool()> cancel) {
+    if (cancel && cancel()) throw YachtCancelledException();
 #if defined(Q_OS_WIN)
     const QString script =
         QStringLiteral("& { $ErrorActionPreference='Stop'; "
@@ -139,15 +163,26 @@ void UpdateClient::verifyInstaller(const QJsonObject &download) {
 
     QStringList args{QStringLiteral("-NoProfile"), QStringLiteral("-NonInteractive"), QStringLiteral("-Command"), script};
     process.start(ps, args);
-    if (!process.waitForStarted(5000)) {
+    if (!waitForStarted(process, cancel)) {
         throw std::runtime_error("Cannot start installer verification: " + process.errorString().toStdString());
     }
 
-    if (!process.waitForFinished(300000)) {
-        process.kill();
-        process.waitForFinished(5000);
-        throw std::runtime_error("The installer verification timed out.");
+    auto started = std::chrono::steady_clock::now();
+    while (process.state() == QProcess::Running) {
+        if (cancel && cancel()) {
+            process.kill();
+            process.waitForFinished(3000);
+            throw YachtCancelledException();
+        }
+        process.waitForFinished(100);
+        if (std::chrono::steady_clock::now() - started > std::chrono::seconds(300)) {
+            process.kill();
+            process.waitForFinished(5000);
+            throw std::runtime_error("The installer verification timed out.");
+        }
     }
+
+    if (cancel && cancel()) throw YachtCancelledException();
 
     if (process.exitCode() != 0) {
         QString err = QString::fromUtf8(process.readAllStandardError()).trimmed();

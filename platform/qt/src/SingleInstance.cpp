@@ -2,6 +2,7 @@
 #include "AppIdentity.h"
 
 #include <QDataStream>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 
@@ -26,7 +27,7 @@ QStringList SingleInstance::normalizeArguments(const QStringList &arguments) {
     // Exclude argv[0] by starting at index 1
     for (int i = 1; i < arguments.size(); ++i) {
         const QString &arg = arguments[i];
-        if (arg == QStringLiteral("--")) {
+        if (!endOfOptions && arg == QStringLiteral("--")) {
             endOfOptions = true;
         } else if (!endOfOptions && arg.startsWith(QLatin1Char('-'))) {
             // Option flag: skip option and any option argument if applicable
@@ -34,7 +35,9 @@ QStringList SingleInstance::normalizeArguments(const QStringList &arguments) {
                 ++i; // skip smoke test json path
             }
         } else {
-            files.append(arg);
+            // The primary instance may have a different working directory.
+            // Resolve here, before forwarding the request across processes.
+            files.append(QFileInfo(arg).absoluteFilePath());
         }
     }
     return files;

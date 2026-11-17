@@ -1,6 +1,6 @@
 # Releasing YACHT
 
-The Git tag is the release version: stable `vMAJOR.MINOR.PATCH`, prerelease `vMAJOR.MINOR.PATCH-beta.N` or `-rc.N`. Embedded/package version omits the `v`. `Cargo.toml` supplies the version to the build; CI must compare it with the tag and fail on a mismatch. The current source version is 2.1.4. The earlier 2.1.2 release candidates are development builds: their workflow artifacts are not production signed. Production automatic-update trust remains unconfigured; a notarized direct download does not enable that channel.
+The Git tag is the release version: stable `vMAJOR.MINOR.PATCH`, prerelease `vMAJOR.MINOR.PATCH-beta.N` or `-rc.N`. Embedded/package version omits the `v`. `Cargo.toml` supplies the version to the build; CI must compare it with the tag and fail on a mismatch. The current source version is 2.1.5. The earlier 2.1.2 release candidates are development builds: their workflow artifacts are not production signed. Production automatic-update trust remains unconfigured; a notarized direct download does not enable that channel.
 
 ## Release categories
 
@@ -22,7 +22,7 @@ GitHub Releases are the canonical direct download and update source. The candida
 2. Update the next version in `Cargo.toml`, run `script/sync_version.py`, and verify the generated macOS/Windows metadata. Review the changelog and release notes. Thomas Lothian creates an annotated tag; CI checks the tag's version and source commit. Cryptographic tag signing is optional.
 3. Each platform builds and runs its required tests independently. A platform publishes only after its own tests and any configured signature checks pass. A failure cannot mark that platform artifact as validated or block a separate successful platform from completing.
 4. Build and functionally verify each platform's current package format. Developer ID sign/notarize/staple macOS apps using default `script/package.sh`; add `--production` for authenticated update packages. When configured, Authenticode-sign Windows binaries and GPG-sign Linux packages; verify every configured signature. Otherwise label the platform artifact unsigned or ad-hoc signed and keep it out of the signed automatic-update channel.
-5. Produce a release SBOM in SPDX or CycloneDX format, `SHA256SUMS`, a signed checksum manifest where appropriate, artifact attestations, and release notes. Use lowercase filenames like `yacht-2.1.4-macos-arm64.zip`. Publish a GitHub Release that identifies every expected platform and plainly lists any missing/failed artifact. Omit empty release-note sections.
+5. Produce a release SBOM in SPDX or CycloneDX format, `SHA256SUMS`, a signed checksum manifest where appropriate, artifact attestations, and release notes. Use lowercase filenames like `yacht-2.1.5-macos-arm64.zip`. Publish a GitHub Release that identifies every expected platform and plainly lists any missing/failed artifact. Omit empty release-note sections.
 
 Release notes use **Highlights**, **Changes**, **Fixes**, **Known issues**, **Supported platforms**, **Installation/update notes**, and **Verification/security information** as applicable. Keep source and build provenance linked to the tag.
 

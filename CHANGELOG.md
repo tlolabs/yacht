@@ -4,6 +4,20 @@ All notable changes are recorded here. Earlier releases remain in Git history.
 
 ## [Unreleased]
 
+## [2.1.5] — 2026-11-16
+
+### Fixed
+
+- Keep wide tables and large cells available in previews by retaining complete rows within the actual HTML byte budget, with accurate row counts and source excerpts at byte-limit boundaries. Full Copy and Export retain every row.
+- Stop and join Qt update workers during window destruction and cancel installer verification during shutdown.
+- Resolve files forwarded from secondary Qt launches against the sender's directory, including filenames after `--`.
+- Preserve forwarded file-open requests while Qt is busy and process them when active work finishes.
+- Derive the release SBOM version from Cargo instead of a hardcoded version.
+
+### Known issues
+
+- Production automatic updates remain disabled pending separate trust and installation qualification.
+
 ## [2.1.4] — 2026-11-15
 
 ### Changed

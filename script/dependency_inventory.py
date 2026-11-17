@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "docs/dependency-inventory.json"
@@ -79,7 +80,8 @@ def build_inventory():
     }
 
 
-def build_spdx_sbom(inventory, version="2.1.4"):
+def build_spdx_sbom(inventory):
+    version = tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"]
     spdx_packages = [
         {
             "SPDXID": "SPDXRef-Package-YACHT",

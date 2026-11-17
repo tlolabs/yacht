@@ -19,9 +19,10 @@ final class PreviewDocumentTests: XCTestCase {
         XCTAssertEqual(document.source, try HTMLGenerator.document(.sample, style: .init()))
     }
     func testHugeCellDoesNotMakeUnboundedPreview() throws {
-        let table = try TableData(records: [["A"], [String(repeating: "🛥️", count: 200_000)]])
+        let table = try TableData(records: [["A"], [String(repeating: "🛥️", count: 400_000)]])
         let preview = try PreviewDocument(table: table, style: .unstyled)
         XCTAssertTrue(preview.previewUnavailable)
+        XCTAssertEqual(preview.rowCount, 0)
         XCTAssertTrue(preview.sourceTruncated)
         XCTAssertLessThanOrEqual(preview.source.utf8.count, 1_000_000)
         XCTAssertFalse(preview.source.contains("\u{fffd}"))
@@ -30,8 +31,24 @@ final class PreviewDocumentTests: XCTestCase {
         let header = Array(repeating: "A", count: 10_000)
         let table = try TableData(records: [header] + Array(repeating: [], count: 200))
         let preview = try PreviewDocument(table: table, style: .unstyled)
-        XCTAssertLessThan(preview.rowCount, 3)
-        XCTAssertLessThan(preview.html.utf8.count, 2_000_000)
+        XCTAssertFalse(preview.previewUnavailable)
+        XCTAssertGreaterThan(preview.rowCount, 0)
+        XCTAssertLessThan(preview.rowCount, 200)
+        XCTAssertLessThanOrEqual(preview.html.utf8.count, 2_000_000)
+        XCTAssertEqual(preview.html, try HTMLGenerator.document(table, style: .unstyled, rowLimit: preview.rowCount))
+    }
+    func testLargeCellsThatFitTheRenderedBudgetRemainVisible() throws {
+        for cell in [String(repeating: "a", count: 400_000), String(repeating: "🛥️", count: 200_000)] {
+            let table = try TableData(records: [["A"], [cell]])
+            let preview = try PreviewDocument(table: table, style: .unstyled, outputMode: .document)
+            let full = try HTMLGenerator.document(table, style: .unstyled)
+            XCTAssertFalse(preview.previewUnavailable)
+            XCTAssertEqual(preview.rowCount, 1)
+            XCTAssertEqual(preview.html, full)
+            XCTAssertTrue(full.hasPrefix(preview.source))
+            XCTAssertEqual(preview.sourceTruncated, full.utf8.count > preview.source.utf8.count)
+            XCTAssertLessThanOrEqual(preview.source.utf8.count, 1_000_000)
+        }
     }
     func testUnstyledPreviewAndSourceHaveNoCSS() throws {
         let preview = try PreviewDocument(table: .sample, style: .unstyled, limit: 2)

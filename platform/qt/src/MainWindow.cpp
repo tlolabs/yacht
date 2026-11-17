@@ -87,6 +87,12 @@ MainWindow::MainWindow(std::shared_ptr<IDesktopServices> desktop, QWidget *paren
 }
 
 MainWindow::~MainWindow() {
+    // Workers may still post a result while cancellation is being observed.
+    // Join before destroying the atomics, QObject, or widgets they reference.
+    m_closeConfirmed = true;
+    m_pendingOpens.clear();
+    m_updateCancelled = true;
+    if (m_updateThread.joinable()) m_updateThread.join();
     m_updateTimer.stop();
     m_previewDebounceTimer.stop();
     m_preferences.save();
@@ -609,7 +615,29 @@ void MainWindow::setBusy(bool busy) {
     m_refreshAction->setEnabled(!busy);
     if (!busy && m_closeConfirmed) {
         QTimer::singleShot(0, this, &QWidget::close);
+    } else if (!busy) {
+        scheduleQueuedOpen();
     }
+}
+
+void MainWindow::scheduleQueuedOpen() {
+    if (m_busy || m_closeConfirmed || m_pendingOpens.empty() || m_openDrainScheduled) return;
+    m_openDrainScheduled = true;
+    QTimer::singleShot(0, this, [this] {
+        m_openDrainScheduled = false;
+        if (m_busy || m_closeConfirmed || m_pendingOpens.empty()) return;
+        PendingOpen request = std::move(m_pendingOpens.front());
+        m_pendingOpens.pop_front();
+        // Cancellation belongs to the operation that just finished, rather
+        // than to the next external file-open request.
+        m_cancelled = false;
+        if (request.paths.size() > 1 || request.batch) {
+            batchConvert(request.paths);
+        } else {
+            loadFile(request.paths.first());
+        }
+        scheduleQueuedOpen();
+    });
 }
 
 void MainWindow::applyAppearance(const QString &appearance) {
@@ -1167,7 +1195,12 @@ void MainWindow::onDelimiterChanged(int index) {
 }
 
 void MainWindow::receive(const QStringList &paths, bool batch) {
-    if (paths.isEmpty() || m_busy) return;
+    if (paths.isEmpty() || m_closeConfirmed) return;
+    if (m_busy || !m_pendingOpens.empty()) {
+        m_pendingOpens.push_back({paths, batch});
+        scheduleQueuedOpen();
+        return;
+    }
     if (paths.size() > 1 || batch) {
         batchConvert(paths);
     } else {
@@ -1249,12 +1282,11 @@ void MainWindow::batchConvert(const QStringList &paths) {
         }
     }
 
-    setBusy(false);
     m_desktop->showMessage(QStringLiteral("Batch results"), results.join(QLatin1Char('\n')));
 }
 
 void MainWindow::checkUpdates(bool automatic) {
-    if (m_updateCheckInProgress) return;
+    if (m_updateCheckInProgress || m_closeConfirmed) return;
     if (AppIdentity::isInternal()) {
         if (!automatic) {
             m_desktop->showMessage(QStringLiteral("Internal reference build"),
@@ -1269,7 +1301,7 @@ void MainWindow::checkUpdates(bool automatic) {
         m_statusLabel->setText(QStringLiteral("Checking for updates…"));
     }
 
-    std::thread([this, automatic]() {
+    startUpdateWorker([this, automatic]() {
         try {
             QJsonObject update = UpdateClient::run(
                 automatic ? QStringLiteral("check-auto") : QStringLiteral("check"),
@@ -1277,7 +1309,7 @@ void MainWindow::checkUpdates(bool automatic) {
                 [this]() { return m_updateCancelled.load(); }
             );
 
-            QMetaObject::invokeMethod(this, [this, automatic, update]() {
+            postUpdateResult([this, automatic, update]() {
                 m_updateCheckInProgress = false;
                 QString status = update.value(QStringLiteral("status")).toString();
                 if (status != QStringLiteral("available")) {
@@ -1316,7 +1348,7 @@ void MainWindow::checkUpdates(bool automatic) {
 #endif
             });
         } catch (const YachtCancelledException &) {
-            QMetaObject::invokeMethod(this, [this, automatic]() {
+            postUpdateResult([this, automatic]() {
                 m_updateCheckInProgress = false;
                 if (!automatic) {
                     m_statusLabel->setText(QStringLiteral("Update check cancelled."));
@@ -1324,7 +1356,7 @@ void MainWindow::checkUpdates(bool automatic) {
             });
         } catch (const std::exception &e) {
             QString err = QString::fromUtf8(e.what());
-            QMetaObject::invokeMethod(this, [this, automatic, err]() {
+            postUpdateResult([this, automatic, err]() {
                 m_updateCheckInProgress = false;
                 if (!automatic) {
                     m_statusLabel->setText(QStringLiteral("Ready"));
@@ -1332,15 +1364,28 @@ void MainWindow::checkUpdates(bool automatic) {
                 }
             });
         }
-    }).detach();
+    });
+}
+
+void MainWindow::startUpdateWorker(std::function<void()> work) {
+    // A completion can enqueue the next phase just before its worker returns.
+    if (m_updateThread.joinable()) m_updateThread.join();
+    m_updateThread = std::thread(std::move(work));
+}
+
+void MainWindow::postUpdateResult(std::function<void()> completion) {
+    QMetaObject::invokeMethod(this, [this, completion = std::move(completion)] {
+        if (!m_closeConfirmed) completion();
+    }, Qt::QueuedConnection);
 }
 
 void MainWindow::downloadAndVerifyUpdate(const QString &ver, const QString &sha256) {
+    if (m_closeConfirmed) return;
     m_updateCheckInProgress = true;
     m_updateCancelled = false;
     m_statusLabel->setText(QStringLiteral("Downloading YACHT %1…").arg(ver));
 
-    std::thread([this, ver, sha256]() {
+    startUpdateWorker([this, ver, sha256]() {
         QString downloadedPath;
         try {
             QJsonObject download = UpdateClient::run(
@@ -1355,13 +1400,13 @@ void MainWindow::downloadAndVerifyUpdate(const QString &ver, const QString &sha2
                 throw std::runtime_error("This release requires manual migration; see the release notes.");
             }
 
-            QMetaObject::invokeMethod(this, [this]() {
+            postUpdateResult([this]() {
                 m_statusLabel->setText(QStringLiteral("Verifying installer…"));
             });
 
-            UpdateClient::verifyInstaller(download);
+            UpdateClient::verifyInstaller(download, [this] { return m_updateCancelled.load(); });
 
-            QMetaObject::invokeMethod(this, [this, download]() {
+            postUpdateResult([this, download]() {
                 m_updateCheckInProgress = false;
                 m_statusLabel->setText(QStringLiteral("Ready"));
                 m_desktop->showMessage(
@@ -1374,7 +1419,7 @@ void MainWindow::downloadAndVerifyUpdate(const QString &ver, const QString &sha2
             if (!downloadedPath.isEmpty() && QFile::exists(downloadedPath)) {
                 QFile::remove(downloadedPath);
             }
-            QMetaObject::invokeMethod(this, [this]() {
+            postUpdateResult([this]() {
                 m_updateCheckInProgress = false;
                 m_statusLabel->setText(QStringLiteral("Download cancelled."));
             });
@@ -1383,13 +1428,13 @@ void MainWindow::downloadAndVerifyUpdate(const QString &ver, const QString &sha2
                 QFile::remove(downloadedPath);
             }
             QString err = QString::fromUtf8(e.what());
-            QMetaObject::invokeMethod(this, [this, err]() {
+            postUpdateResult([this, err]() {
                 m_updateCheckInProgress = false;
                 m_statusLabel->setText(QStringLiteral("Update failed."));
                 m_desktop->showMessage(QStringLiteral("Updates"), err);
             });
         }
-    }).detach();
+    });
 }
 
 bool MainWindow::mayClose() {
@@ -1404,6 +1449,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     if (m_busy) {
         if (m_closeConfirmed || mayClose()) {
             m_closeConfirmed = true;
+            m_pendingOpens.clear();
             cancelActiveWork();
         }
         event->ignore();
@@ -1420,6 +1466,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     }
 
     m_closeConfirmed = true;
+    m_pendingOpens.clear();
     cancelActiveWork();
     m_updateTimer.stop();
     m_previewDebounceTimer.stop();

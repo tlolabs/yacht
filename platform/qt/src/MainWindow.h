@@ -10,7 +10,10 @@
 #include <QProgressBar>
 #include <QTimer>
 #include <atomic>
+#include <deque>
+#include <functional>
 #include <optional>
+#include <thread>
 #include <vector>
 
 class QAction;
@@ -36,6 +39,7 @@ public:
     bool isBusy() const { return m_busy; }
 
     friend class BusyScope;
+    friend class MainWindowTestAccess;
 
     void loadFile(const QString &path, bool infer = true);
     void receive(const QStringList &paths, bool batch = false);
@@ -111,9 +115,12 @@ private:
     void syncPresets();
     void syncRecent();
     void setBusy(bool busy);
+    void scheduleQueuedOpen();
     void applyAppearance(const QString &appearance);
     bool mayClose();
     void downloadAndVerifyUpdate(const QString &ver, const QString &sha256);
+    void startUpdateWorker(std::function<void()> work);
+    void postUpdateResult(std::function<void()> completion);
     void announceStatus(const QString &message, bool isAlert = false);
 
     std::shared_ptr<IDesktopServices> m_desktop;
@@ -129,9 +136,16 @@ private:
     bool m_busy{false};
     std::atomic<bool> m_cancelled{false};
     bool m_closeConfirmed{false};
+    struct PendingOpen {
+        QStringList paths;
+        bool batch;
+    };
+    std::deque<PendingOpen> m_pendingOpens;
+    bool m_openDrainScheduled{false};
 
     bool m_updateCheckInProgress{false};
     std::atomic<bool> m_updateCancelled{false};
+    std::thread m_updateThread;
 
     QTimer m_previewDebounceTimer;
     QTimer m_updateTimer;
