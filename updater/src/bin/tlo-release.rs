@@ -101,7 +101,19 @@ fn run() -> Result<()> {
             {
                 return Err("Invalid artifact filename".into());
             }
-            (a.size, a.sha256) = digest(&assets.join(&a.filename))?;
+            match (a.size == 0, a.sha256.is_empty()) {
+                (true, true) => (a.size, a.sha256) = digest(&assets.join(&a.filename))?,
+                // Preserve values supplied by native verification. The all-target
+                // stream checks below must match them before the envelope is written.
+                (false, false) => {}
+                _ => {
+                    return Err(format!(
+                        "Artifact size and SHA-256 must both be supplied for {}",
+                        a.filename
+                    )
+                    .into());
+                }
+            }
         }
         let key_id = std::env::var("TLO_UPDATE_KEY_ID")?;
         let seed = B64.decode(std::env::var("TLO_UPDATE_PRIVATE_KEY")?)?;

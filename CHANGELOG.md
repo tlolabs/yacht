@@ -4,6 +4,18 @@ All notable changes are recorded here. Earlier releases remain in Git history.
 
 ## [Unreleased]
 
+## [2.1.6] — 2026-11-19
+
+### Fixed
+
+- Check for cancellation before reading CSV input and retry reads interrupted by the operating system.
+- Preserve native input and output paths in the CLI, including paths with non-UTF-8 bytes.
+- Return a fallback text color for malformed Unicode color values.
+- Avoid reopening a TSV on macOS when the app infers its delimiter.
+- Preserve the prior table preview and delimiter after a failed Qt import, clear stale cancellation between operations, and honor cancellation before applying preview and clipboard results.
+- Reject abnormal exits from the Qt update helper or Windows installer verifier.
+- Preserve artifact sizes and SHA-256 digests supplied by native release verification. The offline signer verifies them in one pass before writing update metadata.
+
 ## [2.1.5] — 2026-11-16
 
 ### Fixed

@@ -1,13 +1,15 @@
 use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
 use ring::signature::{Ed25519KeyPair, KeyPair};
+use sha2::{Digest, Sha256};
 use std::{
     fs,
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
 };
-use tlo_updater::{Asset, Manifest};
+use tlo_updater::{hex_digest, Asset, Manifest};
 #[test]
 fn release_tool_signs_roundtrips_and_rejects_artifact_and_version_mismatch() {
+    let fixture = b"fixture bytes, not executable";
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
     let key = Ed25519KeyPair::from_seed_unchecked(&[42; 32]).unwrap();
@@ -41,7 +43,7 @@ fn release_tool_signs_roundtrips_and_rejects_artifact_and_version_mismatch() {
     ] {
         for arch in ["x64", "arm64"] {
             let filename = format!("Test-{platform}-{arch}.{suffix}");
-            fs::write(root.join(&filename), b"fixture bytes, not executable").unwrap();
+            fs::write(root.join(&filename), fixture).unwrap();
             m.assets.push(Asset {
                 platform: platform.into(),
                 arch: arch.into(),
@@ -71,13 +73,45 @@ fn release_tool_signs_roundtrips_and_rejects_artifact_and_version_mismatch() {
             .unwrap()
     };
     assert!(!invoke("sign", &spec, "3.0.0").status.success());
+    let envelope = root.join("tlo-update.json");
+    let sums = root.join("SHA256SUMS");
+    let size = fixture.len() as u64;
+    let sha256 = hex_digest(&Sha256::digest(fixture));
+    for (declared_size, declared_sha256, error) in [
+        (
+            size + 1,
+            sha256.clone(),
+            "Artifact size or SHA-256 mismatch",
+        ),
+        (size, "0".repeat(64), "Artifact size or SHA-256 mismatch"),
+        (
+            size,
+            String::new(),
+            "Artifact size and SHA-256 must both be supplied",
+        ),
+        (
+            0,
+            sha256.clone(),
+            "Artifact size and SHA-256 must both be supplied",
+        ),
+    ] {
+        (m.assets[0].size, m.assets[0].sha256) = (declared_size, declared_sha256);
+        fs::write(&spec, serde_json::to_vec(&m).unwrap()).unwrap();
+        let result = invoke("sign", &spec, "2.0.0");
+        assert!(!result.status.success());
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        assert!(stderr.contains(error), "{stderr}");
+        assert!(!envelope.exists());
+        assert!(!sums.exists());
+    }
+    (m.assets[0].size, m.assets[0].sha256) = (size, sha256);
+    fs::write(&spec, serde_json::to_vec(&m).unwrap()).unwrap();
     let result = invoke("sign", &spec, "2.0.0");
     assert!(
         result.status.success(),
         "{}",
         String::from_utf8_lossy(&result.stderr)
     );
-    let envelope = root.join("tlo-update.json");
     assert!(invoke("verify", &envelope, "2.0.0").status.success());
     fs::write(root.join(&m.assets[0].filename), b"substituted").unwrap();
     assert!(!invoke("verify", &envelope, "2.0.0").status.success());

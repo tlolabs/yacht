@@ -1,4 +1,7 @@
-use std::{cell::Cell, io::Cursor};
+use std::{
+    cell::Cell,
+    io::{self, Cursor, Read},
+};
 use yacht_core::{
     api::Engine,
     csv::{self, Delimiter},
@@ -135,6 +138,56 @@ fn utf8_bom_chunks_delimiters_and_errors() {
     }
     assert_eq!(parse("A\nCafe\u{301}🛥️").rows[0][0], "Cafe\u{301}🛥️");
 }
+
+#[test]
+fn csv_stream_checks_cancellation_before_reading() {
+    struct Unreadable;
+    impl Read for Unreadable {
+        fn read(&mut self, _: &mut [u8]) -> io::Result<usize> {
+            panic!("cancelled stream must not be read");
+        }
+    }
+
+    assert!(matches!(
+        csv::read_stream(Unreadable, Delimiter::Comma, 16, &|| true),
+        Err(Error::Cancelled)
+    ));
+    assert!(matches!(
+        csv::parse(b"\0", Delimiter::Comma, &|| true),
+        Err(Error::Cancelled)
+    ));
+}
+
+#[test]
+fn csv_stream_retries_interrupts_in_prefix_and_body() {
+    struct InterruptedReader {
+        input: Cursor<&'static [u8]>,
+        attempts: usize,
+    }
+    impl Read for InterruptedReader {
+        fn read(&mut self, bytes: &mut [u8]) -> io::Result<usize> {
+            self.attempts += 1;
+            if matches!(self.attempts, 1 | 3) {
+                return Err(io::ErrorKind::Interrupted.into());
+            }
+            self.input.read(bytes)
+        }
+    }
+
+    let reader = InterruptedReader {
+        input: Cursor::new(b"\xef\xbb\xbfA,B\r\n1,2\r\n"),
+        attempts: 0,
+    };
+    let table = csv::read_stream(reader, Delimiter::Comma, 16, &|| false).unwrap();
+    assert_eq!(table, parse("A,B\r\n1,2\r\n"));
+}
+
+#[test]
+fn contrast_color_accepts_invalid_unicode_without_panicking() {
+    assert_eq!(html::accessible_text_color("#aéabc"), "#222222");
+    assert_eq!(html::accessible_text_color("#€"), "#222222");
+}
+
 #[test]
 fn current_document_contract() {
     let table = parse("Item,Count,Notes\nCompass,12,\nCafé,3,\"north & south\"\n");

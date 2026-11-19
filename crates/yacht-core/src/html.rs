@@ -170,6 +170,9 @@ pub fn accessible_text_color(bg: &str) -> &'static str {
         }
     }
     let hex = trimmed.strip_prefix('#').unwrap_or(trimmed);
+    if !hex.is_ascii() {
+        return "#222222";
+    }
     if hex.len() == 6 || hex.len() == 8 {
         if let (Ok(r), Ok(g), Ok(b)) = (
             u8::from_str_radix(&hex[0..2], 16),

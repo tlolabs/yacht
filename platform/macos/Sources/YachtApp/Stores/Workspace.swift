@@ -7,7 +7,7 @@ final class Workspace {
     var table: TableData? = .sample
     var sourceURL: URL?
     var style: StyleOptions { didSet { schedulePreview() } }
-    var delimiter = CSVDelimiter.comma
+    private(set) var delimiter = CSVDelimiter.comma
     var preview: PreviewDocument?
     var validationMessage: String?
     var errorMessage: String?
@@ -47,6 +47,11 @@ final class Workspace {
         guard !urls.isEmpty else { return }
         if urls.count > 1 || batch { batchURLs = urls; batchResults = []; batchOverwrite = false; showBatch = true }
         else { load(urls[0]) }
+    }
+    func selectDelimiter(_ selection: CSVDelimiter) {
+        guard selection != delimiter else { return }
+        delimiter = selection
+        if let sourceURL { load(sourceURL, inferDelimiter: false) }
     }
     func load(_ url: URL, inferDelimiter: Bool = true) {
         importTask?.cancel(); previewTask?.cancel()

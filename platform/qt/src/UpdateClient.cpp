@@ -113,6 +113,9 @@ QJsonObject UpdateClient::run(const QString &command, const QStringList &argumen
 
     if (cancel && cancel()) throw YachtCancelledException();
 
+    if (process.exitStatus() != QProcess::NormalExit) {
+        throw std::runtime_error("The update helper terminated abnormally.");
+    }
     if (process.exitCode() != 0) {
         QString err = QString::fromUtf8(process.readAllStandardError()).trimmed();
         if (err.isEmpty()) {
@@ -184,8 +187,14 @@ void UpdateClient::verifyInstaller(const QJsonObject &download,
 
     if (cancel && cancel()) throw YachtCancelledException();
 
+    if (process.exitStatus() != QProcess::NormalExit) {
+        throw std::runtime_error("Installer verification terminated abnormally.");
+    }
     if (process.exitCode() != 0) {
         QString err = QString::fromUtf8(process.readAllStandardError()).trimmed();
+        if (err.isEmpty()) {
+            err = QStringLiteral("Installer verification failed with exit code %1").arg(process.exitCode());
+        }
         throw std::runtime_error(err.toStdString());
     }
 #else

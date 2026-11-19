@@ -68,12 +68,14 @@ struct ContentView: View {
                 .accessibilityLabel("View mode")
             }
             HStack {
-                Picker("Delimiter", selection: $workspace.delimiter) {
+                Picker("Delimiter", selection: Binding(
+                    get: { workspace.delimiter },
+                    set: { workspace.selectDelimiter($0) }
+                )) {
                     ForEach(CSVDelimiter.allCases, id: \.self) { Text($0.label).tag($0) }
                 }
                 .frame(width: 230)
                 .accessibilityLabel("CSV Delimiter")
-                .onChange(of: workspace.delimiter) { if let url = workspace.sourceURL { workspace.load(url, inferDelimiter: false) } }
                 Spacer()
                 if let table = workspace.table { Text("\(table.rowCount.formatted()) rows · \(table.header.count.formatted()) columns").font(.caption).foregroundStyle(.secondary) }
             }

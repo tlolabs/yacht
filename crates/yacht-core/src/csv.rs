@@ -1,6 +1,10 @@
 use crate::{check, invalid, table::Table, Cancel, Result};
 use serde::{Deserialize, Serialize};
-use std::{io::Read, path::Path};
+use std::{
+    io::{ErrorKind, Read},
+    path::Path,
+};
+
 #[derive(Debug, Clone, Copy, Default, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Delimiter {
@@ -245,6 +249,7 @@ impl Parser {
     }
 }
 pub fn parse(bytes: &[u8], delimiter: Delimiter, cancel: Cancel<'_>) -> Result<Table> {
+    check(cancel)?;
     let unbom = bytes.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(bytes);
     let row_cap_hint = (unbom.len() / 32).clamp(16, 500_000);
     let mut parser = Parser::new(delimiter, row_cap_hint);
@@ -316,6 +321,17 @@ pub fn read_stream(
 ) -> Result<Table> {
     read_stream_with_hint(reader, delimiter, chunk_size, 0, cancel)
 }
+
+fn read_checked(reader: &mut impl Read, buffer: &mut [u8], cancel: Cancel<'_>) -> Result<usize> {
+    loop {
+        check(cancel)?;
+        match reader.read(buffer) {
+            Err(error) if error.kind() == ErrorKind::Interrupted => continue,
+            result => return Ok(result?),
+        }
+    }
+}
+
 fn read_stream_with_hint(
     mut reader: impl Read,
     delimiter: Delimiter,
@@ -330,7 +346,7 @@ fn read_stream_with_hint(
     let mut prefix = [0u8; 3];
     let mut prefix_len = 0;
     while prefix_len < 3 {
-        let n = reader.read(&mut prefix[prefix_len..])?;
+        let n = read_checked(&mut reader, &mut prefix[prefix_len..], cancel)?;
         if n == 0 {
             break;
         }
@@ -341,8 +357,7 @@ fn read_stream_with_hint(
     }
     let mut buffer = vec![0; chunk_size.min(1024 * 1024)];
     loop {
-        check(cancel)?;
-        let n = reader.read(&mut buffer)?;
+        let n = read_checked(&mut reader, &mut buffer, cancel)?;
         if n == 0 {
             break;
         }

@@ -1,6 +1,6 @@
 # Releasing YACHT
 
-The Git tag is the release version: stable `vMAJOR.MINOR.PATCH`, prerelease `vMAJOR.MINOR.PATCH-beta.N` or `-rc.N`. Embedded/package version omits the `v`. `Cargo.toml` supplies the version to the build; CI must compare it with the tag and fail on a mismatch. The current source version is 2.1.5. The earlier 2.1.2 release candidates are development builds: their workflow artifacts are not production signed. Production automatic-update trust remains unconfigured; a notarized direct download does not enable that channel.
+The Git tag is the release version: stable `vMAJOR.MINOR.PATCH`, prerelease `vMAJOR.MINOR.PATCH-beta.N` or `-rc.N`. Embedded/package version omits the `v`. `Cargo.toml` supplies the version to the build; CI must compare it with the tag and fail on a mismatch. The current source version is 2.1.6. The earlier 2.1.2 release candidates are development builds: their workflow artifacts are not production signed. Production automatic-update trust remains unconfigured; a notarized direct download does not enable that channel.
 
 ## Release categories
 

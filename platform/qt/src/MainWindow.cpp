@@ -603,6 +603,7 @@ void MainWindow::initialize() {
 
 void MainWindow::setBusy(bool busy) {
     m_busy = busy;
+    if (!busy) m_cancelled = false;
     m_progressBar->setVisible(busy);
     m_cancelButton->setEnabled(busy);
     m_sidebarWidget->setEnabled(!busy);
@@ -794,6 +795,7 @@ void MainWindow::onPerformRender() {
             return table->call(QStringLiteral("preview"), args,
                                [this] { return m_cancelled.load(); }).toObject();
         });
+        if (m_cancelled.load()) throw YachtCancelledException();
         setBusy(false);
 
         QString html = result.value(QStringLiteral("html")).toString();
@@ -832,7 +834,7 @@ void MainWindow::onPerformRender() {
 }
 
 void MainWindow::loadFile(const QString &path, bool infer) {
-    if (m_busy) return;
+    if (m_busy || m_closeConfirmed) return;
     setBusy(true);
     if (m_cancelled.load()) {
         m_cancelled = false;
@@ -842,18 +844,13 @@ void MainWindow::loadFile(const QString &path, bool infer) {
     }
     m_cancelled = false;
 
-    m_previewWidget->clear();
-    m_sourceEdit->clear();
-
-    if (infer && path.endsWith(QStringLiteral(".tsv"), Qt::CaseInsensitive)) {
-        setDelimiter(QStringLiteral("tab"));
-    }
+    const QString delimiter = infer && path.endsWith(QStringLiteral(".tsv"), Qt::CaseInsensitive)
+                                  ? QStringLiteral("tab") : m_delimiter;
 
     m_statusLabel->setText(QStringLiteral("Reading ") + path);
     QApplication::processEvents();
 
     try {
-        const QString delimiter = m_delimiter;
         TablePtr nextTable = runCoreResponsive([this, path, delimiter] {
             return YachtCore::read(path, delimiter, [this] { return m_cancelled.load(); });
         });
@@ -862,6 +859,9 @@ void MainWindow::loadFile(const QString &path, bool infer) {
             throw YachtCancelledException();
         }
 
+        if (delimiter != m_delimiter) setDelimiter(delimiter);
+        m_previewWidget->clear();
+        m_sourceEdit->clear();
         if (m_table) {
             m_table->release();
         }
@@ -947,6 +947,7 @@ void MainWindow::copyHtmlToClipboard() {
             return table->call(QStringLiteral("html"), args,
                                [this] { return m_cancelled.load(); });
         });
+        if (m_cancelled.load()) throw YachtCancelledException();
         QString html = htmlVal.toString();
         m_desktop->setClipboard(html);
         announceStatus(m_preferences.outputMode == QStringLiteral("document")

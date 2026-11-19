@@ -1,4 +1,5 @@
 use std::{
+    ffi::{OsStr, OsString},
     path::PathBuf,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -32,20 +33,26 @@ Usage: yacht input.csv [more.csv ...] [options]
   --border-collapse MODE  collapse or separate
   --border-spacing N      Border spacing in pixels
   --                     End options; remaining arguments are paths";
-fn path(text: &str) -> PathBuf {
-    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"));
-    if text == "~" {
-        if let Some(home) = home {
-            return home.into();
-        }
-    } else if let Some(rest) = text.strip_prefix("~/").or_else(|| text.strip_prefix(r"~\")) {
-        if let Some(home) = home {
-            return PathBuf::from(home).join(rest);
+fn strip_ascii_prefix<'a>(text: &'a OsStr, prefix: &str) -> Option<&'a OsStr> {
+    assert!(prefix.is_ascii());
+    let suffix = text.as_encoded_bytes().strip_prefix(prefix.as_bytes())?;
+    // SAFETY: The bytes come from this OsStr, and the cut follows an ASCII prefix.
+    Some(unsafe { OsStr::from_encoded_bytes_unchecked(suffix) })
+}
+fn path(text: &OsStr) -> PathBuf {
+    let rest = strip_ascii_prefix(text, "~/").or_else(|| strip_ascii_prefix(text, r"~\"));
+    if text == "~" || rest.is_some() {
+        if let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) {
+            let home = PathBuf::from(home);
+            return match rest {
+                Some(rest) => home.join(rest),
+                None => home,
+            };
         }
     }
     PathBuf::from(text)
 }
-fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
+fn run(args: Vec<OsString>, cancel: &dyn Fn() -> bool) -> Result<()> {
     if args.is_empty() {
         println!("{HELP}");
         return Ok(());
@@ -56,11 +63,20 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
         (vec![], None, Delimiter::Comma, false, false);
     let mut args = args.into_iter();
     while let Some(arg) = args.next() {
-        if positional || !arg.starts_with('-') {
+        if positional || !arg.as_encoded_bytes().starts_with(b"-") {
             inputs.push(arg);
             continue;
         }
-        match arg.as_str() {
+        if let Some(value) =
+            strip_ascii_prefix(&arg, "--output=").or_else(|| strip_ascii_prefix(&arg, "-o="))
+        {
+            output = Some(value.to_os_string());
+            continue;
+        }
+        let arg = arg
+            .to_str()
+            .ok_or_else(|| invalid("Options must use valid Unicode."))?;
+        match arg {
             "--help" | "-h" => {
                 println!("{HELP}");
                 return Ok(());
@@ -80,7 +96,7 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
             _ => {}
         }
         let (flag, value) = if let Some((flag, value)) = arg.split_once('=') {
-            (flag.to_owned(), value.to_owned())
+            (flag, OsString::from(value))
         } else {
             let value = args
                 .next()
@@ -91,6 +107,9 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
             output = Some(value);
             continue;
         }
+        let value = value
+            .into_string()
+            .map_err(|_| invalid(format!("{flag} requires a valid Unicode value.")))?;
         if flag == "--overwrite" {
             overwrite = match value.to_lowercase().as_str() {
                 "1" | "true" | "yes" | "y" | "on" => true,
@@ -128,7 +147,7 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
             };
             continue;
         }
-        match flag.as_str() {
+        match flag {
             "--font-size" => {
                 style.font_size_px = value
                     .parse::<i64>()
@@ -216,7 +235,7 @@ fn run(args: Vec<String>, cancel: &dyn Fn() -> bool) -> Result<()> {
             Err(yacht_core::Error::Cancelled) => return Err(yacht_core::Error::Cancelled),
             Err(e) => {
                 failures += 1;
-                eprintln!("{input}: {e}");
+                eprintln!("{}: {e}", input.to_string_lossy());
             }
         }
     }
@@ -232,7 +251,7 @@ fn main() {
         eprintln!("yacht: Cannot install cancellation handler: {e}");
         std::process::exit(1);
     }
-    if let Err(e) = run(std::env::args().skip(1).collect(), &|| {
+    if let Err(e) = run(std::env::args_os().skip(1).collect(), &|| {
         cancelled.load(Ordering::Relaxed)
     }) {
         eprintln!("yacht: {e}");
@@ -253,5 +272,30 @@ mod tests {
         assert!(run(vec!["--".into(), "--help".into()], &|| false).is_err());
         // An option value is data, even when it happens to spell a help flag.
         assert!(run(vec!["--table-class".into(), "--help".into()], &|| false).is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn accepts_native_input_and_output_paths() {
+        use std::os::unix::ffi::OsStrExt;
+
+        let input = OsStr::from_bytes(b"synthetic-\xff.csv");
+        let output = OsStr::from_bytes(b"synthetic-\xfe.html");
+        for prefix in ["--output=", "-o="] {
+            let mut option = OsString::from(prefix);
+            option.push(output);
+            assert_eq!(strip_ascii_prefix(&option, prefix), Some(output));
+            assert!(matches!(
+                run(vec![input.into(), option], &|| true),
+                Err(yacht_core::Error::Cancelled)
+            ));
+        }
+        assert!(matches!(
+            run(
+                vec![input.into(), "--output".into(), output.into()],
+                &|| true
+            ),
+            Err(yacht_core::Error::Cancelled)
+        ));
     }
 }
